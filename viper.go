@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -75,19 +76,24 @@ func GetTime(key string) time.Time {
 	return cast.ToTime(Get(key))
 }
 
-func GetStringArray(key string) []string {
-	return cast.ToStringArray(Get(key))
+func GetStringSlice(key string) []string {
+	return cast.ToStringSlice(Get(key))
+}
+
+func GetStringMap(key string) map[string]interface{} {
+	return cast.ToStringMap(Get(key))
+}
+
+func GetStringMapString(key string) map[string]string {
+	return cast.ToStringMapString(Get(key))
 }
 
 func find(key string) interface{} {
 	var val interface{}
 	var exists bool
 
-	// If the requested key is an alias, then return the proper key
-	newkey, exists := aliases[key]
-	if exists {
-		return find(newkey)
-	}
+	// if the requested key is an alias, then return the proper key
+	key = realKey(key)
 
 	val, exists = override[key]
 	if exists {
@@ -111,6 +117,7 @@ func find(key string) interface{} {
 }
 
 func Get(key string) interface{} {
+	key = strings.ToLower(key)
 	v := find(key)
 
 	if v == nil {
@@ -140,32 +147,50 @@ func IsSet(key string) bool {
 }
 
 func RegisterAlias(alias string, key string) {
-	aliases[alias] = key
+	registerAlias(alias, strings.ToLower(key))
+}
+
+func registerAlias(alias string, key string) {
+	alias = strings.ToLower(alias)
+	if alias != key && alias != realKey(key) {
+		_, exists := aliases[alias]
+		if !exists {
+			aliases[alias] = key
+		}
+	} else {
+		jww.WARN.Println("Creating circular reference alias", alias, key, realKey(key))
+	}
+}
+
+func realKey(key string) string {
+	newkey, exists := aliases[key]
+	if exists {
+		jww.DEBUG.Println("Alias", key, "to", newkey)
+		return realKey(newkey)
+	} else {
+		return key
+	}
 }
 
 func InConfig(key string) bool {
+	// if the requested key is an alias, then return the proper key
+	key = realKey(key)
+
 	_, exists := config[key]
 	return exists
 }
 
 func SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
-	newkey, exists := aliases[key]
-	if exists {
-		defaults[newkey] = value
-	} else {
-		defaults[key] = value
-	}
+	key = realKey(strings.ToLower(key))
+	defaults[key] = value
 }
 
 func Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
-	newkey, exists := aliases[key]
-	if exists {
-		override[newkey] = value
-	} else {
-		override[key] = value
-	}
+	key = realKey(strings.ToLower(key))
+	key = strings.ToLower(key)
+	override[key] = value
 }
 
 func ReadInConfig() {
@@ -198,6 +223,16 @@ func MarshallReader(in io.Reader) {
 	case "toml":
 		if _, err := toml.Decode(buf.String(), &config); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
+		}
+	}
+
+	insensativiseMap()
+}
+
+func insensativiseMap() {
+	for key, _ := range config {
+		if key != strings.ToLower(key) {
+			registerAlias(key, key)
 		}
 	}
 }

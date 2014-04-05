@@ -25,7 +25,7 @@ title = "TOML Example"
 
 [owner]
 organization = "MongoDB"
-bio = "MongoDB Chief Developer Advocate & Hacker at Large"
+Bio = "MongoDB Chief Developer Advocate & Hacker at Large"
 dob = 1979-05-27T07:32:00Z # First class dates? Why not?`)
 
 var jsonExample = []byte(`{
@@ -114,6 +114,19 @@ func TestTOML(t *testing.T) {
 	assert.Equal(t, "TOML Example", Get("title"))
 }
 
-func TestCaseSensitive(t *testing.T) {
-	assert.Equal(t, true, Get("Hacker"))
+func TestCaseInSensitive(t *testing.T) {
+	assert.Equal(t, true, Get("hacker"))
+	Set("Title", "Checking Case")
+	assert.Equal(t, "Checking Case", Get("tItle"))
+}
+
+func TestAliasesOfAliases(t *testing.T) {
+	RegisterAlias("Foo", "Bar")
+	RegisterAlias("Bar", "Title")
+	assert.Equal(t, "Checking Case", Get("FOO"))
+}
+
+func TestRecursiveAliases(t *testing.T) {
+	RegisterAlias("Baz", "Roo")
+	RegisterAlias("Roo", "baz")
 }
