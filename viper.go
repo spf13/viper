@@ -197,16 +197,25 @@ func Set(key string, value interface{}) {
 	override[key] = value
 }
 
-func ReadInConfig() {
+type UnsupportedConfigError string
+
+func (str UnsupportedConfigError) Error() string {
+	return fmt.Sprintf("Unsupported Config Type %q", string(str))
+}
+
+func ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
 	if !stringInSlice(getConfigType(), SupportedExts) {
-		jww.ERROR.Fatalf("Unsupported Config Type %q", getConfigType())
+		return UnsupportedConfigError(getConfigType())
 	}
 
 	file, err := ioutil.ReadFile(getConfigFile())
-	if err == nil {
-		MarshallReader(bytes.NewReader(file))
+	if err != nil {
+		return err
 	}
+
+	MarshallReader(bytes.NewReader(file))
+	return nil
 }
 
 func MarshallReader(in io.Reader) {
@@ -276,12 +285,11 @@ func getConfigFile() string {
 
 	cf, err := findConfigFile()
 	if err != nil {
-		jww.ERROR.Println(err)
-	} else {
-		configFile = cf
-		return getConfigFile()
+		return ""
 	}
-	return ""
+
+	configFile = cf
+	return getConfigFile()
 }
 
 func searchInPath(in string) (filename string) {
