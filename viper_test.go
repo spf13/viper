@@ -43,21 +43,6 @@ var jsonExample = []byte(`{
     }
 }`)
 
-func reset() {
-	configPaths = nil
-	configName = "config"
-
-	// extensions Supported
-	SupportedExts = []string{"json", "toml", "yaml"}
-	configFile = ""
-	configType = ""
-
-	config = make(map[string]interface{})
-	override = make(map[string]interface{})
-	defaults = make(map[string]interface{})
-	aliases = make(map[string]string)
-}
-
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
 	assert.Equal(t, "/tmp/config.yaml", getConfigFile())
