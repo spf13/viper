@@ -46,6 +46,10 @@ func SetConfigFile(in string) {
 	}
 }
 
+func ConfigFileUsed() string {
+	return configFile
+}
+
 func AddConfigPath(in string) {
 	if in != "" {
 		absin := absPathify(in)

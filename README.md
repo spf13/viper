@@ -80,14 +80,14 @@ validate. Viper is designed to work with YAML, TOML or JSON files. If someone
 really wants to add this feature, I’d be happy to merge it. It’s easy to
 specify which formats your application will permit.
 
-Q: Why viper?
+Q: Why is it called "viper"?
 
 A: Viper is designed to be a companion to
 [Cobra](http://github.com/spf13/cobra). While both can operate completely
 independently, together they make a powerful pair to handle much of your
 application foundation needs.
 
-Q: Why Cobra?
+Q: Why is it called "Cobra"?
 
 A: Is there a better name for a commander?
 
