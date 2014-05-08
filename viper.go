@@ -223,7 +223,7 @@ func MarshallReader(in io.Reader) {
 	buf.ReadFrom(in)
 
 	switch getConfigType() {
-	case "yaml":
+	case "yaml", "yml":
 		if err := yaml.Unmarshal(buf.Bytes(), &config); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
@@ -399,7 +399,7 @@ func Reset() {
 	configName = "config"
 
 	// extensions Supported
-	SupportedExts = []string{"json", "toml", "yaml"}
+	SupportedExts = []string{"json", "toml", "yaml", "yml"}
 	configFile = ""
 	configType = ""
 
