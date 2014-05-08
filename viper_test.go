@@ -83,6 +83,15 @@ func TestAliases(t *testing.T) {
 	assert.Equal(t, 45, Get("age"))
 }
 
+func TestYML(t *testing.T) {
+	Reset()
+	SetConfigType("yml")
+	r := bytes.NewReader(yamlExample)
+
+	MarshallReader(r)
+	assert.Equal(t, "steve", Get("name"))
+}
+
 func TestJSON(t *testing.T) {
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
