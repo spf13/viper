@@ -18,6 +18,9 @@ hobbies:
 - skateboarding
 - snowboarding
 - go
+clothing:
+  jacket: leather
+  trousers: denim
 age: 35`)
 
 var tomlExample = []byte(`
@@ -62,6 +65,7 @@ func TestMarshalling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
+	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 

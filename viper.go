@@ -193,7 +193,6 @@ func SetDefault(key string, value interface{}) {
 func Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = realKey(strings.ToLower(key))
-	key = strings.ToLower(key)
 	override[key] = value
 }
 
@@ -392,6 +391,8 @@ func Debug() {
 	pretty.Println(defaults)
 	fmt.Println("Override:")
 	pretty.Println(override)
+	fmt.Println("Aliases:")
+	pretty.Println(aliases)
 }
 
 func Reset() {
