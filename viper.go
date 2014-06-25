@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -368,8 +369,29 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+func userHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
 func absPathify(inPath string) string {
 	jww.INFO.Println("Trying to resolve absolute path to", inPath)
+
+	if strings.HasPrefix(inPath, "$HOME") {
+		inPath = userHomeDir() + inPath[5:]
+	}
+
+	if strings.HasPrefix(inPath, "$") {
+		end := strings.Index(inPath, string(os.PathSeparator))
+		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+	}
+
 	if filepath.IsAbs(inPath) {
 		return filepath.Clean(inPath)
 	}
