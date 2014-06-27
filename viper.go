@@ -23,6 +23,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
+	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v1"
 )
 
@@ -40,6 +41,7 @@ var configType string
 var config map[string]interface{} = make(map[string]interface{})
 var override map[string]interface{} = make(map[string]interface{})
 var defaults map[string]interface{} = make(map[string]interface{})
+var pflags map[string]*pflag.Flag = make(map[string]*pflag.Flag)
 var aliases map[string]string = make(map[string]string)
 
 func SetConfigFile(in string) {
@@ -116,12 +118,30 @@ func GetAllIntoStruct(rawVal interface{}) (err error) {
 	return
 }
 
+func BindPFlag(key string, flag *pflag.Flag) (err error) {
+	if flag == nil {
+		return fmt.Errorf("flag for %q is nil", key)
+	}
+	pflags[key] = flag
+	SetDefault(key, flag.Value.String())
+	return nil
+}
+
 func find(key string) interface{} {
 	var val interface{}
 	var exists bool
 
 	// if the requested key is an alias, then return the proper key
 	key = realKey(key)
+
+	// PFlag Override first
+	flag, exists := pflags[key]
+	if exists {
+		if flag.Changed {
+			jww.TRACE.Println(key, "found in override (via pflag):", val)
+			return flag.Value.String()
+		}
+	}
 
 	val, exists = override[key]
 	if exists {
