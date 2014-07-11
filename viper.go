@@ -96,13 +96,13 @@ func GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(Get(key))
 }
 
-// takes a map and uses reflection to convert it into the given Go native structure.
-// rawVal must be a pointer to a struct.
-func GetIntoStruct(key string, rawVal interface{}) error {
+// Takes a single key and marshals it into a Struct
+func MarshalKey(key string, rawVal interface{}) error {
 	return mapstructure.Decode(Get(key), rawVal)
 }
 
-func GetAllIntoStruct(rawVal interface{}) (err error) {
+// Marshals the config into a Struct
+func Marshal(rawVal interface{}) (err error) {
 	err = mapstructure.Decode(defaults, rawVal)
 	if err != nil {
 		return
