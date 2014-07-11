@@ -44,6 +44,8 @@ var defaults map[string]interface{} = make(map[string]interface{})
 var pflags map[string]*pflag.Flag = make(map[string]*pflag.Flag)
 var aliases map[string]string = make(map[string]string)
 
+// Explicitly define the path, name and extension of the config file
+// Viper will use this and not check any of the config paths
 func SetConfigFile(in string) {
 	if in != "" {
 		configFile = in
@@ -53,6 +55,9 @@ func SetConfigFile(in string) {
 func ConfigFileUsed() string {
 	return configFile
 }
+
+// Add a path for viper to search for the config file in.
+// Can be called multiple times to define multiple search paths.
 
 func AddConfigPath(in string) {
 	if in != "" {
@@ -118,6 +123,11 @@ func Marshal(rawVal interface{}) (err error) {
 	return
 }
 
+// Bind a specific key to a flag (as used by cobra)
+//
+//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	 viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
+//
 func BindPFlag(key string, flag *pflag.Flag) (err error) {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
@@ -172,6 +182,8 @@ func find(key string) interface{} {
 	return nil
 }
 
+// Get returns an interface..
+// Must be typecast or used by something that will typecast
 func Get(key string) interface{} {
 	key = strings.ToLower(key)
 	v := find(key)
@@ -202,6 +214,8 @@ func IsSet(key string) bool {
 	return t != nil
 }
 
+// Aliases provide another accessor for the same key.
+// This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) {
 	registerAlias(alias, strings.ToLower(key))
 }
@@ -236,12 +250,16 @@ func InConfig(key string) bool {
 	return exists
 }
 
+// Set the default value for this key.
+// Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
 	key = realKey(strings.ToLower(key))
 	defaults[key] = value
 }
 
+// The user provided value (via flag)
+// Will be used instead of values obtained via config file, ENV or default
 func Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = realKey(strings.ToLower(key))
@@ -254,6 +272,8 @@ func (str UnsupportedConfigError) Error() string {
 	return fmt.Sprintf("Unsupported Config Type %q", string(str))
 }
 
+// Viper will discover and load the configuration file from disk
+// searching in one of the defined paths.
 func ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
 	if !stringInSlice(getConfigType(), SupportedExts) {
@@ -301,6 +321,8 @@ func insensativiseMap() {
 	}
 }
 
+// Name for the config file.
+// Does not include extension.
 func SetConfigName(in string) {
 	if in != "" {
 		configName = in
