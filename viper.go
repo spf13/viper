@@ -123,7 +123,15 @@ func BindPFlag(key string, flag *pflag.Flag) (err error) {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
 	pflags[key] = flag
-	SetDefault(key, flag.Value.String())
+
+	switch flag.Value.Type() {
+	case "int", "int8", "int16", "int32", "int64":
+		SetDefault(key, cast.ToInt(flag.Value.String()))
+	case "bool":
+		SetDefault(key, cast.ToBool(flag.Value.String()))
+	default:
+		SetDefault(key, flag.Value.String())
+	}
 	return nil
 }
 
