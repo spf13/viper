@@ -129,7 +129,7 @@ func TestRecursiveAliases(t *testing.T) {
 	RegisterAlias("Roo", "baz")
 }
 
-func TestIntoStruct(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")
 
@@ -140,7 +140,7 @@ func TestIntoStruct(t *testing.T) {
 
 	var C config
 
-	err := GetAllIntoStruct(&C)
+	err := Marshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
@@ -148,7 +148,7 @@ func TestIntoStruct(t *testing.T) {
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313})
 
 	Set("port", 1234)
-	err = GetAllIntoStruct(&C)
+	err = Marshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
