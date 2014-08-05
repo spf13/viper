@@ -21,7 +21,9 @@ hobbies:
 clothing:
   jacket: leather
   trousers: denim
-age: 35`)
+age: 35
+beard: true
+`)
 
 var tomlExample = []byte(`
 title = "TOML Example"
@@ -85,6 +87,15 @@ func TestAliases(t *testing.T) {
 	assert.Equal(t, 40, Get("years"))
 	Set("years", 45)
 	assert.Equal(t, 45, Get("age"))
+}
+
+func TestAliasInConfigFile(t *testing.T) {
+	// the config file specifies "beard".  If we make this an alias for
+	// "hasbeard", we still want the old config file to work with beard.
+	RegisterAlias("beard", "hasbeard")
+	assert.Equal(t, true, Get("hasbeard"))
+	Set("hasbeard", false)
+	assert.Equal(t, false, Get("beard"))
 }
 
 func TestYML(t *testing.T) {

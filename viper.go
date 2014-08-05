@@ -107,20 +107,23 @@ func MarshalKey(key string, rawVal interface{}) error {
 }
 
 // Marshals the config into a Struct
-func Marshal(rawVal interface{}) (err error) {
-	err = mapstructure.Decode(defaults, rawVal)
+func Marshal(rawVal interface{}) error {
+	err := mapstructure.Decode(defaults, rawVal)
 	if err != nil {
-		return
+		return err
 	}
 	err = mapstructure.Decode(config, rawVal)
 	if err != nil {
-		return
+		return err 
 	}
 	err = mapstructure.Decode(override, rawVal)
 	if err != nil {
-		return
+		return err
 	}
-	return
+
+	insensativiseMaps()
+
+	return nil
 }
 
 // Bind a specific key to a flag (as used by cobra)
@@ -224,7 +227,23 @@ func registerAlias(alias string, key string) {
 	alias = strings.ToLower(alias)
 	if alias != key && alias != realKey(key) {
 		_, exists := aliases[alias]
+
 		if !exists {
+			// if we alias something that exists in one of the maps to another
+			// name, we'll never be able to get that value using the original
+			// name, so move the config value to the new realkey.
+			if val, ok := config[alias]; ok {
+				delete(config, alias)
+				config[key] = val
+			}
+			if val, ok := defaults[alias]; ok {
+				delete(defaults, alias)
+				defaults[key] = val
+			}
+			if val, ok := override[alias]; ok {
+				delete(override, alias)
+				override[key] = val
+			}
 			aliases[alias] = key
 		}
 	} else {
@@ -310,16 +329,25 @@ func MarshallReader(in io.Reader) {
 		}
 	}
 
-	insensativiseMap()
+	insensativiseMap(config)
 }
 
-func insensativiseMap() {
-	for key, _ := range config {
-		if key != strings.ToLower(key) {
-			registerAlias(key, key)
+func insensativiseMaps() {
+	insensativiseMap(config)
+	insensativiseMap(defaults)
+	insensativiseMap(override)
+}
+
+func insensativiseMap(m map[string]interface{}) {
+	for key, val := range m {
+		lower := strings.ToLower(key)
+		if key != lower {
+			delete(m, key)
+			m[lower] = val
 		}
 	}
 }
+
 
 // Name for the config file.
 // Does not include extension.
