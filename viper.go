@@ -34,7 +34,7 @@ var configPaths []string
 var configName string = "config"
 
 // extensions Supported
-var SupportedExts []string = []string{"json", "toml", "yaml"}
+var SupportedExts []string = []string{"json", "toml", "yaml", "yml"}
 var configFile string
 var configType string
 
