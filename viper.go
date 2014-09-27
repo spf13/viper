@@ -393,6 +393,38 @@ func insensativiseMap(m map[string]interface{}) {
 	}
 }
 
+func AllKeys() []string {
+	m := map[string]struct{}{}
+
+	for key, _ := range defaults {
+		m[key] = struct{}{}
+	}
+
+	for key, _ := range config {
+		m[key] = struct{}{}
+	}
+
+	for key, _ := range override {
+		m[key] = struct{}{}
+	}
+
+	a := []string{}
+	for x, _ := range m {
+		a = append(a, x)
+	}
+
+	return a
+}
+
+func AllSettings() map[string]interface{} {
+	m := map[string]interface{}{}
+	for _, x := range AllKeys() {
+		m[x] = Get(x)
+	}
+
+	return m
+}
+
 // Name for the config file.
 // Does not include extension.
 func SetConfigName(in string) {

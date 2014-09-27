@@ -8,7 +8,9 @@ package viper
 import (
 	"bytes"
 	"os"
+	"sort"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -136,6 +138,20 @@ func TestEnv(t *testing.T) {
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
+}
+
+func TestAllKeys(t *testing.T) {
+	ks := sort.StringSlice{"title", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type"}
+	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
+	all := map[string]interface{}{"hacker": true, "beard": true, "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut"}
+
+	var allkeys sort.StringSlice
+	allkeys = AllKeys()
+	allkeys.Sort()
+	ks.Sort()
+
+	assert.Equal(t, ks, allkeys)
+	assert.Equal(t, all, AllSettings())
 }
 
 func TestCaseInSensitive(t *testing.T) {
