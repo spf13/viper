@@ -135,9 +135,15 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("ID", "13")
 	os.Setenv("FOOD", "apple")
+	os.Setenv("NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
+	assert.Equal(t, "Cake", Get("name"))
+
+	AutomaticEnv()
+
+	assert.Equal(t, "crunk", Get("name"))
 }
 
 func TestAllKeys(t *testing.T) {

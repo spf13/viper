@@ -262,6 +262,14 @@ func IsSet(key string) bool {
 	return t != nil
 }
 
+// Have viper check ENV variables for all
+// keys set in config, default & flags
+func AutomaticEnv() {
+	for _, x := range AllKeys() {
+		BindEnv(x)
+	}
+}
+
 // Aliases provide another accessor for the same key.
 // This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) {
