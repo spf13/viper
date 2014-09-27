@@ -3,6 +3,17 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
+// Viper is a application configuration system.
+// It believes that applications can be configured a variety of ways
+// via flags, ENVIRONMENT variables, configuration files.
+
+// Each item takes precedence over the item below it:
+
+// flag
+// env
+// config
+// default
+
 package viper
 
 import (
@@ -40,6 +51,7 @@ var configType string
 
 var config map[string]interface{} = make(map[string]interface{})
 var override map[string]interface{} = make(map[string]interface{})
+var env map[string]string = make(map[string]string)
 var defaults map[string]interface{} = make(map[string]interface{})
 var pflags map[string]*pflag.Flag = make(map[string]*pflag.Flag)
 var aliases map[string]string = make(map[string]string)
@@ -114,7 +126,7 @@ func Marshal(rawVal interface{}) error {
 	}
 	err = mapstructure.Decode(config, rawVal)
 	if err != nil {
-		return err 
+		return err
 	}
 	err = mapstructure.Decode(override, rawVal)
 	if err != nil {
@@ -148,6 +160,28 @@ func BindPFlag(key string, flag *pflag.Flag) (err error) {
 	return nil
 }
 
+// Binds a viper key to a ENV variable
+// ENV variables are case sensitive
+// If only a key is provided, it will use the env key matching the key, uppercased.
+func BindEnv(input ...string) (err error) {
+	var key, envkey string
+	if len(input) == 0 {
+		return fmt.Errorf("BindEnv missing key to bind to")
+	}
+
+	key = input[0]
+
+	if len(input) == 1 {
+		envkey = strings.ToUpper(key)
+	} else {
+		envkey = input[1]
+	}
+
+	env[key] = envkey
+
+	return nil
+}
+
 func find(key string) interface{} {
 	var val interface{}
 	var exists bool
@@ -168,6 +202,17 @@ func find(key string) interface{} {
 	if exists {
 		jww.TRACE.Println(key, "found in override:", val)
 		return val
+	}
+
+	envkey, exists := env[key]
+	if exists {
+		jww.TRACE.Println(key, "registered as env var", envkey)
+		if val = os.Getenv(envkey); val != "" {
+			jww.TRACE.Println(envkey, "found in environement with val:", val)
+			return val
+		} else {
+			jww.TRACE.Println(envkey, "env value unset:")
+		}
 	}
 
 	val, exists = config[key]
@@ -348,7 +393,6 @@ func insensativiseMap(m map[string]interface{}) {
 	}
 }
 
-
 // Name for the config file.
 // Does not include extension.
 func SetConfigName(in string) {
@@ -510,6 +554,8 @@ func absPathify(inPath string) string {
 func Debug() {
 	fmt.Println("Config:")
 	pretty.Println(config)
+	fmt.Println("Env:")
+	pretty.Println(env)
 	fmt.Println("Defaults:")
 	pretty.Println(defaults)
 	fmt.Println("Override:")
@@ -529,6 +575,7 @@ func Reset() {
 
 	config = make(map[string]interface{})
 	override = make(map[string]interface{})
+	env = make(map[string]string)
 	defaults = make(map[string]interface{})
 	aliases = make(map[string]string)
 }

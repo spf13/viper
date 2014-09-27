@@ -7,6 +7,7 @@ package viper
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,6 +122,20 @@ func TestTOML(t *testing.T) {
 
 	MarshallReader(r)
 	assert.Equal(t, "TOML Example", Get("title"))
+}
+
+func TestEnv(t *testing.T) {
+	SetConfigType("json")
+	r := bytes.NewReader(jsonExample)
+	MarshallReader(r)
+	BindEnv("id")
+	BindEnv("f", "FOOD")
+
+	os.Setenv("ID", "13")
+	os.Setenv("FOOD", "apple")
+
+	assert.Equal(t, "13", Get("id"))
+	assert.Equal(t, "apple", Get("f"))
 }
 
 func TestCaseInSensitive(t *testing.T) {
