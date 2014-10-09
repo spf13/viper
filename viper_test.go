@@ -27,6 +27,7 @@ clothing:
   jacket: leather
   trousers: denim
 age: 35
+eyes : brown
 beard: true
 `)
 
@@ -170,9 +171,9 @@ func TestEnv(t *testing.T) {
 }
 
 func TestAllKeys(t *testing.T) {
-	ks := sort.StringSlice{"title", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type"}
+	ks := sort.StringSlice{"title", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"hacker": true, "beard": true, "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut"}
+	all := map[string]interface{}{"hacker": true, "beard": true, "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut", "eyes": "brown"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -244,5 +245,28 @@ func TestBindPFlag(t *testing.T) {
 	flag.Changed = true //hack for pflag usage
 
 	assert.Equal(t, "testing_mutate", Get("testvalue"))
+
+}
+
+func TestBoundCaseSensitivity(t *testing.T) {
+
+	assert.Equal(t, "brown", Get("eyes"))
+
+	BindEnv("eYEs", "TURTLE_EYES")
+	os.Setenv("TURTLE_EYES", "blue")
+
+	assert.Equal(t, "blue", Get("eyes"))
+
+	var testString = "green"
+	var testValue = newStringValue(testString, &testString)
+
+	flag := &pflag.Flag{
+		Name:    "eyeballs",
+		Value:   testValue,
+		Changed: true,
+	}
+
+	BindPFlag("eYEs", flag)
+	assert.Equal(t, "green", Get("eyes"))
 
 }
