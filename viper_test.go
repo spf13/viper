@@ -7,11 +7,13 @@ package viper
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,6 +52,27 @@ var jsonExample = []byte(`{
             ]
     }
 }`)
+
+//stubs for PFlag Values
+type stringValue string
+
+func newStringValue(val string, p *string) *stringValue {
+	*p = val
+	return (*stringValue)(p)
+}
+
+func (s *stringValue) Set(val string) error {
+	*s = stringValue(val)
+	return nil
+}
+
+func (s *stringValue) Type() string {
+	return "string"
+}
+
+func (s *stringValue) String() string {
+	return fmt.Sprintf("%s", *s)
+}
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
@@ -201,4 +224,25 @@ func TestMarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
+}
+
+func TestBindPFlag(t *testing.T) {
+	var testString = "testing"
+	var testValue = newStringValue(testString, &testString)
+
+	flag := &pflag.Flag{
+		Name:    "testflag",
+		Value:   testValue,
+		Changed: false,
+	}
+
+	BindPFlag("testvalue", flag)
+
+	assert.Equal(t, testString, Get("testvalue"))
+
+	flag.Value.Set("testing_mutate")
+	flag.Changed = true //hack for pflag usage
+
+	assert.Equal(t, "testing_mutate", Get("testvalue"))
+
 }
