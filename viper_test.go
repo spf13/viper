@@ -149,7 +149,7 @@ func TestEnv(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	ks := sort.StringSlice{"title", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"hacker": true, "beard": true, "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut"}
+	all := map[string]interface{}{"beard": true, "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "id": "13", "type": "donut", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "ppu": 0.55, "age": 35, "title": "TOML Example", "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -201,4 +201,20 @@ func TestMarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
+}
+
+func TestDeepAccess(t *testing.T) {
+	assert.Equal(t, "leather", Get("clothing.jacket"))
+}
+
+func TestDeepBindEnv(t *testing.T) {
+	BindEnv("clothing.jacket")
+	os.Setenv("CLOTHING__JACKET", "peacoat")
+	assert.Equal(t, "peacoat", Get("clothing.jacket"))
+}
+
+func TestDeepAutomaticEnv(t *testing.T) {
+	AutomaticEnv()
+	os.Setenv("CLOTHING__JACKET", "jean")
+	assert.Equal(t, "jean", Get("clothing.jacket"))
 }
