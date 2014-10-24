@@ -218,3 +218,13 @@ func TestDeepAutomaticEnv(t *testing.T) {
 	os.Setenv("CLOTHING__JACKET", "jean")
 	assert.Equal(t, "jean", Get("clothing.jacket"))
 }
+
+func TestDeepAlias(t *testing.T) {
+	RegisterAlias("jacket", "clothing.jacket")
+	assert.Equal(t, "jean", Get("jacket"))
+}
+
+func TestDeepAliasCase(t *testing.T) {
+	RegisterAlias("jacket", "clothing.Jacket")
+	assert.Equal(t, "jean", Get("jacket"))
+}
