@@ -39,7 +39,7 @@ import (
 )
 
 // A set of paths to look for the config file in
-var configPaths []string
+var configPaths []string = []string{"."}
 
 // Name of file to look for inside the path
 var configName string = "config"
