@@ -38,6 +38,7 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
+	crypt "github.com/xordataexchange/crypt/config"
 	"gopkg.in/yaml.v1"
 )
 
@@ -459,34 +460,37 @@ func ReadInConfig() error {
 		return err
 	}
 
-	getKeyValueConfig()
+	err = getKeyValueConfig()
+	if err != nil {
+		return err
+	}
 
-	MarshallReader(bytes.NewReader(file))
+	MarshallReader(bytes.NewReader(file), config)
 	return nil
 }
 
-func MarshallReader(in io.Reader) {
+func MarshallReader(in io.Reader, c map[string]interface{}) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
 	switch getConfigType() {
 	case "yaml", "yml":
-		if err := yaml.Unmarshal(buf.Bytes(), &config); err != nil {
+		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 
 	case "json":
-		if err := json.Unmarshal(buf.Bytes(), &config); err != nil {
+		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 
 	case "toml":
-		if _, err := toml.Decode(buf.String(), &config); err != nil {
+		if _, err := toml.Decode(buf.String(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 	}
 
-	insensativiseMap(config)
+	insensativiseMap(c)
 }
 
 func insensativiseMaps() {
@@ -497,25 +501,54 @@ func insensativiseMaps() {
 }
 
 // retrieve the first found remote configuration
-func getKeyValueConfig() {
+func getKeyValueConfig() error {
+	var err error
 	for _, rp := range remoteProviders {
 		val, err := getRemoteConfig(rp)
 		if err != nil {
-			kvstore = val
-			return
+			continue
 		}
+		kvstore = val
+		return nil
 	}
+	return err
 }
 
 func getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
 	switch provider.provider {
 	case "etcd":
-		// do something
+		return getEtcdConfig(provider)
 	case "consul":
 		// do something
 
 	}
 	return config, nil
+}
+
+func getEtcdConfig(provider *remoteProvider) (map[string]interface{}, error) {
+	var cm crypt.ConfigManager
+	var err error
+
+	if provider.secretKeyring != "" {
+		kr, err := os.Open(provider.secretKeyring)
+		defer kr.Close()
+		if err != nil {
+			return nil, err
+		}
+		cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
+	} else {
+		cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
+	}
+	if err != nil {
+		return nil, err
+	}
+	b, err := cm.Get(configFile)
+	if err != nil {
+		return nil, err
+	}
+	reader := bytes.NewReader(b)
+	MarshallReader(reader, kvstore)
+	return nil, err
 }
 
 func insensativiseMap(m map[string]interface{}) {
