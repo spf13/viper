@@ -519,7 +519,7 @@ func getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
 	case "etcd":
 		return getEtcdConfig(provider)
 	case "consul":
-		// do something
+		// not implemented yet
 
 	}
 	return config, nil
