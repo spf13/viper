@@ -468,7 +468,13 @@ func ReadInConfig() error {
 	MarshallReader(bytes.NewReader(file), config)
 	return nil
 }
-
+func ReadRemoteConfig() error {
+	err := getKeyValueConfig()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func MarshallReader(in io.Reader, c map[string]interface{}) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
