@@ -559,7 +559,7 @@ func getEtcdConfig(provider *remoteProvider) (map[string]interface{}, error) {
 	}
 	reader := bytes.NewReader(b)
 	MarshallReader(reader, kvstore)
-	return nil, err
+	return kvstore, err
 }
 
 func insensativiseMap(m map[string]interface{}) {
