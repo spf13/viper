@@ -118,6 +118,7 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 		rp := &remoteProvider{
 			endpoint: endpoint,
 			provider: provider,
+			path:     path,
 		}
 		if !providerPathExists(rp) {
 			remoteProviders = append(remoteProviders, rp)
@@ -136,7 +137,7 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 // you should set path to /configs and set config name (SetConfigName()) to
 // "myapp"
 // Secure Remote Providers are implemented with github.com/xordataexchange/crypt
-func AddSecureRemoteProvider(provider, endpoint, secretkeyring string) error {
+func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
 	}
@@ -145,6 +146,7 @@ func AddSecureRemoteProvider(provider, endpoint, secretkeyring string) error {
 		rp := &remoteProvider{
 			endpoint: endpoint,
 			provider: provider,
+			path:     path,
 		}
 		if !providerPathExists(rp) {
 			remoteProviders = append(remoteProviders, rp)
@@ -460,11 +462,6 @@ func ReadInConfig() error {
 		return err
 	}
 
-	err = getKeyValueConfig()
-	if err != nil {
-		return err
-	}
-
 	MarshallReader(bytes.NewReader(file), config)
 	return nil
 }
@@ -553,7 +550,7 @@ func getEtcdConfig(provider *remoteProvider) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	b, err := cm.Get(configFile)
+	b, err := cm.Get(provider.path)
 	if err != nil {
 		return nil, err
 	}
