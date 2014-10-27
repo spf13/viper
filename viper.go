@@ -508,7 +508,6 @@ func insensativiseMaps() {
 
 // retrieve the first found remote configuration
 func getKeyValueConfig() error {
-	var err error
 	for _, rp := range remoteProviders {
 		val, err := getRemoteConfig(rp)
 		if err != nil {
@@ -517,7 +516,13 @@ func getKeyValueConfig() error {
 		kvstore = val
 		return nil
 	}
-	return err
+	return RemoteConfigError("No Files Found")
+}
+
+type RemoteConfigError string
+
+func (rce RemoteConfigError) Error() string {
+	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
 
 func getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
