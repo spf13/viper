@@ -9,7 +9,7 @@ Viper is a complete configuration solution. Designed to work within an
 application to handle file based configuration and seamlessly marry that with
 command line flags which can also be used to control application behavior.
 Viper also supports retrieving configuration values from remote key/value stores. 
-Etcd is currently supported, and Consul is coming soon.
+Etcd and Consul are supported. 
 
 ## Why Viper?
 
@@ -100,11 +100,13 @@ to use Consul.
 ### Remote Key/Value Store Example - Unencrypted
 
 	viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
+	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
 	err := viper.ReadRemoteConfig()
 
 ### Remote Key/Value Store Example - Encrypted
 
 	viper.AddSecureRemoteProvier("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
+	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
 	err := viper.ReadRemoteConfig()
 
 
