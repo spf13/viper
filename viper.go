@@ -523,17 +523,6 @@ func (rce RemoteConfigError) Error() string {
 }
 
 func getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
-	switch provider.provider {
-	case "etcd":
-		return getEtcdConfig(provider)
-	case "consul":
-		// not implemented yet
-
-	}
-	return config, nil
-}
-
-func getEtcdConfig(provider *remoteProvider) (map[string]interface{}, error) {
 	var cm crypt.ConfigManager
 	var err error
 
@@ -543,9 +532,17 @@ func getEtcdConfig(provider *remoteProvider) (map[string]interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
+		} else {
+			cm, err = crypt.NewConsulConfigManager([]string{provider.endpoint}, kr)
+		}
 	} else {
-		cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
+		} else {
+			cm, err = crypt.NewStandardConsulConfigManager([]string{provider.endpoint})
+		}
 	}
 	if err != nil {
 		return nil, err
