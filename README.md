@@ -105,7 +105,7 @@ to use Consul.
 
 ### Remote Key/Value Store Example - Encrypted
 
-	viper.AddSecureRemoteProvier("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
+	viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
 	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
 	err := viper.ReadRemoteConfig()
 
