@@ -7,11 +7,13 @@ package viper
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"sort"
 	"testing"
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +27,7 @@ clothing:
   jacket: leather
   trousers: denim
 age: 35
+eyes : brown
 beard: true
 `)
 
@@ -56,6 +59,27 @@ var remoteExample = []byte(`{
 "type":"cronut",
 "newkey":"remote"
 }`)
+
+//stubs for PFlag Values
+type stringValue string
+
+func newStringValue(val string, p *string) *stringValue {
+	*p = val
+	return (*stringValue)(p)
+}
+
+func (s *stringValue) Set(val string) error {
+	*s = stringValue(val)
+	return nil
+}
+
+func (s *stringValue) Type() string {
+	return "string"
+}
+
+func (s *stringValue) String() string {
+	return fmt.Sprintf("%s", *s)
+}
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
@@ -169,9 +193,9 @@ func TestEnv(t *testing.T) {
 }
 
 func TestAllKeys(t *testing.T) {
-	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type"}
+	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"hacker": true, "beard": true, "newkey": "remote", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut"}
+	all := map[string]interface{}{"hacker": true, "beard": true, "newkey": "remote", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut", "eyes": "brown"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -223,4 +247,48 @@ func TestMarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
+}
+
+func TestBindPFlag(t *testing.T) {
+	var testString = "testing"
+	var testValue = newStringValue(testString, &testString)
+
+	flag := &pflag.Flag{
+		Name:    "testflag",
+		Value:   testValue,
+		Changed: false,
+	}
+
+	BindPFlag("testvalue", flag)
+
+	assert.Equal(t, testString, Get("testvalue"))
+
+	flag.Value.Set("testing_mutate")
+	flag.Changed = true //hack for pflag usage
+
+	assert.Equal(t, "testing_mutate", Get("testvalue"))
+
+}
+
+func TestBoundCaseSensitivity(t *testing.T) {
+
+	assert.Equal(t, "brown", Get("eyes"))
+
+	BindEnv("eYEs", "TURTLE_EYES")
+	os.Setenv("TURTLE_EYES", "blue")
+
+	assert.Equal(t, "blue", Get("eyes"))
+
+	var testString = "green"
+	var testValue = newStringValue(testString, &testString)
+
+	flag := &pflag.Flag{
+		Name:    "eyeballs",
+		Value:   testValue,
+		Changed: true,
+	}
+
+	BindPFlag("eYEs", flag)
+	assert.Equal(t, "green", Get("eyes"))
+
 }

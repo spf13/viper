@@ -241,7 +241,7 @@ func BindPFlag(key string, flag *pflag.Flag) (err error) {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
-	pflags[key] = flag
+	pflags[strings.ToLower(key)] = flag
 
 	switch flag.Value.Type() {
 	case "int", "int8", "int16", "int32", "int64":
@@ -263,7 +263,7 @@ func BindEnv(input ...string) (err error) {
 		return fmt.Errorf("BindEnv missing key to bind to")
 	}
 
-	key = input[0]
+	key = strings.ToLower(input[0])
 
 	if len(input) == 1 {
 		envkey = strings.ToUpper(key)
