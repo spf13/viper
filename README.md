@@ -8,6 +8,8 @@ Go configuration with fangs
 Viper is a complete configuration solution. Designed to work within an
 application to handle file based configuration and seamlessly marry that with
 command line flags which can also be used to control application behavior.
+Viper also supports retrieving configuration values from remote key/value stores. 
+Etcd and Consul are supported. 
 
 ## Why Viper?
 
@@ -26,10 +28,8 @@ Viper does the following for you:
 Viper believes that:
 
 1. command line flags take precedence over options set in config files
-2. config files take precedence over defaults
-
-Config files often can be found in multiple locations. Viper allows you to set
-multiple paths to search for the config file in.
+2. config files take precedence over options set in remote key/value stores
+3. remote key/value stores take precedence over defaults
 
 Viper configuration keys are case insensitive.
 
@@ -69,6 +69,46 @@ Viper configuration keys are case insensitive.
 	if viper.GetBool("verbose") {
         fmt.Println("verbose enabled")
 	}
+
+### Remote Key/Value Store Support
+Viper will read a config string (as JSON, TOML, or YAML) retrieved from a
+path in a Key/Value store such as Etcd or Consul.  These values take precedence
+over default values, but are overriden by configuration values retrieved from disk, 
+flags, or environment variables.
+
+Viper uses [crypt](https://github.com/xordataexchange/crypt) to retrieve configuration
+from the k/v store, which means that you can store your configuration values
+encrypted and have them automatically decrypted if you have the correct
+gpg keyring.  Encryption is optional.
+
+You can use remote configuration in conjunction with local configuration, or
+independently of it.  
+
+`crypt` has a command-line helper that you can use to put configurations
+in your k/v store. `crypt` defaults to etcd on http://127.0.0.1:4001.
+
+	go get github.com/xordataexchange/crypt/bin/crypt
+	crypt set -plaintext /config/hugo.json /Users/hugo/settings/config.json
+
+Confirm that your value was set:
+
+	crypt get -plaintext /config/hugo.json
+
+See the `crypt` documentation for examples of how to set encrypted values, or how
+to use Consul.
+
+### Remote Key/Value Store Example - Unencrypted
+
+	viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
+	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+	err := viper.ReadRemoteConfig()
+
+### Remote Key/Value Store Example - Encrypted
+
+	viper.AddSecureRemoteProvier("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
+	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+	err := viper.ReadRemoteConfig()
+
 
 
 ## Q & A

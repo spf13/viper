@@ -5,13 +5,15 @@
 
 // Viper is a application configuration system.
 // It believes that applications can be configured a variety of ways
-// via flags, ENVIRONMENT variables, configuration files.
+// via flags, ENVIRONMENT variables, configuration files retrieved
+// from the file system, or a remote key/value store.
 
 // Each item takes precedence over the item below it:
 
 // flag
 // env
 // config
+// key/value store
 // default
 
 package viper
@@ -25,6 +27,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -35,17 +38,33 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
+	crypt "github.com/xordataexchange/crypt/config"
 	"gopkg.in/yaml.v1"
 )
 
+// remoteProvider stores the configuration necessary
+// to connect to a remote key/value store.
+// Optional secretKeyring to unencrypt encrypted values
+// can be provided.
+type remoteProvider struct {
+	provider      string
+	endpoint      string
+	path          string
+	secretKeyring string
+}
+
 // A set of paths to look for the config file in
 var configPaths []string
+
+// A set of remote providers to search for the configuration
+var remoteProviders []*remoteProvider
 
 // Name of file to look for inside the path
 var configName string = "config"
 
 // extensions Supported
 var SupportedExts []string = []string{"json", "toml", "yaml", "yml"}
+var SupportedRemoteProviders []string = []string{"etcd", "consul"}
 var configFile string
 var configType string
 
@@ -53,6 +72,7 @@ var config map[string]interface{} = make(map[string]interface{})
 var override map[string]interface{} = make(map[string]interface{})
 var env map[string]string = make(map[string]string)
 var defaults map[string]interface{} = make(map[string]interface{})
+var kvstore map[string]interface{} = make(map[string]interface{})
 var pflags map[string]*pflag.Flag = make(map[string]*pflag.Flag)
 var aliases map[string]string = make(map[string]string)
 
@@ -79,6 +99,76 @@ func AddConfigPath(in string) {
 			configPaths = append(configPaths, absin)
 		}
 	}
+}
+
+// AddRemoteProvider adds a remote configuration source.
+// Remote Providers are searched in the order they are added.
+// provider is a string value, "etcd" or "consul" are currently supported.
+// endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
+// path is the path in the k/v store to retrieve configuration
+// To retrieve a config file called myapp.json from /configs/myapp.json
+// you should set path to /configs and set config name (SetConfigName()) to
+// "myapp"
+func AddRemoteProvider(provider, endpoint, path string) error {
+	if !stringInSlice(provider, SupportedRemoteProviders) {
+		return UnsupportedRemoteProviderError(provider)
+	}
+	if provider != "" && endpoint != "" {
+		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
+		rp := &remoteProvider{
+			endpoint: endpoint,
+			provider: provider,
+			path:     path,
+		}
+		if !providerPathExists(rp) {
+			remoteProviders = append(remoteProviders, rp)
+		}
+	}
+	return nil
+}
+
+// AddSecureRemoteProvider adds a remote configuration source.
+// Secure Remote Providers are searched in the order they are added.
+// provider is a string value, "etcd" or "consul" are currently supported.
+// endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
+// secretkeyring is the filepath to your openpgp secret keyring.  e.g. /etc/secrets/myring.gpg
+// path is the path in the k/v store to retrieve configuration
+// To retrieve a config file called myapp.json from /configs/myapp.json
+// you should set path to /configs and set config name (SetConfigName()) to
+// "myapp"
+// Secure Remote Providers are implemented with github.com/xordataexchange/crypt
+func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
+	if !stringInSlice(provider, SupportedRemoteProviders) {
+		return UnsupportedRemoteProviderError(provider)
+	}
+	if provider != "" && endpoint != "" {
+		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
+		rp := &remoteProvider{
+			endpoint: endpoint,
+			provider: provider,
+			path:     path,
+		}
+		if !providerPathExists(rp) {
+			remoteProviders = append(remoteProviders, rp)
+		}
+	}
+	return nil
+}
+
+func providerPathExists(p *remoteProvider) bool {
+
+	for _, y := range remoteProviders {
+		if reflect.DeepEqual(y, p) {
+			return true
+		}
+	}
+	return false
+}
+
+type UnsupportedRemoteProviderError string
+
+func (str UnsupportedRemoteProviderError) Error() string {
+	return fmt.Sprintf("Unsupported Remote Provider Type %q", string(str))
 }
 
 func GetString(key string) string {
@@ -129,6 +219,10 @@ func Marshal(rawVal interface{}) error {
 		return err
 	}
 	err = mapstructure.Decode(override, rawVal)
+	if err != nil {
+		return err
+	}
+	err = mapstructure.Decode(kvstore, rawVal)
 	if err != nil {
 		return err
 	}
@@ -221,6 +315,12 @@ func find(key string) interface{} {
 		return val
 	}
 
+	val, exists = kvstore[key]
+	if exists {
+		jww.TRACE.Println(key, "found in key/value store:", val)
+		return val
+	}
+
 	val, exists = defaults[key]
 	if exists {
 		jww.TRACE.Println(key, "found in defaults:", val)
@@ -289,6 +389,10 @@ func registerAlias(alias string, key string) {
 				delete(config, alias)
 				config[key] = val
 			}
+			if val, ok := kvstore[alias]; ok {
+				delete(kvstore, alias)
+				kvstore[key] = val
+			}
 			if val, ok := defaults[alias]; ok {
 				delete(defaults, alias)
 				defaults[key] = val
@@ -331,7 +435,8 @@ func SetDefault(key string, value interface{}) {
 }
 
 // The user provided value (via flag)
-// Will be used instead of values obtained via config file, ENV or default
+// Will be used instead of values obtained via
+// config file, ENV, default, or key/value store
 func Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = realKey(strings.ToLower(key))
@@ -345,7 +450,7 @@ func (str UnsupportedConfigError) Error() string {
 }
 
 // Viper will discover and load the configuration file from disk
-// searching in one of the defined paths.
+// and key/value stores, searching in one of the defined paths.
 func ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
 	if !stringInSlice(getConfigType(), SupportedExts) {
@@ -357,38 +462,98 @@ func ReadInConfig() error {
 		return err
 	}
 
-	MarshallReader(bytes.NewReader(file))
+	MarshallReader(bytes.NewReader(file), config)
 	return nil
 }
-
-func MarshallReader(in io.Reader) {
+func ReadRemoteConfig() error {
+	err := getKeyValueConfig()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func MarshallReader(in io.Reader, c map[string]interface{}) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
 	switch getConfigType() {
 	case "yaml", "yml":
-		if err := yaml.Unmarshal(buf.Bytes(), &config); err != nil {
+		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 
 	case "json":
-		if err := json.Unmarshal(buf.Bytes(), &config); err != nil {
+		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 
 	case "toml":
-		if _, err := toml.Decode(buf.String(), &config); err != nil {
+		if _, err := toml.Decode(buf.String(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
 		}
 	}
 
-	insensativiseMap(config)
+	insensativiseMap(c)
 }
 
 func insensativiseMaps() {
 	insensativiseMap(config)
 	insensativiseMap(defaults)
 	insensativiseMap(override)
+	insensativiseMap(kvstore)
+}
+
+// retrieve the first found remote configuration
+func getKeyValueConfig() error {
+	for _, rp := range remoteProviders {
+		val, err := getRemoteConfig(rp)
+		if err != nil {
+			continue
+		}
+		kvstore = val
+		return nil
+	}
+	return RemoteConfigError("No Files Found")
+}
+
+type RemoteConfigError string
+
+func (rce RemoteConfigError) Error() string {
+	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
+}
+
+func getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
+	var cm crypt.ConfigManager
+	var err error
+
+	if provider.secretKeyring != "" {
+		kr, err := os.Open(provider.secretKeyring)
+		defer kr.Close()
+		if err != nil {
+			return nil, err
+		}
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
+		} else {
+			cm, err = crypt.NewConsulConfigManager([]string{provider.endpoint}, kr)
+		}
+	} else {
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
+		} else {
+			cm, err = crypt.NewStandardConsulConfigManager([]string{provider.endpoint})
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	b, err := cm.Get(provider.path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bytes.NewReader(b)
+	MarshallReader(reader, kvstore)
+	return kvstore, err
 }
 
 func insensativiseMap(m map[string]interface{}) {
@@ -409,6 +574,10 @@ func AllKeys() []string {
 	}
 
 	for key, _ := range config {
+		m[key] = struct{}{}
+	}
+
+	for key, _ := range kvstore {
 		m[key] = struct{}{}
 	}
 
@@ -594,6 +763,8 @@ func absPathify(inPath string) string {
 func Debug() {
 	fmt.Println("Config:")
 	pretty.Println(config)
+	fmt.Println("Key/Value Store:")
+	pretty.Println(kvstore)
 	fmt.Println("Env:")
 	pretty.Println(env)
 	fmt.Println("Defaults:")
@@ -613,6 +784,7 @@ func Reset() {
 	configFile = ""
 	configType = ""
 
+	kvstore = make(map[string]interface{})
 	config = make(map[string]interface{})
 	override = make(map[string]interface{})
 	env = make(map[string]string)
