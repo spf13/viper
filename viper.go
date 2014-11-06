@@ -25,7 +25,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -650,10 +649,10 @@ func searchInPath(in string) (filename string) {
 	jww.DEBUG.Println("Searching for config in ", in)
 	for _, ext := range SupportedExts {
 
-		jww.DEBUG.Println("Checking for", path.Join(in, configName+"."+ext))
-		if b, _ := exists(path.Join(in, configName+"."+ext)); b {
-			jww.DEBUG.Println("Found: ", path.Join(in, configName+"."+ext))
-			return path.Join(in, configName+"."+ext)
+		jww.DEBUG.Println("Checking for", filepath.Join(in, configName+"."+ext))
+		if b, _ := exists(filepath.Join(in, configName+"."+ext)); b {
+			jww.DEBUG.Println("Found: ", filepath.Join(in, configName+"."+ext))
+			return filepath.Join(in, configName+"."+ext)
 		}
 	}
 
@@ -669,13 +668,19 @@ func findConfigFile() (string, error) {
 			return file, nil
 		}
 	}
-	cwd, _ := findCWD()
 
+	cwd, _ := findCWD()
 	file := searchInPath(cwd)
 	if file != "" {
 		return file, nil
 	}
 
+	// try the current working directory
+	wd, _ := os.Getwd()
+	file = searchInPath(wd)
+	if file != "" {
+		return file, nil
+	}
 	return "", fmt.Errorf("config file not found in: %s", configPaths)
 }
 
