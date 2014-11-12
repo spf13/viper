@@ -301,7 +301,7 @@ func find(key string) interface{} {
 	if exists {
 		jww.TRACE.Println(key, "registered as env var", envkey)
 		if val = os.Getenv(envkey); val != "" {
-			jww.TRACE.Println(envkey, "found in environement with val:", val)
+			jww.TRACE.Println(envkey, "found in environment with val:", val)
 			return val
 		} else {
 			jww.TRACE.Println(envkey, "env value unset:")
