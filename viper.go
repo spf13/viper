@@ -621,7 +621,7 @@ func getConfigType() string {
 	}
 
 	cf := getConfigFile()
-	ext := path.Ext(cf)
+	ext := filepath.Ext(cf)
 
 	if len(ext) > 1 {
 		return ext[1:]
