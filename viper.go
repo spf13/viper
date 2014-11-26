@@ -53,7 +53,7 @@ type remoteProvider struct {
 }
 
 // A set of paths to look for the config file in
-var configPaths []string
+var configPaths []string = []string{"."}
 
 // A set of remote providers to search for the configuration
 var remoteProviders []*remoteProvider
