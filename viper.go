@@ -20,7 +20,6 @@ package viper
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -30,14 +29,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/kr/pretty"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	crypt "github.com/xordataexchange/crypt/config"
-	"gopkg.in/yaml.v1"
 )
 
 var v *viper
@@ -64,6 +61,8 @@ func (rce RemoteConfigError) Error() string {
 	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
 
+// A viper is a unexported struct. Use New() to create a new instance of viper
+// or use the functions for a "global instance"
 type viper struct {
 	// A set of paths to look for the config file in
 	configPaths []string
@@ -85,6 +84,7 @@ type viper struct {
 	aliases  map[string]string
 }
 
+// The prescribed way to create a new Viper
 func New() *viper {
 	v := new(viper)
 	v.configName = "config"
@@ -212,6 +212,39 @@ func (v *viper) providerPathExists(p *remoteProvider) bool {
 	return false
 }
 
+// Viper is essentially repository for configurations
+// Get can retrieve any value given the key to use
+// Get has the behavior of returning the value associated with the first
+// place from where it is set. Viper will check in the following order:
+// flag, env, config file, key/value store, default
+//
+// Get returns an interface. For a specific value use one of the Get____ methods.
+func Get(key string) interface{} { return v.Get(key) }
+func (v *viper) Get(key string) interface{} {
+	key = strings.ToLower(key)
+	val := v.find(key)
+
+	if val == nil {
+		return nil
+	}
+
+	switch val.(type) {
+	case bool:
+		return cast.ToBool(val)
+	case string:
+		return cast.ToString(val)
+	case int64, int32, int16, int8, int:
+		return cast.ToInt(val)
+	case float64, float32:
+		return cast.ToFloat64(val)
+	case time.Time:
+		return cast.ToTime(val)
+	case []string:
+		return val
+	}
+	return val
+}
+
 func GetString(key string) string { return v.GetString(key) }
 func (v *viper) GetString(key string) string {
 	return cast.ToString(Get(key))
@@ -329,6 +362,10 @@ func (v *viper) BindEnv(input ...string) (err error) {
 	return nil
 }
 
+// Given a key, find the value
+// Viper will check in the following order:
+// flag, env, config file, key/value store, default
+// Viper will check to see if an alias exists first
 func (v *viper) find(key string) interface{} {
 	var val interface{}
 	var exists bool
@@ -383,34 +420,7 @@ func (v *viper) find(key string) interface{} {
 	return nil
 }
 
-// Get returns an interface..
-// Must be typecast or used by something that will typecast
-func Get(key string) interface{} { return v.Get(key) }
-func (v *viper) Get(key string) interface{} {
-	key = strings.ToLower(key)
-	val := v.find(key)
-
-	if val == nil {
-		return nil
-	}
-
-	switch val.(type) {
-	case bool:
-		return cast.ToBool(val)
-	case string:
-		return cast.ToString(val)
-	case int64, int32, int16, int8, int:
-		return cast.ToInt(val)
-	case float64, float32:
-		return cast.ToFloat64(val)
-	case time.Time:
-		return cast.ToTime(val)
-	case []string:
-		return val
-	}
-	return val
-}
-
+// Check to see if the key has been set in any of the data locations
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *viper) IsSet(key string) bool {
 	t := v.Get(key)
@@ -475,6 +485,7 @@ func (v *viper) realKey(key string) string {
 	}
 }
 
+// Check to see if the given key (or an alias) is in the config file
 func InConfig(key string) bool { return v.InConfig(key) }
 func (v *viper) InConfig(key string) bool {
 	// if the requested key is an alias, then return the proper key
@@ -530,29 +541,11 @@ func (v *viper) ReadRemoteConfig() error {
 	return nil
 }
 
+// Marshall a Reader into a map
+// Should probably be an unexported function
 func MarshallReader(in io.Reader, c map[string]interface{}) { v.MarshallReader(in, c) }
 func (v *viper) MarshallReader(in io.Reader, c map[string]interface{}) {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
-
-	switch v.getConfigType() {
-	case "yaml", "yml":
-		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
-		}
-
-	case "json":
-		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
-		}
-
-	case "toml":
-		if _, err := toml.Decode(buf.String(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
-		}
-	}
-
-	insensativiseMap(c)
+	marshallConfigReader(in, c, v.getConfigType())
 }
 
 func (v *viper) insensativiseMaps() {
@@ -609,6 +602,7 @@ func (v *viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{
 	return v.kvstore, err
 }
 
+// Return all keys regardless where they are set
 func AllKeys() []string { return v.AllKeys() }
 func (v *viper) AllKeys() []string {
 	m := map[string]struct{}{}
@@ -637,6 +631,7 @@ func (v *viper) AllKeys() []string {
 	return a
 }
 
+// Return all settings as a map[string]interface{}
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *viper) AllSettings() map[string]interface{} {
 	m := map[string]interface{}{}
@@ -706,6 +701,8 @@ func (v *viper) searchInPath(in string) (filename string) {
 	return ""
 }
 
+// search all configPaths for any config file.
+// Returns the first path that exists (and is a config file)
 func (v *viper) findConfigFile() (string, error) {
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
@@ -745,11 +742,4 @@ func (v *viper) Debug() {
 	pretty.Println(v.override)
 	fmt.Println("Aliases:")
 	pretty.Println(v.aliases)
-}
-
-// Intended for testing, will reset all to default settings.
-func Reset() {
-	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml"}
-	SupportedRemoteProviders = []string{"etcd", "consul"}
 }

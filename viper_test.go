@@ -54,6 +54,13 @@ var jsonExample = []byte(`{
     }
 }`)
 
+// Intended for testing, will reset all to default settings.
+func Reset() {
+	v = New()
+	SupportedExts = []string{"json", "toml", "yaml", "yml"}
+	SupportedRemoteProviders = []string{"etcd", "consul"}
+}
+
 var remoteExample = []byte(`{
 "id":"0002",
 "type":"cronut",

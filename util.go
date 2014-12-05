@@ -11,13 +11,18 @@
 package viper
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	jww "github.com/spf13/jwalterweatherman"
+	"gopkg.in/yaml.v1"
 )
 
 func insensativiseMap(m map[string]interface{}) {
@@ -109,4 +114,28 @@ func findCWD() (string, error) {
 	}
 
 	return path, nil
+}
+
+func marshallConfigReader(in io.Reader, c map[string]interface{}, configType string) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(in)
+
+	switch configType {
+	case "yaml", "yml":
+		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
+			jww.ERROR.Fatalf("Error parsing config: %s", err)
+		}
+
+	case "json":
+		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
+			jww.ERROR.Fatalf("Error parsing config: %s", err)
+		}
+
+	case "toml":
+		if _, err := toml.Decode(buf.String(), &c); err != nil {
+			jww.ERROR.Fatalf("Error parsing config: %s", err)
+		}
+	}
+
+	insensativiseMap(c)
 }
