@@ -1,0 +1,112 @@
+// Copyright © 2014 Steve Francia <spf@spf13.com>.
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file.
+
+// Viper is a application configuration system.
+// It believes that applications can be configured a variety of ways
+// via flags, ENVIRONMENT variables, configuration files retrieved
+// from the file system, or a remote key/value store.
+
+package viper
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	jww "github.com/spf13/jwalterweatherman"
+)
+
+func insensativiseMap(m map[string]interface{}) {
+	for key, val := range m {
+		lower := strings.ToLower(key)
+		if key != lower {
+			delete(m, key)
+			m[lower] = val
+		}
+	}
+}
+
+func absPathify(inPath string) string {
+	jww.INFO.Println("Trying to resolve absolute path to", inPath)
+
+	if strings.HasPrefix(inPath, "$HOME") {
+		inPath = userHomeDir() + inPath[5:]
+	}
+
+	if strings.HasPrefix(inPath, "$") {
+		end := strings.Index(inPath, string(os.PathSeparator))
+		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+	}
+
+	if filepath.IsAbs(inPath) {
+		return filepath.Clean(inPath)
+	}
+
+	p, err := filepath.Abs(inPath)
+	if err == nil {
+		return filepath.Clean(p)
+	} else {
+		jww.ERROR.Println("Couldn't discover absolute path")
+		jww.ERROR.Println(err)
+	}
+	return ""
+}
+
+// Check if File / Directory Exists
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func userHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
+func findCWD() (string, error) {
+	serverFile, err := filepath.Abs(os.Args[0])
+
+	if err != nil {
+		return "", fmt.Errorf("Can't get absolute path for executable: %v", err)
+	}
+
+	path := filepath.Dir(serverFile)
+	realFile, err := filepath.EvalSymlinks(serverFile)
+
+	if err != nil {
+		if _, err = os.Stat(serverFile + ".exe"); err == nil {
+			realFile = filepath.Clean(serverFile + ".exe")
+		}
+	}
+
+	if err == nil && realFile != serverFile {
+		path = filepath.Dir(realFile)
+	}
+
+	return path, nil
+}
