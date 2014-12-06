@@ -102,7 +102,7 @@ func TestMarshalling(t *testing.T) {
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
 
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	assert.True(t, InConfig("name"))
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
@@ -143,7 +143,7 @@ func TestYML(t *testing.T) {
 	SetConfigType("yml")
 	r := bytes.NewReader(yamlExample)
 
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	assert.Equal(t, "steve", Get("name"))
 }
 
@@ -151,7 +151,7 @@ func TestJSON(t *testing.T) {
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
 
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	assert.Equal(t, "0001", Get("id"))
 }
 
@@ -159,17 +159,17 @@ func TestTOML(t *testing.T) {
 	SetConfigType("toml")
 	r := bytes.NewReader(tomlExample)
 
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	assert.Equal(t, "TOML Example", Get("title"))
 }
 
 func TestRemotePrecedence(t *testing.T) {
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	remote := bytes.NewReader(remoteExample)
 	assert.Equal(t, "0001", Get("id"))
-	MarshallReader(remote, v.kvstore)
+	marshalReader(remote, v.kvstore)
 	assert.Equal(t, "0001", Get("id"))
 	assert.NotEqual(t, "cronut", Get("type"))
 	assert.Equal(t, "remote", Get("newkey"))
@@ -182,7 +182,7 @@ func TestRemotePrecedence(t *testing.T) {
 func TestEnv(t *testing.T) {
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
-	MarshallReader(r, v.config)
+	marshalReader(r, v.config)
 	BindEnv("id")
 	BindEnv("f", "FOOD")
 

@@ -528,7 +528,7 @@ func (v *viper) ReadInConfig() error {
 		return err
 	}
 
-	v.MarshallReader(bytes.NewReader(file), v.config)
+	v.marshalReader(bytes.NewReader(file), v.config)
 	return nil
 }
 
@@ -543,8 +543,8 @@ func (v *viper) ReadRemoteConfig() error {
 
 // Marshall a Reader into a map
 // Should probably be an unexported function
-func MarshallReader(in io.Reader, c map[string]interface{}) { v.MarshallReader(in, c) }
-func (v *viper) MarshallReader(in io.Reader, c map[string]interface{}) {
+func marshalReader(in io.Reader, c map[string]interface{}) { v.marshalReader(in, c) }
+func (v *viper) marshalReader(in io.Reader, c map[string]interface{}) {
 	marshallConfigReader(in, c, v.getConfigType())
 }
 
@@ -598,7 +598,7 @@ func (v *viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{
 		return nil, err
 	}
 	reader := bytes.NewReader(b)
-	v.MarshallReader(reader, v.kvstore)
+	v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
 
