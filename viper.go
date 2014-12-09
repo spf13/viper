@@ -247,48 +247,48 @@ func (v *viper) Get(key string) interface{} {
 
 func GetString(key string) string { return v.GetString(key) }
 func (v *viper) GetString(key string) string {
-	return cast.ToString(Get(key))
+	return cast.ToString(v.Get(key))
 }
 
 func GetBool(key string) bool { return v.GetBool(key) }
 func (v *viper) GetBool(key string) bool {
-	return cast.ToBool(Get(key))
+	return cast.ToBool(v.Get(key))
 }
 
 func GetInt(key string) int { return v.GetInt(key) }
 func (v *viper) GetInt(key string) int {
-	return cast.ToInt(Get(key))
+	return cast.ToInt(v.Get(key))
 }
 
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
 func (v *viper) GetFloat64(key string) float64 {
-	return cast.ToFloat64(Get(key))
+	return cast.ToFloat64(v.Get(key))
 }
 
 func GetTime(key string) time.Time { return v.GetTime(key) }
 func (v *viper) GetTime(key string) time.Time {
-	return cast.ToTime(Get(key))
+	return cast.ToTime(v.Get(key))
 }
 
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 func (v *viper) GetStringSlice(key string) []string {
-	return cast.ToStringSlice(Get(key))
+	return cast.ToStringSlice(v.Get(key))
 }
 
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 func (v *viper) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(Get(key))
+	return cast.ToStringMap(v.Get(key))
 }
 
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 func (v *viper) GetStringMapString(key string) map[string]string {
-	return cast.ToStringMapString(Get(key))
+	return cast.ToStringMapString(v.Get(key))
 }
 
 // Takes a single key and marshals it into a Struct
 func MarshalKey(key string, rawVal interface{}) error { return v.MarshalKey(key, rawVal) }
 func (v *viper) MarshalKey(key string, rawVal interface{}) error {
-	return mapstructure.Decode(Get(key), rawVal)
+	return mapstructure.Decode(v.Get(key), rawVal)
 }
 
 // Marshals the config into a Struct
