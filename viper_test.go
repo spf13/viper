@@ -67,6 +67,49 @@ var remoteExample = []byte(`{
 "newkey":"remote"
 }`)
 
+func initConfigs() {
+	Reset()
+	SetConfigType("yaml")
+	r := bytes.NewReader(yamlExample)
+	marshalReader(r, v.config)
+
+	SetConfigType("json")
+	r = bytes.NewReader(jsonExample)
+	marshalReader(r, v.config)
+
+	SetConfigType("toml")
+	r = bytes.NewReader(tomlExample)
+	marshalReader(r, v.config)
+
+	SetConfigType("json")
+	remote := bytes.NewReader(remoteExample)
+	marshalReader(remote, v.kvstore)
+}
+
+func initYAML() {
+	Reset()
+	SetConfigType("yaml")
+	r := bytes.NewReader(yamlExample)
+
+	marshalReader(r, v.config)
+}
+
+func initJSON() {
+	Reset()
+	SetConfigType("json")
+	r := bytes.NewReader(jsonExample)
+
+	marshalReader(r, v.config)
+}
+
+func initTOML() {
+	Reset()
+	SetConfigType("toml")
+	r := bytes.NewReader(tomlExample)
+
+	marshalReader(r, v.config)
+}
+
 //stubs for PFlag Values
 type stringValue string
 
@@ -139,34 +182,23 @@ func TestAliasInConfigFile(t *testing.T) {
 }
 
 func TestYML(t *testing.T) {
-	Reset()
-	SetConfigType("yml")
-	r := bytes.NewReader(yamlExample)
-
-	marshalReader(r, v.config)
+	initYAML()
 	assert.Equal(t, "steve", Get("name"))
 }
 
 func TestJSON(t *testing.T) {
-	SetConfigType("json")
-	r := bytes.NewReader(jsonExample)
-
-	marshalReader(r, v.config)
+	initJSON()
 	assert.Equal(t, "0001", Get("id"))
 }
 
 func TestTOML(t *testing.T) {
-	SetConfigType("toml")
-	r := bytes.NewReader(tomlExample)
-
-	marshalReader(r, v.config)
+	initTOML()
 	assert.Equal(t, "TOML Example", Get("title"))
 }
 
 func TestRemotePrecedence(t *testing.T) {
-	SetConfigType("json")
-	r := bytes.NewReader(jsonExample)
-	marshalReader(r, v.config)
+	initJSON()
+
 	remote := bytes.NewReader(remoteExample)
 	assert.Equal(t, "0001", Get("id"))
 	marshalReader(remote, v.kvstore)
@@ -180,9 +212,8 @@ func TestRemotePrecedence(t *testing.T) {
 }
 
 func TestEnv(t *testing.T) {
-	SetConfigType("json")
-	r := bytes.NewReader(jsonExample)
-	marshalReader(r, v.config)
+	initJSON()
+
 	BindEnv("id")
 	BindEnv("f", "FOOD")
 
@@ -199,10 +230,32 @@ func TestEnv(t *testing.T) {
 	assert.Equal(t, "crunk", Get("name"))
 }
 
+func TestEnvPrefix(t *testing.T) {
+	initJSON()
+
+	SetEnvPrefix("foo") // will be uppercased automatically
+	BindEnv("id")
+	BindEnv("f", "FOOD") // not using prefix
+
+	os.Setenv("FOO_ID", "13")
+	os.Setenv("FOOD", "apple")
+	os.Setenv("FOO_NAME", "crunk")
+
+	assert.Equal(t, "13", Get("id"))
+	assert.Equal(t, "apple", Get("f"))
+	assert.Equal(t, "Cake", Get("name"))
+
+	AutomaticEnv()
+
+	assert.Equal(t, "crunk", Get("name"))
+}
+
 func TestAllKeys(t *testing.T) {
+	initConfigs()
+
 	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"hacker": true, "beard": true, "newkey": "remote", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "ppu": 0.55, "clothing": map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, "name": "crunk", "owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "id": "13", "title": "TOML Example", "age": 35, "type": "donut", "eyes": "brown"}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather"}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()

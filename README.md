@@ -170,7 +170,7 @@ the value will be read each time it is accessed. It does not fix the
 value when the BindEnv is called.
 
 
-AutomaticEnv is intended to be a convience helper. It will look for all
+AutomaticEnv is intended to be a convenience helper. It will look for all
 keys that have been set (via defaults, config file, flag, or remote key
 value) and call BindEnv on that key. It does
 not simply import all ENV variables. Because of this behavior it’s

@@ -74,6 +74,7 @@ type viper struct {
 	configName string
 	configFile string
 	configType string
+	envPrefix  string
 
 	config   map[string]interface{}
 	override map[string]interface{}
@@ -123,6 +124,22 @@ func (v *viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
 	}
+}
+
+// Define a prefix that ENVIRONMENT variables will use.
+func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
+func (v *viper) SetEnvPrefix(in string) {
+	if in != "" {
+		v.envPrefix = in
+	}
+}
+
+func (v *viper) mergeWithEnvPrefix(in string) string {
+	if v.envPrefix != "" {
+		return v.envPrefix + "_" + in
+	}
+
+	return in
 }
 
 // Return the config file used
@@ -342,6 +359,7 @@ func (v *viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
 // Binds a viper key to a ENV variable
 // ENV variables are case sensitive
 // If only a key is provided, it will use the env key matching the key, uppercased.
+// EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) (err error) { return v.BindEnv(input...) }
 func (v *viper) BindEnv(input ...string) (err error) {
 	var key, envkey string
@@ -352,7 +370,7 @@ func (v *viper) BindEnv(input ...string) (err error) {
 	key = strings.ToLower(input[0])
 
 	if len(input) == 1 {
-		envkey = strings.ToUpper(key)
+		envkey = strings.ToUpper(v.mergeWithEnvPrefix(key))
 	} else {
 		envkey = input[1]
 	}
