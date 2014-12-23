@@ -76,6 +76,8 @@ type viper struct {
 	configType string
 	envPrefix  string
 
+	automaticEnvApplied bool
+
 	config   map[string]interface{}
 	override map[string]interface{}
 	defaults map[string]interface{}
@@ -136,10 +138,10 @@ func (v *viper) SetEnvPrefix(in string) {
 
 func (v *viper) mergeWithEnvPrefix(in string) string {
 	if v.envPrefix != "" {
-		return v.envPrefix + "_" + in
+		return strings.ToUpper(v.envPrefix + "_" + in)
 	}
 
-	return in
+	return strings.ToUpper(in)
 }
 
 // Return the config file used
@@ -370,7 +372,7 @@ func (v *viper) BindEnv(input ...string) (err error) {
 	key = strings.ToLower(input[0])
 
 	if len(input) == 1 {
-		envkey = strings.ToUpper(v.mergeWithEnvPrefix(key))
+		envkey = v.mergeWithEnvPrefix(key)
 	} else {
 		envkey = input[1]
 	}
@@ -404,6 +406,15 @@ func (v *viper) find(key string) interface{} {
 	if exists {
 		jww.TRACE.Println(key, "found in override:", val)
 		return val
+	}
+
+	if v.automaticEnvApplied {
+		// even if it hasn't been registered, if automaticEnv is used,
+		// check any Get request
+		if val = os.Getenv(v.mergeWithEnvPrefix(key)); val != "" {
+			jww.TRACE.Println(key, "found in environment with val:", val)
+			return val
+		}
 	}
 
 	envkey, exists := v.env[key]
@@ -449,9 +460,7 @@ func (v *viper) IsSet(key string) bool {
 // keys set in config, default & flags
 func AutomaticEnv() { v.AutomaticEnv() }
 func (v *viper) AutomaticEnv() {
-	for _, x := range v.AllKeys() {
-		v.BindEnv(x)
-	}
+	v.automaticEnvApplied = true
 }
 
 // Aliases provide another accessor for the same key.

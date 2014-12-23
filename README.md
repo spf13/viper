@@ -125,11 +125,11 @@ One important thing to recognize when working with ENV variables is that
 the value will be read each time it is accessed. It does not fix the
 value when the BindEnv is called.
 
-AutomaticEnv is intended to be a convenience helper. It will look for all
-keys that have been set (via defaults, config file, flag, or remote key
-value) and call BindEnv on that key. It does
-not simply import all ENV variables. Because of this behavior it’s
-usually best to call it last.
+AutomaticEnv is a powerful helper especially when combined with
+SetEnvPrefix. When called, Viper will check for an environment variable
+any time a viper.Get request is made. It will apply the following rules.
+It will check for a environment variable with a name matching the key
+uppercased and prefixed with the EnvPrefix if set.
 
 #### Env example
 
