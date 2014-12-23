@@ -49,7 +49,7 @@ over the item below it:
 
 Viper configuration keys are case insensitive.
 
-## Usage
+## Putting Values into Viper
 
 ### Establishing Defaults
 
@@ -95,86 +95,51 @@ Aliases permit a single value to be referenced by multiple keys
     viper.GetBool("loud") // true
     viper.GetBool("verbose") // true
 
-### Getting Values
-
-In Viper there are a few ways to get a value depending on what type of value you want to retrieved.
-The following functions and methods exist: 
-
- * Get(key string) : interface{}
- * GetBool(key string) : bool
- * GetFloat64(key string) : float64
- * GetInt(key string) : int
- * GetString(key string) : string
- * GetStringMap(key string) : map[string]interface{}
- * GetStringMapString(key string) : map[string]string
- * GetStringSlice(key string) : []string
- * GetTime(key string) : time.Time
- * IsSet(key string) : bool
-
-One important thing to recognize is that each Get function will return
-it’s zero value if it’s not found. To check if it’s found, the IsSet()
-method has been provided.
-
-Example:
-
-    viper.GetString("logfile") // case insensitive Setting & Getting
-	if viper.GetBool("verbose") {
-        fmt.Println("verbose enabled")
-	}
-
-### Marshaling
-
-You also have the option of Marshaling all or a specific value to a struct, map, etc.
-
-There are two methods to do this:
-
- * Marshal(rawVal interface{}) : error
- * MarshalKey(key string, rawVal interface{}) : error
-
-Example:
-
-	type config struct {
-		Port int
-		Name string
-	}
-
-	var C config
-
-	err := Marshal(&C)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
-
 ### Working with Environment Variables
 
 Viper has full support for environment variables. This enables 12 factor
-applications out of the box. There are two methods that exist to aid
+applications out of the box. There are three methods that exist to aid
 with working with ENV:
 
  * AutomaticEnv()
- * BindEnv(input ) : error
+ * BindEnv(string...) : error
+ * SetEnvPrefix(string)
 
-When working with ENV variables it’s important to recognize that Viper
-treats ENV variables as case sensitive.
+_When working with ENV variables it’s important to recognize that Viper
+treats ENV variables as case sensitive._
+
+Viper provides a mechanism to try to ensure that ENV variables are
+unique. By using SetEnvPrefix you can tell Viper to use add a prefix
+while reading from the environment variables. Both BindEnv and
+AutomaticEnv will use this prefix.
 
 BindEnv takes one or two parameters. The first parameter is the key
 name, the second is the name of the environment variable. The name of
-the environment variable is case sensitive.
-
-If the ENV variable name is not provided then Viper will automatically
-assume that the key name matches the ENV variable name but the ENV
-variable is IN ALL CAPS.
+the environment variable is case sensitive. If the ENV variable name is
+not provided then Viper will automatically assume that the key name
+matches the ENV variable name but the ENV variable is IN ALL CAPS. When
+you explicitly provide the env variable name it **Does not**
+automatically add the prefix.
 
 One important thing to recognize when working with ENV variables is that
 the value will be read each time it is accessed. It does not fix the
 value when the BindEnv is called.
-
 
 AutomaticEnv is intended to be a convenience helper. It will look for all
 keys that have been set (via defaults, config file, flag, or remote key
 value) and call BindEnv on that key. It does
 not simply import all ENV variables. Because of this behavior it’s
 usually best to call it last.
+
+#### Env example
+
+	SetEnvPrefix("spf") // will be uppercased automatically
+	BindEnv("id")
+
+	os.Setenv("SPF_ID", "13") // typically done outside of the app
+
+	id := Get("id")) // 13
+
 
 ### Working with Flags
 
@@ -233,7 +198,58 @@ to use Consul.
 	err := viper.ReadRemoteConfig()
 
 
-### Viper or Vipers?
+## Getting Values From Viper
+
+In Viper there are a few ways to get a value depending on what type of value you want to retrieved.
+The following functions and methods exist: 
+
+ * Get(key string) : interface{}
+ * GetBool(key string) : bool
+ * GetFloat64(key string) : float64
+ * GetInt(key string) : int
+ * GetString(key string) : string
+ * GetStringMap(key string) : map[string]interface{}
+ * GetStringMapString(key string) : map[string]string
+ * GetStringSlice(key string) : []string
+ * GetTime(key string) : time.Time
+ * IsSet(key string) : bool
+
+One important thing to recognize is that each Get function will return
+it’s zero value if it’s not found. To check if a given key exists, the IsSet()
+method has been provided.
+
+Example:
+
+    viper.GetString("logfile") // case insensitive Setting & Getting
+	if viper.GetBool("verbose") {
+        fmt.Println("verbose enabled")
+	}
+
+### Marshaling
+
+You also have the option of Marshaling all or a specific value to a struct, map, etc.
+
+There are two methods to do this:
+
+ * Marshal(rawVal interface{}) : error
+ * MarshalKey(key string, rawVal interface{}) : error
+
+Example:
+
+	type config struct {
+		Port int
+		Name string
+	}
+
+	var C config
+
+	err := Marshal(&C)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+
+
+## Viper or Vipers?
 
 Viper comes ready to use out of the box. There is no configuration or
 initialization needed to begin using Viper. Since most applications will
