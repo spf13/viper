@@ -559,7 +559,9 @@ func (v *Viper) ReadInConfig() error {
 	return nil
 }
 
-// ReadInRawConfig reads the given raw bytes to load configuration.
+// ReadInRawConfig reads the given raw bytes to load configuration. It is
+// necessary to call SetConfigType(), to let viper know how to parse the given
+// configuration.
 func ReadInRawConfig(raw []byte) error { return v.ReadInRawConfig(raw) }
 func (v *Viper) ReadInRawConfig(raw []byte) error {
 	v.marshalReader(bytes.NewReader(raw), v.config)
