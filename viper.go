@@ -777,15 +777,9 @@ func (v *viper) findConfigFile() (string, error) {
 		}
 	}
 
-	cwd, _ := findCWD()
-	file := v.searchInPath(cwd)
-	if file != "" {
-		return file, nil
-	}
-
 	// try the current working directory
 	wd, _ := os.Getwd()
-	file = v.searchInPath(wd)
+	file := v.searchInPath(wd)
 	if file != "" {
 		return file, nil
 	}
