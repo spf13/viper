@@ -559,6 +559,13 @@ func (v *Viper) ReadInConfig() error {
 	return nil
 }
 
+// ReadInRawConfig reads the given raw bytes to load configuration.
+func ReadInRawConfig(raw []byte) error { return v.ReadInRawConfig(raw) }
+func (v *Viper) ReadInRawConfig(raw []byte) error {
+	v.marshalReader(bytes.NewReader(raw), v.config)
+	return nil
+}
+
 func ReadRemoteConfig() error { return v.ReadRemoteConfig() }
 func (v *Viper) ReadRemoteConfig() error {
 	err := v.getKeyValueConfig()
