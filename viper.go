@@ -361,7 +361,7 @@ func (v *viper) Marshal(rawVal interface{}) error {
 		return err
 	}
 
-	v.insensativiseMaps()
+	v.insensitiviseMaps()
 
 	return nil
 }
@@ -612,11 +612,11 @@ func (v *viper) marshalReader(in io.Reader, c map[string]interface{}) {
 	marshallConfigReader(in, c, v.getConfigType())
 }
 
-func (v *viper) insensativiseMaps() {
-	insensativiseMap(v.config)
-	insensativiseMap(v.defaults)
-	insensativiseMap(v.override)
-	insensativiseMap(v.kvstore)
+func (v *viper) insensitiviseMaps() {
+	insensitiviseMap(v.config)
+	insensitiviseMap(v.defaults)
+	insensitiviseMap(v.override)
+	insensitiviseMap(v.kvstore)
 }
 
 // retrieve the first found remote configuration

@@ -25,7 +25,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func insensativiseMap(m map[string]interface{}) {
+func insensitiviseMap(m map[string]interface{}) {
 	for key, val := range m {
 		lower := strings.ToLower(key)
 		if key != lower {
@@ -137,5 +137,5 @@ func marshallConfigReader(in io.Reader, c map[string]interface{}, configType str
 		}
 	}
 
-	insensativiseMap(c)
+	insensitiviseMap(c)
 }
