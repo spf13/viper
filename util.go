@@ -22,7 +22,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	jww "github.com/spf13/jwalterweatherman"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
 func insensativiseMap(m map[string]interface{}) {
