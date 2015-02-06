@@ -141,6 +141,7 @@ func (v *viper) SetEnvPrefix(in string) {
 
 // Enable cascading configuration values for files. Will traverse down
 // ConfigPaths in an attempt to find keys
+func EnableCascading(enable bool){ v.EnableCascading(enable) }
 func (v *viper) EnableCascading(enable bool){
 	v.cascadeConfigurations = enable;
 }
