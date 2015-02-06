@@ -14,6 +14,7 @@ import (
 	"time"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"io/ioutil"
 
 	"github.com/spf13/pflag"
@@ -390,7 +391,7 @@ func TestFindAllConfigPaths(t *testing.T){
 		command.Run()
 	}
 
-	assert.Equal(t,expected,found,"All files should exist")
+	assert.Equal(t,expected,removeDuplicates(found),"All files should exist")
 }
 
 func generateCascadingTests(v2 *viper, file_name string) []string {
@@ -398,6 +399,9 @@ func generateCascadingTests(v2 *viper, file_name string) []string {
 	v2.SetConfigName(file_name)
 
 	tmp := os.Getenv("TMPDIR")
+	if( tmp == ""){
+		tmp,_ = filepath.Abs(filepath.Dir("./"))
+	}
 	// $TMPDIR/a > $TMPDIR/b > %TMPDIR
 	paths := []string{path.Join(tmp,"a"),path.Join(tmp,"b"),tmp}
 
@@ -442,4 +446,16 @@ func generateCascadingTests(v2 *viper, file_name string) []string {
 	}
 
 	return expected
+}
+
+func removeDuplicates(a []string) []string {
+	result := []string{}
+	seen := map[string]string{}
+	for _, val := range a {
+		if _, ok := seen[val]; !ok {
+			result = append(result, val)
+			seen[val] = val
+		}
+	}
+	return result
 }
