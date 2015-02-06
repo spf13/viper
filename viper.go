@@ -77,11 +77,13 @@ type viper struct {
 	envPrefix  string
 
 	automaticEnvApplied bool
+	cascadeConfigurations bool
 
 	config   map[string]interface{}
 	override map[string]interface{}
 	defaults map[string]interface{}
 	kvstore  map[string]interface{}
+	cascadingConfigs map[string]map[string]interface{}
 	pflags   map[string]*pflag.Flag
 	env      map[string]string
 	aliases  map[string]string
@@ -98,6 +100,7 @@ func New() *viper {
 	v.pflags = make(map[string]*pflag.Flag)
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
+	v.cascadeConfigurations = false
 
 	return v
 }
@@ -134,6 +137,12 @@ func (v *viper) SetEnvPrefix(in string) {
 	if in != "" {
 		v.envPrefix = in
 	}
+}
+
+// Enable cascading configuration values for files. Will traverse down
+// ConfigPaths in an attempt to find keys
+func (v *viper) EnableCascading(enable bool){
+	v.cascadeConfigurations = enable;
 }
 
 func (v *viper) mergeWithEnvPrefix(in string) string {
@@ -389,6 +398,7 @@ func (v *viper) BindEnv(input ...string) (err error) {
 func (v *viper) find(key string) interface{} {
 	var val interface{}
 	var exists bool
+	var file string
 
 	// if the requested key is an alias, then return the proper key
 	key = v.realKey(key)
@@ -434,6 +444,15 @@ func (v *viper) find(key string) interface{} {
 		return val
 	}
 
+	if( v.cascadeConfigurations) {
+		//cascade down the rest of the files
+		val, exists, file = v.findCascading(key)
+		if exists {
+			jww.TRACE.Printf("%s found in config: %s (%s)", key, val, file)
+			return val
+		}
+	}
+
 	val, exists = v.kvstore[key]
 	if exists {
 		jww.TRACE.Println(key, "found in key/value store:", val)
@@ -447,6 +466,49 @@ func (v *viper) find(key string) interface{} {
 	}
 
 	return nil
+}
+
+func (v *viper) findCascading(key string) (interface{}, bool, string) {
+
+	if( v.cascadingConfigs != nil ){
+		for file,config := range v.cascadingConfigs {
+			result := config[key]
+			if( result != nil ){
+				return result,true,file
+			}
+		}
+	}
+
+	v.cascadingConfigs = make(map[string]map[string]interface{})
+
+	configFiles := v.findAllConfigFiles()
+	for _, configFile := range configFiles {
+
+		if(v.cascadingConfigs[configFile] != nil){
+			//already cached
+			continue
+		}
+
+		jww.TRACE.Printf("Looking in %s for key %s",configFile,key)
+		file, err := ioutil.ReadFile(configFile)
+		if err != nil {
+			jww.ERROR.Print(err)
+			continue
+		}
+
+		jww.TRACE.Printf("marshalling %s for cascading",configFile)
+		var config = make(map[string]interface{})
+
+		marshallConfigReader(bytes.NewReader(file), config, filepath.Ext(configFile)[1:])
+		v.cascadingConfigs[configFile] = config
+
+		result := config[key]
+
+		if( result != nil){
+			return result,true,configFile
+		}
+	}
+	return "", false, ""
 }
 
 // Check to see if the key has been set in any of the data locations
@@ -733,26 +795,41 @@ func (v *viper) searchInPath(in string) (filename string) {
 func (v *viper) findConfigFile() (string, error) {
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
+	var validFiles = v.findAllConfigFiles()
+
+	if len(validFiles) == 0 {
+		return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+	}
+
+	return validFiles[0], nil
+}
+
+func (v *viper) findAllConfigFiles() []string {
+
+	var validFiles []string
 	for _, cp := range v.configPaths {
 		file := v.searchInPath(cp)
 		if file != "" {
-			return file, nil
+			jww.TRACE.Println("Found config file in: %s",file)
+			validFiles = append(validFiles, file)
 		}
 	}
 
 	cwd, _ := findCWD()
 	file := v.searchInPath(cwd)
 	if file != "" {
-		return file, nil
+		validFiles = append(validFiles, file)
 	}
 
 	// try the current working directory
 	wd, _ := os.Getwd()
 	file = v.searchInPath(wd)
 	if file != "" {
-		return file, nil
+		validFiles = append(validFiles, file)
 	}
-	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+
+
+	return validFiles
 }
 
 func Debug() { v.Debug() }
