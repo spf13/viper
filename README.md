@@ -1,4 +1,4 @@
-viper <!--[![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper)-->
+viper 
 =====
 
 Go configuration with fangs
