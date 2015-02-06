@@ -86,7 +86,7 @@ the order that files are added  by AddConfigPath. For more see viper_test's casc
 Consider:
 
  * \etc\myapp\myapp.json
- * (%GOPATH)\src\myapp\myapp.json
+ * ($GOPATH)\src\myapp\myapp.json
 
 You can check in a default myapp.json for development and only override certain kvps in production
 
