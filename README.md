@@ -1,4 +1,4 @@
-viper [![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper)
+viper <!--[![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper)-->
 =====
 
 Go configuration with fangs
@@ -69,12 +69,28 @@ Examples:
 If you want to support a config file, Viper requires a minimal
 configuration so it knows where to look for the config file. Viper
 supports yaml, toml and json files. Viper can search multiple paths, but
-currently a single viper only supports a single config file.
+currently a single viper only supports a single config file, unless cascading is enabled.
 
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
 	viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
 	viper.ReadInConfig() // Find and read the config file
+
+#### Enabling Cascading
+
+By default Viper stops reading configuration once it encounters the first available configuration file.
+That means each configuration file must contain all configuration values you need.
+By enabling cascading you can create sparse configuration files. Configuration will cascade down in
+the order that files are added  by AddConfigPath. For more see viper_test's cascading tests.
+
+Consider:
+
+ * \etc\myapp\myapp.json
+ * (%GOPATH)\src\myapp\myapp.json
+
+You can check in a default myapp.json for development and only override certain kvps in production
+
+	viper.EnableCascading(true)
 
 ### Setting Overrides
 
