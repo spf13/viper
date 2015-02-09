@@ -76,7 +76,7 @@ type viper struct {
 	configType string
 	envPrefix  string
 
-	automaticEnvApplied bool
+	automaticEnvApplied   bool
 	cascadeConfigurations bool
 
 	config   map[string]interface{}
@@ -125,6 +125,7 @@ var SupportedRemoteProviders []string = []string{"etcd", "consul"}
 // Explicitly define the path, name and extension of the config file
 // Viper will use this and not check any of the config paths
 func SetConfigFile(in string) { v.SetConfigFile(in) }
+
 func (v *viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
@@ -133,6 +134,7 @@ func (v *viper) SetConfigFile(in string) {
 
 // Define a prefix that ENVIRONMENT variables will use.
 func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
+
 func (v *viper) SetEnvPrefix(in string) {
 	if in != "" {
 		v.envPrefix = in
@@ -142,7 +144,7 @@ func (v *viper) SetEnvPrefix(in string) {
 // Enable cascading configuration values for files. Will traverse down
 // ConfigPaths in an attempt to find keys
 func EnableCascading(enable bool){ v.EnableCascading(enable) }
-func (v *viper) EnableCascading(enable bool){
+func (v *viper) EnableCascading(enable bool) {
 	v.cascadeConfigurations = enable;
 }
 
@@ -155,12 +157,14 @@ func (v *viper) mergeWithEnvPrefix(in string) string {
 }
 
 // Return the config file used
-func ConfigFileUsed() string            { return v.ConfigFileUsed() }
+func ConfigFileUsed() string { return v.ConfigFileUsed() }
+
 func (v *viper) ConfigFileUsed() string { return v.configFile }
 
 // Add a path for viper to search for the config file in.
 // Can be called multiple times to define multiple search paths.
 func AddConfigPath(in string) { v.AddConfigPath(in) }
+
 func (v *viper) AddConfigPath(in string) {
 	if in != "" {
 		absin := absPathify(in)
@@ -182,6 +186,7 @@ func (v *viper) AddConfigPath(in string) {
 func AddRemoteProvider(provider, endpoint, path string) error {
 	return v.AddRemoteProvider(provider, endpoint, path)
 }
+
 func (v *viper) AddRemoteProvider(provider, endpoint, path string) error {
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
@@ -249,6 +254,7 @@ func (v *viper) providerPathExists(p *remoteProvider) bool {
 //
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
+
 func (v *viper) Get(key string) interface{} {
 	key = strings.ToLower(key)
 	val := v.find(key)
@@ -275,53 +281,63 @@ func (v *viper) Get(key string) interface{} {
 }
 
 func GetString(key string) string { return v.GetString(key) }
+
 func (v *viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
 func GetBool(key string) bool { return v.GetBool(key) }
+
 func (v *viper) GetBool(key string) bool {
 	return cast.ToBool(v.Get(key))
 }
 
 func GetInt(key string) int { return v.GetInt(key) }
+
 func (v *viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
+
 func (v *viper) GetFloat64(key string) float64 {
 	return cast.ToFloat64(v.Get(key))
 }
 
 func GetTime(key string) time.Time { return v.GetTime(key) }
+
 func (v *viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
 }
 
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
+
 func (v *viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
+
 func (v *viper) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(v.Get(key))
 }
 
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
+
 func (v *viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
 }
 
 // Takes a single key and marshals it into a Struct
 func MarshalKey(key string, rawVal interface{}) error { return v.MarshalKey(key, rawVal) }
+
 func (v *viper) MarshalKey(key string, rawVal interface{}) error {
 	return mapstructure.Decode(v.Get(key), rawVal)
 }
 
 // Marshals the config into a Struct
 func Marshal(rawVal interface{}) error { return v.Marshal(rawVal) }
+
 func (v *viper) Marshal(rawVal interface{}) error {
 	err := mapstructure.Decode(v.defaults, rawVal)
 	if err != nil {
@@ -351,6 +367,7 @@ func (v *viper) Marshal(rawVal interface{}) error {
 //	 viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 //
 func BindPFlag(key string, flag *pflag.Flag) (err error) { return v.BindPFlag(key, flag) }
+
 func (v *viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
@@ -373,6 +390,7 @@ func (v *viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
 // If only a key is provided, it will use the env key matching the key, uppercased.
 // EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) (err error) { return v.BindEnv(input...) }
+
 func (v *viper) BindEnv(input ...string) (err error) {
 	var key, envkey string
 	if len(input) == 0 {
@@ -445,7 +463,7 @@ func (v *viper) find(key string) interface{} {
 		return val
 	}
 
-	if( v.cascadeConfigurations) {
+	if ( v.cascadeConfigurations) {
 		//cascade down the rest of the files
 		val, exists, file = v.findCascading(key)
 		if exists {
@@ -471,49 +489,54 @@ func (v *viper) find(key string) interface{} {
 
 func (v *viper) findCascading(key string) (interface{}, bool, string) {
 
-	if( v.cascadingConfigs != nil ){
-		for file,config := range v.cascadingConfigs {
-			result := config[key]
-			if( result != nil ){
-				return result,true,file
-			}
-		}
-	}
-
-	v.cascadingConfigs = make(map[string]map[string]interface{})
-
 	configFiles := v.findAllConfigFiles()
-	for _, configFile := range configFiles {
 
-		if(v.cascadingConfigs[configFile] != nil){
-			//already cached
-			continue
-		}
-
-		jww.TRACE.Printf("Looking in %s for key %s",configFile,key)
-		file, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			jww.ERROR.Print(err)
-			continue
-		}
-
-		jww.TRACE.Printf("marshalling %s for cascading",configFile)
-		var config = make(map[string]interface{})
-
-		marshallConfigReader(bytes.NewReader(file), config, filepath.Ext(configFile)[1:])
-		v.cascadingConfigs[configFile] = config
-
-		result := config[key]
-
-		if( result != nil){
-			return result,true,configFile
-		}
+	if ( v.cascadingConfigs == nil) {
+		v.cascadingConfigs = make(map[string]map[string]interface{})
 	}
+
+	for _, configFile := range configFiles {
+		config := v.cascadingConfigs[configFile]
+
+		if ( config == nil ) {
+			var err error
+			config,err = readConfigFile(configFile)
+			if( err != nil){
+				jww.ERROR.Print(err)
+				continue
+			}
+			v.cascadingConfigs[configFile] = config
+		}
+
+		jww.TRACE.Printf("Looking in %s for key %s", configFile, key)
+		result := config[key]
+		if ( result != nil ) {
+			return result, true, configFile
+		}
+
+	}
+
 	return "", false, ""
+}
+
+func readConfigFile(configFile string) (map[string]interface{},error) {
+	jww.TRACE.Printf("marshalling %s ", configFile)
+
+	file, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil,err
+	}
+
+	var config = make(map[string]interface{})
+
+	marshallConfigReader(bytes.NewReader(file), config, filepath.Ext(configFile)[1:])
+
+	return config,nil
 }
 
 // Check to see if the key has been set in any of the data locations
 func IsSet(key string) bool { return v.IsSet(key) }
+
 func (v *viper) IsSet(key string) bool {
 	t := v.Get(key)
 	return t != nil
@@ -522,6 +545,7 @@ func (v *viper) IsSet(key string) bool {
 // Have viper check ENV variables for all
 // keys set in config, default & flags
 func AutomaticEnv() { v.AutomaticEnv() }
+
 func (v *viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
 }
@@ -529,6 +553,7 @@ func (v *viper) AutomaticEnv() {
 // Aliases provide another accessor for the same key.
 // This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
+
 func (v *viper) RegisterAlias(alias string, key string) {
 	v.registerAlias(alias, strings.ToLower(key))
 }
@@ -577,6 +602,7 @@ func (v *viper) realKey(key string) string {
 
 // Check to see if the given key (or an alias) is in the config file
 func InConfig(key string) bool { return v.InConfig(key) }
+
 func (v *viper) InConfig(key string) bool {
 	// if the requested key is an alias, then return the proper key
 	key = v.realKey(key)
@@ -588,6 +614,7 @@ func (v *viper) InConfig(key string) bool {
 // Set the default value for this key.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
+
 func (v *viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
@@ -598,6 +625,7 @@ func (v *viper) SetDefault(key string, value interface{}) {
 // Will be used instead of values obtained via
 // config file, ENV, default, or key/value store
 func Set(key string, value interface{}) { v.Set(key, value) }
+
 func (v *viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
@@ -607,6 +635,7 @@ func (v *viper) Set(key string, value interface{}) {
 // Viper will discover and load the configuration file from disk
 // and key/value stores, searching in one of the defined paths.
 func ReadInConfig() error { return v.ReadInConfig() }
+
 func (v *viper) ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
 	if !stringInSlice(v.getConfigType(), SupportedExts) {
@@ -623,6 +652,7 @@ func (v *viper) ReadInConfig() error {
 }
 
 func ReadRemoteConfig() error { return v.ReadRemoteConfig() }
+
 func (v *viper) ReadRemoteConfig() error {
 	err := v.getKeyValueConfig()
 	if err != nil {
@@ -634,6 +664,7 @@ func (v *viper) ReadRemoteConfig() error {
 // Marshall a Reader into a map
 // Should probably be an unexported function
 func marshalReader(in io.Reader, c map[string]interface{}) { v.marshalReader(in, c) }
+
 func (v *viper) marshalReader(in io.Reader, c map[string]interface{}) {
 	marshallConfigReader(in, c, v.getConfigType())
 }
@@ -694,6 +725,7 @@ func (v *viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{
 
 // Return all keys regardless where they are set
 func AllKeys() []string { return v.AllKeys() }
+
 func (v *viper) AllKeys() []string {
 	m := map[string]struct{}{}
 
@@ -723,6 +755,7 @@ func (v *viper) AllKeys() []string {
 
 // Return all settings as a map[string]interface{}
 func AllSettings() map[string]interface{} { return v.AllSettings() }
+
 func (v *viper) AllSettings() map[string]interface{} {
 	m := map[string]interface{}{}
 	for _, x := range v.AllKeys() {
@@ -735,6 +768,7 @@ func (v *viper) AllSettings() map[string]interface{} {
 // Name for the config file.
 // Does not include extension.
 func SetConfigName(in string) { v.SetConfigName(in) }
+
 func (v *viper) SetConfigName(in string) {
 	if in != "" {
 		v.configName = in
@@ -742,6 +776,7 @@ func (v *viper) SetConfigName(in string) {
 }
 
 func SetConfigType(in string) { v.SetConfigType(in) }
+
 func (v *viper) SetConfigType(in string) {
 	if in != "" {
 		v.configType = in
@@ -811,7 +846,7 @@ func (v *viper) findAllConfigFiles() []string {
 	for _, cp := range v.configPaths {
 		file := v.searchInPath(cp)
 		if file != "" {
-			jww.TRACE.Println("Found config file in: %s",file)
+			jww.TRACE.Println("Found config file in: %s", file)
 			validFiles = append(validFiles, file)
 		}
 	}
@@ -834,6 +869,7 @@ func (v *viper) findAllConfigFiles() []string {
 }
 
 func Debug() { v.Debug() }
+
 func (v *viper) Debug() {
 	fmt.Println("Config:")
 	pretty.Println(v.config)
