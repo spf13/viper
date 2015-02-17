@@ -250,6 +250,23 @@ func TestEnvPrefix(t *testing.T) {
 	assert.Equal(t, "crunk", Get("name"))
 }
 
+func TestAutoEnv(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	os.Setenv("FOO_BAR", "13")
+	assert.Equal(t, "13", Get("foo_bar"))
+}
+
+func TestAutoEnvWithPrefix(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	SetEnvPrefix("Baz")
+	os.Setenv("BAZ_BAR", "13")
+	assert.Equal(t, "13", Get("bar"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
