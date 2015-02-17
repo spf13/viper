@@ -313,23 +313,10 @@ func (v *viper) MarshalKey(key string, rawVal interface{}) error {
 // Marshals the config into a Struct
 func Marshal(rawVal interface{}) error { return v.Marshal(rawVal) }
 func (v *viper) Marshal(rawVal interface{}) error {
-	err := mapstructure.Decode(v.defaults, rawVal)
+	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
 	if err != nil {
 		return err
 	}
-	err = mapstructure.Decode(v.config, rawVal)
-	if err != nil {
-		return err
-	}
-	err = mapstructure.Decode(v.override, rawVal)
-	if err != nil {
-		return err
-	}
-	err = mapstructure.Decode(v.kvstore, rawVal)
-	if err != nil {
-		return err
-	}
-
 	v.insensativiseMaps()
 
 	return nil
