@@ -633,6 +633,14 @@ func (v *viper) AllKeys() []string {
 		m[key] = struct{}{}
 	}
 
+	for key, _ := range v.env {
+		m[key] = struct{}{}
+	}
+
+	for key, _ := range v.pflags {
+		m[key] = struct{}{}
+	}
+
 	for key, _ := range v.override {
 		m[key] = struct{}{}
 	}
