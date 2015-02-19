@@ -102,6 +102,15 @@ func New() *viper {
 	return v
 }
 
+// Intended for testing, will reset all to default settings.
+// In the public interface for the viper package so applications
+// can use it in their testing as well.
+func Reset() {
+	v = New()
+	SupportedExts = []string{"json", "toml", "yaml", "yml"}
+	SupportedRemoteProviders = []string{"etcd", "consul"}
+}
+
 // remoteProvider stores the configuration necessary
 // to connect to a remote key/value store.
 // Optional secretKeyring to unencrypt encrypted values
