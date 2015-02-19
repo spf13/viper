@@ -212,6 +212,7 @@ The following functions and methods exist:
  * GetStringMapString(key string) : map[string]string
  * GetStringSlice(key string) : []string
  * GetTime(key string) : time.Time
+ * GetDuration(key string) : time.Duration
  * IsSet(key string) : bool
 
 One important thing to recognize is that each Get function will return
