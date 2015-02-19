@@ -258,6 +258,8 @@ func (v *viper) Get(key string) interface{} {
 		return cast.ToFloat64(val)
 	case time.Time:
 		return cast.ToTime(val)
+	case time.Duration:
+		return cast.ToDuration(val)
 	case []string:
 		return val
 	}
@@ -287,6 +289,11 @@ func (v *viper) GetFloat64(key string) float64 {
 func GetTime(key string) time.Time { return v.GetTime(key) }
 func (v *viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
+}
+
+func GetDuration(key string) time.Duration { return v.GetDuration(key) }
+func (v *viper) GetDuration(key string) time.Duration {
+	return cast.ToDuration(v.Get(key))
 }
 
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
