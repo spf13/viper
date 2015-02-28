@@ -335,6 +335,12 @@ func (v *viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
 }
 
+func GetSizeInBytes(key string) uint { return v.GetSizeInBytes(key) }
+func (v *viper) GetSizeInBytes(key string) uint {
+	sizeStr := cast.ToString(v.Get(key))
+	return parseSizeInBytes(sizeStr)
+}
+
 // Takes a single key and marshals it into a Struct
 func MarshalKey(key string, rawVal interface{}) error { return v.MarshalKey(key, rawVal) }
 func (v *viper) MarshalKey(key string, rawVal interface{}) error {

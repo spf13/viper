@@ -376,3 +376,20 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "green", Get("eyes"))
 
 }
+
+func TestSizeInBytes(t *testing.T) {
+	input := map[string]uint{
+		"":               0,
+		"b":              0,
+		"12 bytes":       0,
+		"200000000000gb": 0,
+		"12 b":           12,
+		"43 MB":          43 * (1 << 20),
+		"10mb":           10 * (1 << 20),
+		"1gb":            1 << 30,
+	}
+
+	for str, expected := range input {
+		assert.Equal(t, expected, parseSizeInBytes(str), str)
+	}
+}
