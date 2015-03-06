@@ -7,7 +7,7 @@ Go configuration with fangs
 
 Viper is a complete configuration solution for go applications. It has
 been designed to work within an application to handle all types of
-configuration. It supports 
+configuration. It supports
 
 * setting defaults
 * reading from yaml, toml and json config files
@@ -167,7 +167,7 @@ Example:
 ### Remote Key/Value Store Support
 Viper will read a config string (as JSON, TOML, or YAML) retrieved from a
 path in a Key/Value store such as Etcd or Consul.  These values take precedence
-over default values, but are overriden by configuration values retrieved from disk, 
+over default values, but are overriden by configuration values retrieved from disk,
 flags, or environment variables.
 
 Viper uses [crypt](https://github.com/xordataexchange/crypt) to retrieve configuration
@@ -176,7 +176,7 @@ encrypted and have them automatically decrypted if you have the correct
 gpg keyring.  Encryption is optional.
 
 You can use remote configuration in conjunction with local configuration, or
-independently of it.  
+independently of it.
 
 `crypt` has a command-line helper that you can use to put configurations
 in your k/v store. `crypt` defaults to etcd on http://127.0.0.1:4001.
@@ -207,7 +207,7 @@ to use Consul.
 ## Getting Values From Viper
 
 In Viper there are a few ways to get a value depending on what type of value you want to retrieved.
-The following functions and methods exist: 
+The following functions and methods exist:
 
  * Get(key string) : interface{}
  * GetBool(key string) : bool
