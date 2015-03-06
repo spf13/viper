@@ -77,6 +77,7 @@ type viper struct {
 	envPrefix  string
 
 	automaticEnvApplied bool
+	envKeyReplacer      *strings.Replacer
 
 	config   map[string]interface{}
 	override map[string]interface{}
@@ -151,6 +152,20 @@ func (v *viper) mergeWithEnvPrefix(in string) string {
 	}
 
 	return strings.ToUpper(in)
+}
+
+// TODO: should getEnv logic be moved into find(). Can generalize the use of
+// rewriting keys many things, Ex: Get('someKey') -> some_key
+// (cammel case to snake case for JSON keys perhaps)
+
+// getEnv s a wrapper around os.Getenv which replaces characters in the original
+// key. This allows env vars which have different keys then the config object
+// keys
+func (v *viper) getEnv(key string) string {
+	if v.envKeyReplacer != nil {
+		key = v.envKeyReplacer.Replace(key)
+	}
+	return os.Getenv(key)
 }
 
 // Return the config file used
@@ -427,7 +442,7 @@ func (v *viper) find(key string) interface{} {
 	if v.automaticEnvApplied {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
-		if val = os.Getenv(v.mergeWithEnvPrefix(key)); val != "" {
+		if val = v.getEnv(v.mergeWithEnvPrefix(key)); val != "" {
 			jww.TRACE.Println(key, "found in environment with val:", val)
 			return val
 		}
@@ -436,7 +451,7 @@ func (v *viper) find(key string) interface{} {
 	envkey, exists := v.env[key]
 	if exists {
 		jww.TRACE.Println(key, "registered as env var", envkey)
-		if val = os.Getenv(envkey); val != "" {
+		if val = v.getEnv(envkey); val != "" {
 			jww.TRACE.Println(envkey, "found in environment with val:", val)
 			return val
 		} else {
@@ -477,6 +492,12 @@ func (v *viper) IsSet(key string) bool {
 func AutomaticEnv() { v.AutomaticEnv() }
 func (v *viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
+}
+
+// SetEnvKeyReplacer sets the strings.Replacer on the viper object
+func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
+func (v *viper) SetEnvKeyReplacer(r *strings.Replacer) {
+	v.envKeyReplacer = r
 }
 
 // Aliases provide another accessor for the same key.

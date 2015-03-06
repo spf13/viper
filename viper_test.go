@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -221,6 +222,7 @@ func TestEnv(t *testing.T) {
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
+
 }
 
 func TestEnvPrefix(t *testing.T) {
@@ -258,6 +260,18 @@ func TestAutoEnvWithPrefix(t *testing.T) {
 	SetEnvPrefix("Baz")
 	os.Setenv("BAZ_BAR", "13")
 	assert.Equal(t, "13", Get("bar"))
+}
+
+func TestSetEnvReplacer(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	os.Setenv("REFRESH_INTERVAL", "30s")
+
+	replacer := strings.NewReplacer("-", "_")
+	SetEnvKeyReplacer(replacer)
+
+	assert.Equal(t, "30s", Get("refresh-interval"))
 }
 
 func TestAllKeys(t *testing.T) {

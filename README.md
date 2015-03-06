@@ -98,12 +98,13 @@ Aliases permit a single value to be referenced by multiple keys
 ### Working with Environment Variables
 
 Viper has full support for environment variables. This enables 12 factor
-applications out of the box. There are three methods that exist to aid
+applications out of the box. There are four methods that exist to aid
 with working with ENV:
 
  * AutomaticEnv()
  * BindEnv(string...) : error
  * SetEnvPrefix(string)
+ * SetEnvReplacer(string...) *strings.Replacer
 
 _When working with ENV variables it’s important to recognize that Viper
 treats ENV variables as case sensitive._
@@ -130,6 +131,11 @@ SetEnvPrefix. When called, Viper will check for an environment variable
 any time a viper.Get request is made. It will apply the following rules.
 It will check for a environment variable with a name matching the key
 uppercased and prefixed with the EnvPrefix if set.
+
+SetEnvReplacer allows you to use a `strings.Replacer` object to rewrite Env keys
+to an extent. This is useful if you want to use `-` or something in your Get()
+calls, but want your environmental variables to use `_` delimiters. An example
+of using it can be found in `viper_test.go`
 
 #### Env example
 
