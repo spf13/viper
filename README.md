@@ -10,7 +10,7 @@ been designed to work within an application to handle all types of
 configuration. It supports
 
 * setting defaults
-* reading from yaml, toml and json config files
+* reading from json, toml and yaml config files
 * reading from environment variables
 * reading from remote config systems (Etcd or Consul)
 * reading from command line flags
@@ -21,15 +21,15 @@ configuration needs.
 
 ## Why Viper?
 
-When building a modern application you don’t want to have to worry about
-configuration file formats, you want to focus on building awesome software.
+When building a modern application, you don’t want to have to worry about
+configuration file formats; you want to focus on building awesome software.
 Viper is here to help with that.
 
 Viper does the following for you:
 
-1. Find, load and marshal a configuration file in YAML, TOML or JSON.
+1. Find, load and marshal a configuration file in JSON, TOML or YAML.
 2. Provide a mechanism to set default values for your different
-   configuration options
+   configuration options.
 3. Provide a mechanism to set override values for options specified
    through command line flags.
 4. Provide an alias system to easily rename parameters without breaking
@@ -62,13 +62,13 @@ Examples:
 
 	viper.SetDefault("ContentDir", "content")
 	viper.SetDefault("LayoutDir", "layouts")
-	viper.SetDefault("Indexes", map[string]string{"tag": "tags", "category": "categories"})
+	viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
 
 ### Reading Config Files
 
 If you want to support a config file, Viper requires a minimal
 configuration so it knows where to look for the config file. Viper
-supports yaml, toml and json files. Viper can search multiple paths, but
+supports json, toml and yaml files. Viper can search multiple paths, but
 currently a single viper only supports a single config file.
 
 	viper.SetConfigName("config") // name of config file (without extension)
@@ -106,20 +106,20 @@ with working with ENV:
  * SetEnvPrefix(string)
  * SetEnvReplacer(string...) *strings.Replacer
 
-_When working with ENV variables it’s important to recognize that Viper
+_When working with ENV variables, it’s important to recognize that Viper
 treats ENV variables as case sensitive._
 
 Viper provides a mechanism to try to ensure that ENV variables are
-unique. By using SetEnvPrefix you can tell Viper to use add a prefix
+unique. By using SetEnvPrefix, you can tell Viper to use add a prefix
 while reading from the environment variables. Both BindEnv and
 AutomaticEnv will use this prefix.
 
 BindEnv takes one or two parameters. The first parameter is the key
 name, the second is the name of the environment variable. The name of
 the environment variable is case sensitive. If the ENV variable name is
-not provided then Viper will automatically assume that the key name
+not provided, then Viper will automatically assume that the key name
 matches the ENV variable name but the ENV variable is IN ALL CAPS. When
-you explicitly provide the env variable name it **Does not**
+you explicitly provide the ENV variable name, it **does not**
 automatically add the prefix.
 
 One important thing to recognize when working with ENV variables is that
@@ -135,7 +135,7 @@ uppercased and prefixed with the EnvPrefix if set.
 SetEnvReplacer allows you to use a `strings.Replacer` object to rewrite Env keys
 to an extent. This is useful if you want to use `-` or something in your Get()
 calls, but want your environmental variables to use `_` delimiters. An example
-of using it can be found in `viper_test.go`
+of using it can be found in `viper_test.go`.
 
 #### Env example
 
@@ -149,10 +149,10 @@ of using it can be found in `viper_test.go`
 
 ### Working with Flags
 
-Viper has the ability to bind to flags. Specifically Viper supports
-Pflags as used in the [Cobra](http://github.com/spf13/cobra) library.
+Viper has the ability to bind to flags. Specifically, Viper supports
+Pflags as used in the [Cobra](https://github.com/spf13/cobra) library.
 
-Like BindEnv the value is not set when the binding method is called, but
+Like BindEnv, the value is not set when the binding method is called, but
 when it is accessed. This means you can bind as early as you want, even
 in an init() function.
 
@@ -160,8 +160,8 @@ The BindPFlag() method provides this functionality.
 
 Example:
 
- serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
- viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
+    serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+    viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 
 
 ### Remote Key/Value Store Support
@@ -171,7 +171,7 @@ over default values, but are overriden by configuration values retrieved from di
 flags, or environment variables.
 
 Viper uses [crypt](https://github.com/xordataexchange/crypt) to retrieve configuration
-from the k/v store, which means that you can store your configuration values
+from the K/V store, which means that you can store your configuration values
 encrypted and have them automatically decrypted if you have the correct
 gpg keyring.  Encryption is optional.
 
@@ -179,7 +179,7 @@ You can use remote configuration in conjunction with local configuration, or
 independently of it.
 
 `crypt` has a command-line helper that you can use to put configurations
-in your k/v store. `crypt` defaults to etcd on http://127.0.0.1:4001.
+in your K/V store. `crypt` defaults to etcd on http://127.0.0.1:4001.
 
 	go get github.com/xordataexchange/crypt/bin/crypt
 	crypt set -plaintext /config/hugo.json /Users/hugo/settings/config.json
@@ -206,7 +206,7 @@ to use Consul.
 
 ## Getting Values From Viper
 
-In Viper there are a few ways to get a value depending on what type of value you want to retrieved.
+In Viper, there are a few ways to get a value depending on what type of value you want to retrieved.
 The following functions and methods exist:
 
  * Get(key string) : interface{}
@@ -222,15 +222,15 @@ The following functions and methods exist:
  * IsSet(key string) : bool
 
 One important thing to recognize is that each Get function will return
-it’s zero value if it’s not found. To check if a given key exists, the IsSet()
+its zero value if it’s not found. To check if a given key exists, the IsSet()
 method has been provided.
 
 Example:
 
-    viper.GetString("logfile") // case insensitive Setting & Getting
-	if viper.GetBool("verbose") {
+    viper.GetString("logfile") // case-insensitive Setting & Getting
+    if viper.GetBool("verbose") {
         fmt.Println("verbose enabled")
-	}
+    }
 
 ### Marshaling
 
@@ -260,10 +260,10 @@ Example:
 
 Viper comes ready to use out of the box. There is no configuration or
 initialization needed to begin using Viper. Since most applications will
-want to use a single central repository for their configuration the
+want to use a single central repository for their configuration, the
 viper package provides this. It is similar to a singleton.
 
-In all of the examples above they demonstrate using viper in it’s
+In all of the examples above, they demonstrate using viper in its
 singleton style approach.
 
 ### Working with multiple vipers
@@ -275,33 +275,33 @@ functions that viper package supports are mirrored as methods on a viper.
 
 Example:
 
-    x  := viper.New()
-    y  := viper.New()
+    x := viper.New()
+    y := viper.New()
 
 	x.SetDefault("ContentDir", "content")
 	y.SetDefault("ContentDir", "foobar")
 
     ...
 
-When working with multiple vipers it is up to the user to keep track of
+When working with multiple vipers, it is up to the user to keep track of
 the different vipers.
 
 ## Q & A
 
 Q: Why not INI files?
 
-A: Ini files are pretty awful. There’s no standard format and they are hard to
-validate. Viper is designed to work with YAML, TOML or JSON files. If someone
+A: Ini files are pretty awful. There’s no standard format, and they are hard to
+validate. Viper is designed to work with JSON, TOML or YAML files. If someone
 really wants to add this feature, I’d be happy to merge it. It’s easy to
 specify which formats your application will permit.
 
-Q: Why is it called "viper"?
+Q: Why is it called “Viper”?
 
-A: Viper is designed to be a companion to
-[Cobra](http://github.com/spf13/cobra). While both can operate completely
+A: Viper is designed to be a [companion](http://en.wikipedia.org/wiki/Viper_(G.I._Joe)) to
+[Cobra](https://github.com/spf13/cobra). While both can operate completely
 independently, together they make a powerful pair to handle much of your
 application foundation needs.
 
-Q: Why is it called "Cobra"?
+Q: Why is it called “Cobra”?
 
-A: Is there a better name for a commander?
+A: Is there a better name for a [commander](http://en.wikipedia.org/wiki/Cobra_Commander)?
