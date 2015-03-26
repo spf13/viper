@@ -329,10 +329,10 @@ func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	key = strings.ToLower(key)
 	var val interface{}
-	v.buildIndex()
 
-	if val = v.findIndex(key); val == nil {
-		val = v.find(key)
+	if val = v.find(key); val == nil {
+		v.buildIndex()
+		val = v.findIndex(key)
 	}
 
 	if val == nil {
