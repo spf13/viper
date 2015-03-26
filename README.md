@@ -144,7 +144,7 @@ of using it can be found in `viper_test.go`.
 
 	os.Setenv("SPF_ID", "13") // typically done outside of the app
 
-	id := Get("id")) // 13
+	id := Get("id") // 13
 
 
 ### Working with Flags
