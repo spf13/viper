@@ -598,27 +598,13 @@ func (v *Viper) find(key string) interface{} {
 	return nil
 }
 
+// Recursively walks through the structure returned by
+// AllSettings, indexing deeply nested values.
+// It uses AllSettings in order to get a properly
+// prioritized config structure.
 func (v *Viper) buildIndex() {
 	v.index = make(map[string]interface{})
-	v.indexMap(v.AllSettings(), "")
-}
-
-func (v *Viper) indexMap(source map[string]interface{}, prefix string) {
-	if len(prefix) > 0 {
-		prefix = prefix + INDEX_DELIM
-	}
-
-	for key, val := range source {
-
-		indexPath := strings.ToLower(prefix + key)
-
-		v.index[indexPath] = val
-
-		if reflect.TypeOf(val).Kind() == reflect.Map {
-			v.indexMap(cast.ToStringMap(val), indexPath)
-		}
-	}
-
+	indexMap(v.AllSettings(), "", v.index)
 }
 
 // Check to see if the key has been set in any of the data locations
@@ -840,6 +826,8 @@ func (v *Viper) AllKeys() []string {
 	return a
 }
 
+// Return all keys found in the index, including the deeply
+// nested keys.
 func AllIndexes() []string { return v.AllIndexes() }
 func (v *Viper) AllIndexes() []string {
 	v.buildIndex()
