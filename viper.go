@@ -610,7 +610,7 @@ func (v *Viper) indexMap(source map[string]interface{}, prefix string) {
 
 	for key, val := range source {
 
-		indexPath := prefix + key
+		indexPath := strings.ToLower(prefix + key)
 
 		v.index[indexPath] = val
 
