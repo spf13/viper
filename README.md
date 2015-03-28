@@ -74,7 +74,10 @@ currently a single viper only supports a single config file.
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
 	viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
-	viper.ReadInConfig() // Find and read the config file
+	err := viper.ReadInConfig() // Find and read the config file
+    if err != nil { // Handle errors reading the config file
+        panic(fmt.Errorf("Fatal error config file: %s \n", err))
+    }
 
 ### Setting Overrides
 
