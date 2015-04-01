@@ -10,6 +10,7 @@
 
 // Each item takes precedence over the item below it:
 
+// overrides
 // flag
 // env
 // config
@@ -43,26 +44,68 @@ func init() {
 	v = New()
 }
 
+// Denotes encountering an unsupported
+// configuration filetype.
 type UnsupportedConfigError string
 
+// Returns the formatted configuration error.
 func (str UnsupportedConfigError) Error() string {
 	return fmt.Sprintf("Unsupported Config Type %q", string(str))
 }
 
+// Denotes encountering an unsupported remote
+// provider. Currently only Etcd and Consul are
+// supported.
 type UnsupportedRemoteProviderError string
 
+// Returns the formatted remote provider error.
 func (str UnsupportedRemoteProviderError) Error() string {
 	return fmt.Sprintf("Unsupported Remote Provider Type %q", string(str))
 }
 
+// Denotes encountering an error while trying to
+// pull the configuration from the remote provider.
 type RemoteConfigError string
 
+// Returns the formatted remote provider error
 func (rce RemoteConfigError) Error() string {
 	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
 
-// A Viper is a unexported struct. Use New() to create a new instance of viper
-// or use the functions for a "global instance"
+// Viper is a prioritized configuration registry. It
+// maintains a set of configuration sources, fetches
+// values to populate those, and provides them according
+// to the source's priority.
+// The priority of the sources is the following:
+// 1. overrides
+// 2. flags
+// 3. env. variables
+// 4. config file
+// 5. key/value store
+// 6. defaults
+//
+// For example, if values from the following sources were loaded:
+//
+//  Defaults : {
+//  	"secret": "",
+//  	"user": "default",
+// 	    "endpoint": "https://localhost"
+//  }
+//  Config : {
+//  	"user": "root"
+//	    "secret": "defaultsecret"
+//  }
+//  Env : {
+//  	"secret": "somesecretkey"
+//  }
+//
+// The resulting config will have the following values:
+//
+//	{
+//		"secret": "somesecretkey",
+//		"user": "root",
+//		"endpoint": "https://localhost"
+//	}
 type Viper struct {
 	// A set of paths to look for the config file in
 	configPaths []string
@@ -88,7 +131,7 @@ type Viper struct {
 	aliases  map[string]string
 }
 
-// The prescribed way to create a new Viper
+// Returns an initialized Viper instance.
 func New() *Viper {
 	v := new(Viper)
 	v.configName = "config"
@@ -123,10 +166,10 @@ type remoteProvider struct {
 	secretKeyring string
 }
 
-// universally supported extensions
+// Universally supported extensions.
 var SupportedExts []string = []string{"json", "toml", "yaml", "yml"}
 
-// universally supported remote providers
+// Universally supported remote providers.
 var SupportedRemoteProviders []string = []string{"etcd", "consul"}
 
 // Explicitly define the path, name and extension of the config file
@@ -139,6 +182,8 @@ func (v *Viper) SetConfigFile(in string) {
 }
 
 // Define a prefix that ENVIRONMENT variables will use.
+// E.g. if your prefix is "spf", the env registry
+// will look for env. variables that start with "SPF_"
 func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
 func (v *Viper) SetEnvPrefix(in string) {
 	if in != "" {
@@ -168,7 +213,7 @@ func (v *Viper) getEnv(key string) string {
 	return os.Getenv(key)
 }
 
-// Return the config file used
+// Return the file used to populate the config registry
 func ConfigFileUsed() string            { return v.ConfigFileUsed() }
 func (v *Viper) ConfigFileUsed() string { return v.configFile }
 
@@ -259,7 +304,7 @@ func (v *Viper) providerPathExists(p *remoteProvider) bool {
 // Get can retrieve any value given the key to use
 // Get has the behavior of returning the value associated with the first
 // place from where it is set. Viper will check in the following order:
-// flag, env, config file, key/value store, default
+// override, flag, env, config file, key/value store, default
 //
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
@@ -290,51 +335,62 @@ func (v *Viper) Get(key string) interface{} {
 	return val
 }
 
+// Returns the value associated with the key as a string
 func GetString(key string) string { return v.GetString(key) }
 func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
+// Returns the value associated with the key asa boolean
 func GetBool(key string) bool { return v.GetBool(key) }
 func (v *Viper) GetBool(key string) bool {
 	return cast.ToBool(v.Get(key))
 }
 
+// Returns the value associated with the key as an integer
 func GetInt(key string) int { return v.GetInt(key) }
 func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
+// Returns the value associated with the key as a float64
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
 func (v *Viper) GetFloat64(key string) float64 {
 	return cast.ToFloat64(v.Get(key))
 }
 
+// Returns the value associated with the key as time
 func GetTime(key string) time.Time { return v.GetTime(key) }
 func (v *Viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
 }
 
+// Returns the value associated with the key as a duration
 func GetDuration(key string) time.Duration { return v.GetDuration(key) }
 func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
+// Returns the value associated with the key as a slice of strings
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
+// Returns the value associated with the key as a map of interfaces
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 func (v *Viper) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(v.Get(key))
 }
 
+// Returns the value associated with the key as a map of strings
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 func (v *Viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
 }
 
+// Returns the size of the value associated with the given key
+// in bytes.
 func GetSizeInBytes(key string) uint { return v.GetSizeInBytes(key) }
 func (v *Viper) GetSizeInBytes(key string) uint {
 	sizeStr := cast.ToString(v.Get(key))
@@ -347,7 +403,8 @@ func (v *Viper) MarshalKey(key string, rawVal interface{}) error {
 	return mapstructure.Decode(v.Get(key), rawVal)
 }
 
-// Marshals the config into a Struct
+// Marshals the config into a Struct. Make sure that the tags
+// on the fields of the structure are properly set.
 func Marshal(rawVal interface{}) error { return v.Marshal(rawVal) }
 func (v *Viper) Marshal(rawVal interface{}) error {
 	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
@@ -362,6 +419,7 @@ func (v *Viper) Marshal(rawVal interface{}) error {
 }
 
 // Bind a specific key to a flag (as used by cobra)
+// Example(where serverCmd is a Cobra instance):
 //
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 //	 Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
@@ -490,6 +548,8 @@ func (v *Viper) AutomaticEnv() {
 }
 
 // SetEnvKeyReplacer sets the strings.Replacer on the viper object
+// Useful for mapping an environmental variable to a key that does
+// not match it.
 func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
 func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
@@ -563,9 +623,9 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 	v.defaults[key] = value
 }
 
-// The user provided value (via flag)
+// Sets the value for the key in the override regiser.
 // Will be used instead of values obtained via
-// config file, ENV, default, or key/value store
+// flags, config file, ENV, default, or key/value store
 func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
@@ -591,6 +651,8 @@ func (v *Viper) ReadInConfig() error {
 	return nil
 }
 
+// Attempts to get configuration from a remote source
+// and read it in the remote configuration registry.
 func ReadRemoteConfig() error { return v.ReadRemoteConfig() }
 func (v *Viper) ReadRemoteConfig() error {
 	err := v.getKeyValueConfig()
@@ -710,6 +772,8 @@ func (v *Viper) SetConfigName(in string) {
 	}
 }
 
+// Sets the type of the configuration returned by the
+// remote source, e.g. "json".
 func SetConfigType(in string) { v.SetConfigType(in) }
 func (v *Viper) SetConfigType(in string) {
 	if in != "" {
@@ -781,6 +845,8 @@ func (v *Viper) findConfigFile() (string, error) {
 	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
 }
 
+// Prints all configuration registries for debugging
+// purposes.
 func Debug() { v.Debug() }
 func (v *Viper) Debug() {
 	fmt.Println("Config:")
