@@ -810,4 +810,6 @@ func (v *Viper) Debug() {
 	pretty.Println(v.override)
 	fmt.Println("Aliases:")
 	pretty.Println(v.aliases)
+	fmt.Println("PFlags")
+	pretty.Println(v.pflags)
 }
