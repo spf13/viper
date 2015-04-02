@@ -333,6 +333,41 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
 }
 
+func TestBindPFlags(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	var testValues = map[string]*string{
+		"host":     nil,
+		"port":     nil,
+		"endpoint": nil,
+	}
+
+	var mutatedTestValues = map[string]string{
+		"host":     "localhost",
+		"port":     "6060",
+		"endpoint": "/public",
+	}
+
+	for name, _ := range testValues {
+		testValues[name] = flagSet.String(name, "", "test")
+	}
+
+	err := BindPFlags(flagSet)
+	if err != nil {
+		t.Fatalf("error binding flag set, %v", err)
+	}
+
+	flagSet.VisitAll(func(flag *pflag.Flag) {
+		flag.Value.Set(mutatedTestValues[flag.Name])
+		flag.Changed = true
+	})
+
+	for name, expected := range mutatedTestValues {
+		assert.Equal(t, Get(name), expected)
+	}
+
+}
+
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
 	var testValue = newStringValue(testString, &testString)
