@@ -361,6 +361,21 @@ func (v *Viper) Marshal(rawVal interface{}) error {
 	return nil
 }
 
+// Bind a full flag set to the configuration, using each flag's long
+// name as the config key.
+func BindPFlags(flags *pflag.FlagSet) (err error) { return v.BindPFlags(flags) }
+func (v *Viper) BindPFlags(flags *pflag.FlagSet) (err error) {
+	flags.VisitAll(func(flag *pflag.Flag) {
+		if err != nil {
+			// an error has been encountered in one of the previous flags
+			return
+		}
+
+		err = v.BindPFlag(flag.Name, flag)
+	})
+	return
+}
+
 // Bind a specific key to a flag (as used by cobra)
 //
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
