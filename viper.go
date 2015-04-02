@@ -429,6 +429,14 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) (err error) {
 		}
 
 		err = v.BindPFlag(flag.Name, flag)
+		switch flag.Value.Type() {
+		case "int", "int8", "int16", "int32", "int64":
+			v.SetDefault(flag.Name, cast.ToInt(flag.Value.String()))
+		case "bool":
+			v.SetDefault(flag.Name, cast.ToBool(flag.Value.String()))
+		default:
+			v.SetDefault(flag.Name, flag.Value.String())
+		}
 	})
 	return
 }
