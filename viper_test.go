@@ -512,6 +512,7 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestBindPFlags(t *testing.T) {
+	Reset()
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	var testValues = map[string]*string{
@@ -568,6 +569,7 @@ func TestBindPFlag(t *testing.T) {
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
+	initConfigs()
 
 	assert.Equal(t, "brown", Get("eyes"))
 
