@@ -55,6 +55,14 @@ var jsonExample = []byte(`{
     }
 }`)
 
+var propertiesExample = []byte(`
+p_id: 0001
+p_type: donut
+p_name: Cake
+p_ppu: 0.55
+p_batters.batter.type: Regular
+`)
+
 var remoteExample = []byte(`{
 "id":"0002",
 "type":"cronut",
@@ -69,6 +77,10 @@ func initConfigs() {
 
 	SetConfigType("json")
 	r = bytes.NewReader(jsonExample)
+	marshalReader(r, v.config)
+
+	SetConfigType("properties")
+	r = bytes.NewReader(propertiesExample)
 	marshalReader(r, v.config)
 
 	SetConfigType("toml")
@@ -92,6 +104,14 @@ func initJSON() {
 	Reset()
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
+
+	marshalReader(r, v.config)
+}
+
+func initProperties() {
+	Reset()
+	SetConfigType("properties")
+	r := bytes.NewReader(propertiesExample)
 
 	marshalReader(r, v.config)
 }
@@ -183,6 +203,11 @@ func TestYML(t *testing.T) {
 func TestJSON(t *testing.T) {
 	initJSON()
 	assert.Equal(t, "0001", Get("id"))
+}
+
+func TestProperties(t *testing.T) {
+	initProperties()
+	assert.Equal(t, "0001", Get("p_id"))
 }
 
 func TestTOML(t *testing.T) {
@@ -277,9 +302,9 @@ func TestSetEnvReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes"}
+	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather"}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake"}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather"}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters.batter.type": "Regular", "p_type": "donut"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()

@@ -174,7 +174,7 @@ type remoteProvider struct {
 }
 
 // Universally supported extensions.
-var SupportedExts []string = []string{"json", "toml", "yaml", "yml"}
+var SupportedExts []string = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop"}
 
 // Universally supported remote providers.
 var SupportedRemoteProviders []string = []string{"etcd", "consul"}
