@@ -315,6 +315,184 @@ func TestAllKeys(t *testing.T) {
 	assert.Equal(t, all, AllSettings())
 }
 
+func TestAllIndexes(t *testing.T) {
+	initConfigs()
+	expected := sort.StringSlice{"owner.organization", "name", "ppu", "clothing.trousers", "type", "batters.batter", "clothing.jacket", "hacker", "beard", "newkey", "owner.bio", "batters", "clothing", "owner", "eyes", "hobbies", "owner.dob", "title", "age", "id"}
+	expected.Sort()
+
+	var actual sort.StringSlice
+	actual = AllIndexes()
+	actual.Sort()
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestBuildsIndex(t *testing.T) {
+	initConfigs()
+	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
+
+	Set("super", map[string]interface{}{
+		"deep": map[string]interface{}{
+			"nested": "value",
+		},
+	})
+
+	expected := map[string]interface{}{
+		"super": map[string]interface{}{
+			"deep": map[string]interface{}{
+				"nested": "value",
+			},
+		},
+		"super.deep": map[string]interface{}{
+			"nested": "value",
+		},
+		"super.deep.nested":  "value",
+		"owner.organization": "MongoDB",
+		"batters.batter": []interface{}{
+			map[string]interface{}{
+				"type": "Regular",
+			},
+			map[string]interface{}{
+				"type": "Chocolate",
+			},
+			map[string]interface{}{
+				"type": "Blueberry",
+			},
+			map[string]interface{}{
+				"type": "Devil's Food",
+			},
+		},
+		"hobbies": []interface{}{
+			"skateboarding", "snowboarding", "go",
+		},
+		"title":  "TOML Example",
+		"newkey": "remote",
+		"batters": map[string]interface{}{
+			"batter": []interface{}{
+				map[string]interface{}{
+					"type": "Regular",
+				},
+				map[string]interface{}{
+					"type": "Chocolate",
+				}, map[string]interface{}{
+					"type": "Blueberry",
+				}, map[string]interface{}{
+					"type": "Devil's Food",
+				},
+			},
+		},
+		"eyes": "brown",
+		"age":  35,
+		"owner": map[string]interface{}{
+			"organization": "MongoDB",
+			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"dob":          dob,
+		},
+		"owner.bio": "MongoDB Chief Developer Advocate & Hacker at Large",
+		"type":      "donut",
+		"id":        "0001",
+		"name":      "Cake",
+		"hacker":    true,
+		"ppu":       0.55,
+		"clothing": map[interface{}]interface{}{
+			"jacket":   "leather",
+			"trousers": "denim",
+		},
+		"clothing.jacket":   "leather",
+		"clothing.trousers": "denim",
+		"owner.dob":         dob,
+		"beard":             true,
+	}
+
+	v.buildIndex()
+
+	assert.Equal(t, expected, v.index)
+}
+
+func TestRetrievesIndex(t *testing.T) {
+	initConfigs()
+
+	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
+
+	Set("super", map[string]interface{}{
+		"deep": map[string]interface{}{
+			"nested": "value",
+		},
+	})
+	expected := map[string]interface{}{
+		"super": map[string]interface{}{
+			"deep": map[string]interface{}{
+				"nested": "value",
+			},
+		},
+		"super.deep": map[string]interface{}{
+			"nested": "value",
+		},
+		"super.deep.nested":  "value",
+		"owner.organization": "MongoDB",
+		"batters.batter": []interface{}{
+			map[string]interface{}{
+				"type": "Regular",
+			},
+			map[string]interface{}{
+				"type": "Chocolate",
+			},
+			map[string]interface{}{
+				"type": "Blueberry",
+			},
+			map[string]interface{}{
+				"type": "Devil's Food",
+			},
+		},
+		"hobbies": []interface{}{
+			"skateboarding", "snowboarding", "go",
+		},
+		"title":  "TOML Example",
+		"newkey": "remote",
+		"batters": map[string]interface{}{
+			"batter": []interface{}{
+				map[string]interface{}{
+					"type": "Regular",
+				},
+				map[string]interface{}{
+					"type": "Chocolate",
+				}, map[string]interface{}{
+					"type": "Blueberry",
+				}, map[string]interface{}{
+					"type": "Devil's Food",
+				},
+			},
+		},
+		"eyes": "brown",
+		"age":  35,
+		"owner": map[string]interface{}{
+			"organization": "MongoDB",
+			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"dob":          dob,
+		},
+		"owner.bio": "MongoDB Chief Developer Advocate & Hacker at Large",
+		"type":      "donut",
+		"id":        "0001",
+		"name":      "Cake",
+		"hacker":    true,
+		"ppu":       0.55,
+		"clothing": map[interface{}]interface{}{
+			"jacket":   "leather",
+			"trousers": "denim",
+		},
+		"clothing.jacket":   "leather",
+		"clothing.trousers": "denim",
+		"owner.dob":         dob,
+		"beard":             true,
+	}
+
+	v.buildIndex()
+
+	for key, value := range expected {
+		assert.Equal(t, value, v.Get(key))
+	}
+}
+
 func TestCaseInSensitive(t *testing.T) {
 	assert.Equal(t, true, Get("hacker"))
 	Set("Title", "Checking Case")
@@ -359,6 +537,7 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestBindPFlags(t *testing.T) {
+	Reset()
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	var testValues = map[string]*string{
@@ -415,6 +594,7 @@ func TestBindPFlag(t *testing.T) {
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
+	initConfigs()
 
 	assert.Equal(t, "brown", Get("eyes"))
 

@@ -237,6 +237,12 @@ Example:
         fmt.Println("verbose enabled")
     }
 
+You can get deeply nested values by providing the expected key path.
+
+Example:
+
+    viper.Get("log.verbose") // case-insensitive path <root key>.<subkey1>.<subkey2>...etc
+
 ### Marshaling
 
 You also have the option of Marshaling all or a specific value to a struct, map, etc.

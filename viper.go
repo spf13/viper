@@ -38,6 +38,9 @@ import (
 	crypt "github.com/xordataexchange/crypt/config"
 )
 
+const INDEX_DELIM = "."
+const ENV_INDEX_DELIM = "__"
+
 var v *Viper
 
 func init() {
@@ -121,7 +124,10 @@ type Viper struct {
 
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
+	envToIndex          *strings.Replacer
+	indexToEnv          *strings.Replacer
 
+	index    map[string]interface{}
 	config   map[string]interface{}
 	override map[string]interface{}
 	defaults map[string]interface{}
@@ -135,6 +141,7 @@ type Viper struct {
 func New() *Viper {
 	v := new(Viper)
 	v.configName = "config"
+	v.index = make(map[string]interface{})
 	v.config = make(map[string]interface{})
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
@@ -149,6 +156,8 @@ func New() *Viper {
 	} else {
 		v.AddConfigPath(wd)
 	}
+	v.indexToEnv = strings.NewReplacer(ENV_INDEX_DELIM, INDEX_DELIM)
+	v.envToIndex = strings.NewReplacer(INDEX_DELIM, ENV_INDEX_DELIM)
 
 	return v
 }
@@ -214,6 +223,8 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // key. This allows env vars which have different keys then the config object
 // keys
 func (v *Viper) getEnv(key string) string {
+	key = v.indexToEnv.Replace(key)
+
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
@@ -317,12 +328,23 @@ func (v *Viper) providerPathExists(p *remoteProvider) bool {
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	key = strings.ToLower(key)
-	val := v.find(key)
+	var val interface{}
+
+	if val = v.find(key); val == nil {
+		v.buildIndex()
+		val = v.findIndex(key)
+	}
 
 	if val == nil {
 		return nil
 	}
 
+	val = castVal(val)
+
+	return val
+}
+
+func castVal(val interface{}) interface{} {
 	switch val.(type) {
 	case bool:
 		return cast.ToBool(val)
@@ -339,6 +361,7 @@ func (v *Viper) Get(key string) interface{} {
 	case []string:
 		return val
 	}
+
 	return val
 }
 
@@ -483,7 +506,7 @@ func (v *Viper) BindEnv(input ...string) (err error) {
 		return fmt.Errorf("BindEnv missing key to bind to")
 	}
 
-	key = strings.ToLower(input[0])
+	key = v.envToIndex.Replace(strings.ToLower(input[0]))
 
 	if len(input) == 1 {
 		envkey = v.mergeWithEnvPrefix(key)
@@ -493,6 +516,18 @@ func (v *Viper) BindEnv(input ...string) (err error) {
 
 	v.env[key] = envkey
 
+	return nil
+}
+
+func (v *Viper) findIndex(key string) interface{} {
+	// Check index - it is safe ot check it first
+	// as the paths there should be materialized
+	// according to their priority
+	val, exists := v.index[key]
+	if exists {
+		jww.TRACE.Println(key, "found in index:", val)
+		return val
+	}
 	return nil
 }
 
@@ -507,6 +542,12 @@ func (v *Viper) find(key string) interface{} {
 	// if the requested key is an alias, then return the proper key
 	key = v.realKey(key)
 
+	val, exists = v.override[key]
+	if exists {
+		jww.TRACE.Println(key, "found in override:", val)
+		return val
+	}
+
 	// PFlag Override first
 	flag, exists := v.pflags[key]
 	if exists {
@@ -514,12 +555,6 @@ func (v *Viper) find(key string) interface{} {
 			jww.TRACE.Println(key, "found in override (via pflag):", val)
 			return flag.Value.String()
 		}
-	}
-
-	val, exists = v.override[key]
-	if exists {
-		jww.TRACE.Println(key, "found in override:", val)
-		return val
 	}
 
 	if v.automaticEnvApplied {
@@ -561,6 +596,15 @@ func (v *Viper) find(key string) interface{} {
 	}
 
 	return nil
+}
+
+// Recursively walks through the structure returned by
+// AllSettings, indexing deeply nested values.
+// It uses AllSettings in order to get a properly
+// prioritized config structure.
+func (v *Viper) buildIndex() {
+	v.index = make(map[string]interface{})
+	indexMap(v.AllSettings(), "", v.index)
 }
 
 // Check to see if the key has been set in any of the data locations
@@ -784,12 +828,26 @@ func (v *Viper) AllKeys() []string {
 	return a
 }
 
+// Return all keys found in the index, including the deeply
+// nested keys.
+func AllIndexes() []string { return v.AllIndexes() }
+func (v *Viper) AllIndexes() []string {
+	v.buildIndex()
+
+	var indexes []string
+	for key, _ := range v.index {
+		indexes = append(indexes, key)
+	}
+
+	return indexes
+}
+
 // Return all settings as a map[string]interface{}
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
 	m := map[string]interface{}{}
 	for _, x := range v.AllKeys() {
-		m[x] = v.Get(x)
+		m[x] = castVal(v.find(x))
 	}
 
 	return m
@@ -881,6 +939,8 @@ func (v *Viper) findConfigFile() (string, error) {
 // purposes.
 func Debug() { v.Debug() }
 func (v *Viper) Debug() {
+	fmt.Println("Index:")
+	pretty.Print(v.index)
 	fmt.Println("Config:")
 	pretty.Println(v.config)
 	fmt.Println("Key/Value Store:")

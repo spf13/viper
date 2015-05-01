@@ -17,6 +17,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"unicode"
@@ -195,4 +196,24 @@ func parseSizeInBytes(sizeStr string) uint {
 	}
 
 	return safeMul(uint(size), multiplier)
+}
+
+// Recursively walks through the source map, populating the index with keys representing
+// the nesting of the value and the value itself.
+func indexMap(source map[string]interface{}, prefix string, index map[string]interface{}) {
+	if len(prefix) > 0 {
+		prefix = prefix + INDEX_DELIM
+	}
+
+	for key, val := range source {
+
+		indexPath := strings.ToLower(prefix + key)
+
+		v.index[indexPath] = val
+
+		if reflect.TypeOf(val).Kind() == reflect.Map {
+			indexMap(cast.ToStringMap(val), indexPath, index)
+		}
+	}
+
 }
