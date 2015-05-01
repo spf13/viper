@@ -914,18 +914,18 @@ func (v *Viper) findConfigFile() (string, error) {
 // purposes.
 func Debug() { v.Debug() }
 func (v *Viper) Debug() {
-	fmt.Println("Config:")
-	pretty.Println(v.config)
-	fmt.Println("Key/Value Store:")
-	pretty.Println(v.kvstore)
-	fmt.Println("Env:")
-	pretty.Println(v.env)
-	fmt.Println("Defaults:")
-	pretty.Println(v.defaults)
-	fmt.Println("Override:")
-	pretty.Println(v.override)
 	fmt.Println("Aliases:")
 	pretty.Println(v.aliases)
+	fmt.Println("Override:")
+	pretty.Println(v.override)
 	fmt.Println("PFlags")
 	pretty.Println(v.pflags)
+	fmt.Println("Env:")
+	pretty.Println(v.env)
+	fmt.Println("Key/Value Store:")
+	pretty.Println(v.kvstore)
+	fmt.Println("Config:")
+	pretty.Println(v.config)
+	fmt.Println("Defaults:")
+	pretty.Println(v.defaults)
 }
