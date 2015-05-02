@@ -237,6 +237,71 @@ Example:
         fmt.Println("verbose enabled")
     }
 
+### Accessing nested keys
+
+The accessor methods also accept formatted paths to deeply nested keys. 
+For example, if the following JSON file is loaded:
+
+```
+{
+    "host": {
+        "address": "localhost",
+        "port": 5799
+    },
+    "datastore": {
+        "metric": {
+            "host": "127.0.0.1",
+            "port": 3099
+        },
+        "warehouse": {
+            "host": "198.0.0.1",
+            "port": 2112
+        }
+    }
+}
+
+```
+
+Viper can access a nested field by passing a `.` delimited path of keys:
+```
+GetString("datastore.metric.host") // (returns "127.0.0.1")
+```
+
+This obeys the precendense rules established above; the search for the root key
+(in this examole, `datastore`) will cascade through the remaining configuration registries
+until found. The search for the subkeys (`metric` and `host`), however, will not.
+
+For example, if the `metric` key was not defined in the configuration loaded
+from file, but was defined in the defaults, Viper would return the zero value.
+
+On the other hand, if the primary key was not defined, Viper would go through the
+remaining registries looking for it.
+
+Lastly, if there exists a key that matches the delimited key path, its value will
+be returned instead. E.g. 
+
+```
+{
+    "datastore.metric.host": "0.0.0.0",
+    "host": {
+        "address": "localhost",
+        "port": 5799
+    },
+    "datastore": {
+        "metric": {
+            "host": "127.0.0.1",
+            "port": 3099
+        },
+        "warehouse": {
+            "host": "198.0.0.1",
+            "port": 2112
+        }
+    }
+}
+
+GetString("datastore.metric.host") //returns "0.0.0.0"
+```
+
 ### Marshaling
 
 You also have the option of Marshaling all or a specific value to a struct, map, etc.
