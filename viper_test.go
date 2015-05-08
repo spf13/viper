@@ -537,3 +537,17 @@ func TestFindsNestedKeys(t *testing.T) {
 	}
 
 }
+
+func TestReadBufConfig(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadBufConfig(bytes.NewBuffer(yamlExample))
+	t.Log(v.AllKeys())
+
+	assert.True(t, v.InConfig("name"))
+	assert.False(t, v.InConfig("state"))
+	assert.Equal(t, "steve", v.Get("name"))
+	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
+	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, v.Get("clothing"))
+	assert.Equal(t, 35, v.Get("age"))
+}
