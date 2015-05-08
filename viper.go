@@ -36,6 +36,8 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	crypt "github.com/xordataexchange/crypt/config"
+
+	// log "github.com/oliveagle/seelog"
 )
 
 var v *Viper
@@ -268,6 +270,8 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 			v.remoteProviders = append(v.remoteProviders, rp)
 		}
 	}
+
+	// log.Info("remoteProviders", v.remoteProviders)
 	return nil
 }
 
@@ -716,11 +720,27 @@ func (v *Viper) ReadInConfig() error {
 	return nil
 }
 
+func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
+func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
+	v.config = make(map[string]interface{})
+	v.marshalReader(buf, v.config)
+	return nil
+}
+
 // Attempts to get configuration from a remote source
 // and read it in the remote configuration registry.
 func ReadRemoteConfig() error { return v.ReadRemoteConfig() }
 func (v *Viper) ReadRemoteConfig() error {
 	err := v.getKeyValueConfig()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func WatchRemoteConfig() error { return v.WatchRemoteConfig() }
+func (v *Viper) WatchRemoteConfig() error {
+	err := v.watchKeyValueConfig()
 	if err != nil {
 		return err
 	}
@@ -784,6 +804,61 @@ func (v *Viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{
 		return nil, err
 	}
 	reader := bytes.NewReader(b)
+	v.marshalReader(reader, v.kvstore)
+	return v.kvstore, err
+}
+
+// retrieve the first found remote configuration
+func (v *Viper) watchKeyValueConfig() error {
+	// log.Info("ahahahah==========================================")
+	// log.Info("remoteProviders", v.remoteProviders)
+
+	for _, rp := range v.remoteProviders {
+		val, err := v.watchRemoteConfig(rp)
+		if err != nil {
+			continue
+		}
+		v.kvstore = val
+		return nil
+	}
+	return RemoteConfigError("No Files Found")
+}
+
+func (v *Viper) watchRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
+	// defer log.Flush()
+	// log.Info("ahahahah==========================================")
+	var cm crypt.ConfigManager
+	var err error
+
+	if provider.secretKeyring != "" {
+		kr, err := os.Open(provider.secretKeyring)
+		defer kr.Close()
+		if err != nil {
+			return nil, err
+		}
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
+		} else {
+			cm, err = crypt.NewConsulConfigManager([]string{provider.endpoint}, kr)
+		}
+	} else {
+		if provider.provider == "etcd" {
+			cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
+		} else {
+			cm, err = crypt.NewStandardConsulConfigManager([]string{provider.endpoint})
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	resp := <-cm.Watch(provider.path, nil)
+	// b, err := cm.Watch(provider.path, nil)
+	err = resp.Error
+	if err != nil {
+		return nil, err
+	}
+
+	reader := bytes.NewReader(resp.Value)
 	v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
