@@ -36,8 +36,6 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	crypt "github.com/xordataexchange/crypt/config"
-
-	// log "github.com/oliveagle/seelog"
 )
 
 var v *Viper
@@ -270,8 +268,6 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 			v.remoteProviders = append(v.remoteProviders, rp)
 		}
 	}
-
-	// log.Info("remoteProviders", v.remoteProviders)
 	return nil
 }
 
@@ -810,9 +806,6 @@ func (v *Viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{
 
 // retrieve the first found remote configuration
 func (v *Viper) watchKeyValueConfig() error {
-	// log.Info("ahahahah==========================================")
-	// log.Info("remoteProviders", v.remoteProviders)
-
 	for _, rp := range v.remoteProviders {
 		val, err := v.watchRemoteConfig(rp)
 		if err != nil {
@@ -825,8 +818,6 @@ func (v *Viper) watchKeyValueConfig() error {
 }
 
 func (v *Viper) watchRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
-	// defer log.Flush()
-	// log.Info("ahahahah==========================================")
 	var cm crypt.ConfigManager
 	var err error
 
