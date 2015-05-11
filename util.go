@@ -128,7 +128,7 @@ func marshallConfigReader(in io.Reader, c map[string]interface{}, configType str
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
-	switch configType {
+	switch strings.ToLower(configType) {
 	case "yaml", "yml":
 		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
 			jww.ERROR.Fatalf("Error parsing config: %s", err)
