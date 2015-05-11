@@ -14,8 +14,9 @@ configuration. It supports
 * setting defaults
 * reading from json, toml and yaml config files
 * reading from environment variables
-* reading from remote config systems (Etcd or Consul)
+* reading from remote config systems (Etcd or Consul), watching changes
 * reading from command line flags
+* reading from buffer
 * setting explicit values
 
 It can be thought of as a registry for all of your applications
@@ -80,6 +81,36 @@ currently a single viper only supports a single config file.
     if err != nil { // Handle errors reading the config file
         panic(fmt.Errorf("Fatal error config file: %s \n", err))
     }
+
+### Reading Config from bytes.Buffer
+
+Viper predefined many configuration sources, such as files, environment variables, flags and 
+remote K/V store. But you are not bound to them. You can also implement your own way to
+require configuration and feed it to viper.
+
+````go
+viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
+
+// any approach to require this configuration into your program. 
+var yamlExample = []byte(`
+Hacker: true
+name: steve
+hobbies:
+- skateboarding
+- snowboarding
+- go
+clothing:
+  jacket: leather
+  trousers: denim
+age: 35
+eyes : brown
+beard: true
+`)
+
+viper.ReadBufConfig(bytes.NewBuffer(yamlExample))
+
+viper.Get("name") // this would be "steve"
+````
 
 ### Setting Overrides
 
@@ -207,6 +238,38 @@ to use Consul.
 	viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
 	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
 	err := viper.ReadRemoteConfig()
+
+### Watching Changes in Etcd - Unencrypted
+
+    // alternatively, you can create a new viper instance.
+    var runtime_viper = viper.New()
+
+    runtime_viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001", "/config/hugo.yml")
+    runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes
+
+    // read from remote config the first time.
+    err := runtime_viper.ReadRemoteConfig()
+
+    // marshal config
+    runtime_viper.Marshal(&runtime_conf)
+
+    // open a goroutine to wath remote changes forever
+    go func(){
+        for {
+            time.Sleep(time.Second * 5) // delay after each request
+
+            // currenlty, only tested with etcd support
+            err := runtime_viper.WatchRemoteConfig()
+            if err != nil {
+                log.Errorf("unable to read remote config: %v", err)
+                continue
+            }
+
+            // marshal new config into our runtime config struct. you can also use channel 
+            // to implement a signal to notify the system of the changes
+            runtime_viper.Marshal(&runtime_conf)
+        }
+    }()
 
 
 ## Getting Values From Viper
