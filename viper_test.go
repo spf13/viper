@@ -541,7 +541,7 @@ func TestFindsNestedKeys(t *testing.T) {
 func TestReadBufConfig(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
-	v.ReadBufConfig(bytes.NewBuffer(yamlExample))
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
 	t.Log(v.AllKeys())
 
 	assert.True(t, v.InConfig("name"))
