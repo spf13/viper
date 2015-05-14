@@ -716,12 +716,19 @@ func (v *Viper) ReadInConfig() error {
 	return nil
 }
 
-func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
-func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
+func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
+func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
-	v.marshalReader(buf, v.config)
+	v.marshalReader(in, v.config)
 	return nil
 }
+
+// func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
+// func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
+// 	v.config = make(map[string]interface{})
+// 	v.marshalReader(buf, v.config)
+// 	return nil
+// }
 
 // Attempts to get configuration from a remote source
 // and read it in the remote configuration registry.
