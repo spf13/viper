@@ -82,7 +82,7 @@ currently a single viper only supports a single config file.
         panic(fmt.Errorf("Fatal error config file: %s \n", err))
     }
 
-### Reading Config from bytes.Buffer
+### Reading Config from io.Reader
 
 Viper predefined many configuration sources, such as files, environment variables, flags and 
 remote K/V store. But you are not bound to them. You can also implement your own way to
@@ -107,7 +107,7 @@ eyes : brown
 beard: true
 `)
 
-viper.ReadBufConfig(bytes.NewBuffer(yamlExample))
+viper.ReadConfig(bytes.NewBuffer(yamlExample))
 
 viper.Get("name") // this would be "steve"
 ````
