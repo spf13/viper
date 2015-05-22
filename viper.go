@@ -148,13 +148,6 @@ func New() *Viper {
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		jww.INFO.Println("Could not add cwd to search paths", err)
-	} else {
-		v.AddConfigPath(wd)
-	}
-
 	return v
 }
 
