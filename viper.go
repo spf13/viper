@@ -955,9 +955,20 @@ func (v *Viper) searchInPath(in string) (filename string) {
 	return ""
 }
 
-// search all configPaths for any config file.
-// Returns the first path that exists (and is a config file)
+// Choose where to look for a config file: either
+// in provided directories or in the working directory
 func (v *Viper) findConfigFile() (string, error) {
+	if len(v.configPaths) > 0 {
+		return v.findConfigInPaths()
+	} else {
+		return v.findConfigInWD()
+	}
+}
+
+// Search all configPaths for any config file.
+// Returns the first path that exists (and has a config file)
+func (v *Viper) findConfigInPaths() (string, error) {
+
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
 	for _, cp := range v.configPaths {
@@ -966,18 +977,20 @@ func (v *Viper) findConfigFile() (string, error) {
 			return file, nil
 		}
 	}
+	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+}
 
-	if len(v.configPaths) > 0 {
-		return "", fmt.Errorf("Config file not found in: %s", v.configPaths)
-	}
+// Search the current working directory for any config file.
+func (v *Viper) findConfigInCWD() (string, error) {
 
-	// try the current working directory
 	wd, _ := os.Getwd()
+	jww.INFO.Println("Searching for config in ", wd)
+
 	file := v.searchInPath(wd)
 	if file != "" {
 		return file, nil
 	}
-	return "", fmt.Errorf("config file not found in the current working directory %q", wd)
+	return "", fmt.Errorf("config file not found in current working directory", v.configPaths)
 }
 
 // Prints all configuration registries for debugging
