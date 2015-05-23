@@ -50,7 +50,7 @@ type UnsupportedConfigError string
 
 // Returns the formatted configuration error.
 func (str UnsupportedConfigError) Error() string {
-	return fmt.Sprintf("Unsupported Config Type %q", string(str))
+	return fmt.Sprintf("Unsupported Config Type %q or Config File Not Found", string(str))
 }
 
 // Denotes encountering an unsupported remote
@@ -967,13 +967,17 @@ func (v *Viper) findConfigFile() (string, error) {
 		}
 	}
 
+	if len(v.configPaths) > 0 {
+		return "", fmt.Errorf("Config file not found in: %s", v.configPaths)
+	}
+
 	// try the current working directory
 	wd, _ := os.Getwd()
 	file := v.searchInPath(wd)
 	if file != "" {
 		return file, nil
 	}
-	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+	return "", fmt.Errorf("config file not found in the current working directory %q", wd)
 }
 
 // Prints all configuration registries for debugging
