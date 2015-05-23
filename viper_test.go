@@ -147,7 +147,9 @@ func (s *stringValue) String() string {
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
-	assert.Equal(t, "/tmp/config.yaml", v.getConfigFile())
+	cf, err := v.getConfigFile()
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "/tmp/config.yaml", cf)
 }
 
 func TestDefault(t *testing.T) {
