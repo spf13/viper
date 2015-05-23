@@ -981,7 +981,7 @@ func (v *Viper) findConfigInPaths() (string, error) {
 }
 
 // Search the current working directory for any config file.
-func (v *Viper) findConfigInCWD() (string, error) {
+func (v *Viper) findConfigInWD() (string, error) {
 
 	wd, _ := os.Getwd()
 	jww.INFO.Println("Searching for config in ", wd)
