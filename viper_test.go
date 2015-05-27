@@ -611,6 +611,24 @@ func TestCWDSearch(t *testing.T) {
 	assert.Equal(t, `root`, v.GetString(`key`))
 }
 
+func TestCWDSearchNoConfig(t *testing.T) {
+
+	_, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	// Remove the config file in CWD
+	os.Remove(config + ".toml")
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	err := v.ReadInConfig()
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+
+	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
 func TestDirsSearch(t *testing.T) {
 
 	root, config, cleanup := initDirs(t)
