@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -632,7 +633,7 @@ func TestDirsSearch(t *testing.T) {
 	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
 }
 
-func TestWrongDirsSearchNotFoundOK(t *testing.T) {
+func TestWrongDirsSearchNotFoundHasCWDConfig(t *testing.T) {
 
 	_, config, cleanup := initDirs(t)
 	defer cleanup()
@@ -648,5 +649,27 @@ func TestWrongDirsSearchNotFoundOK(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Should not see the value "root" which comes from config in CWD
+	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
+func TestWrongDirsSearchNotFoundNoCWDConfig(t *testing.T) {
+
+	_, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	os.Remove(config + ".toml")
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	v.AddConfigPath(`whattayoutalkingbout`)
+	v.AddConfigPath(`thispathaintthere`)
+
+	err := v.ReadInConfig()
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
