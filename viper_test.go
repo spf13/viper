@@ -646,7 +646,7 @@ func TestWrongDirsSearchNotFoundHasCWDConfig(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.Nil(t, err)
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
 
 	// Should not see the value "root" which comes from config in CWD
 	assert.Equal(t, `default`, v.GetString(`key`))
@@ -657,6 +657,7 @@ func TestWrongDirsSearchNotFoundNoCWDConfig(t *testing.T) {
 	_, config, cleanup := initDirs(t)
 	defer cleanup()
 
+	// Remove the config file in CWD
 	os.Remove(config + ".toml")
 
 	v := New()
