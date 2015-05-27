@@ -313,6 +313,8 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 
 	if next, ok := source[path[0]]; ok {
 		switch next.(type) {
+		case map[interface{}]interface{}:
+			return v.searchMap(cast.ToStringMap(next), path[1:])
 		case map[string]interface{}:
 			// Type assertion is safe here since it is only reached
 			// if the type of `next` is the same as the type being asserted
