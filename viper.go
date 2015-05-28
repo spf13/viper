@@ -35,7 +35,6 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
-	crypt "github.com/xordataexchange/crypt/config"
 )
 
 var v *Viper
@@ -43,6 +42,14 @@ var v *Viper
 func init() {
 	v = New()
 }
+
+type remoteConfigFactory interface {
+	Get(rp RemoteProvider) (io.Reader, error)
+	Watch(rp RemoteProvider) (io.Reader, error)
+}
+
+// RemoteConfig is optional, see the remote package
+var RemoteConfig remoteConfigFactory
 
 // Denotes encountering an unsupported
 // configuration filetype.
@@ -115,7 +122,7 @@ type Viper struct {
 	configPaths []string
 
 	// A set of remote providers to search for the configuration
-	remoteProviders []*remoteProvider
+	remoteProviders []*defaultRemoteProvider
 
 	// Name of file to look for inside the path
 	configName string
@@ -160,15 +167,38 @@ func Reset() {
 	SupportedRemoteProviders = []string{"etcd", "consul"}
 }
 
-// remoteProvider stores the configuration necessary
-// to connect to a remote key/value store.
-// Optional secretKeyring to unencrypt encrypted values
-// can be provided.
-type remoteProvider struct {
+type defaultRemoteProvider struct {
 	provider      string
 	endpoint      string
 	path          string
 	secretKeyring string
+}
+
+func (rp defaultRemoteProvider) Provider() string {
+	return rp.provider
+}
+
+func (rp defaultRemoteProvider) Endpoint() string {
+	return rp.endpoint
+}
+
+func (rp defaultRemoteProvider) Path() string {
+	return rp.path
+}
+
+func (rp defaultRemoteProvider) SecretKeyring() string {
+	return rp.secretKeyring
+}
+
+// RemoteProvider stores the configuration necessary
+// to connect to a remote key/value store.
+// Optional secretKeyring to unencrypt encrypted values
+// can be provided.
+type RemoteProvider interface {
+	Provider() string
+	Endpoint() string
+	Path() string
+	SecretKeyring() string
 }
 
 // Universally supported extensions.
@@ -252,7 +282,7 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 	}
 	if provider != "" && endpoint != "" {
 		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
-		rp := &remoteProvider{
+		rp := &defaultRemoteProvider{
 			endpoint: endpoint,
 			provider: provider,
 			path:     path,
@@ -284,7 +314,7 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 	}
 	if provider != "" && endpoint != "" {
 		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
-		rp := &remoteProvider{
+		rp := &defaultRemoteProvider{
 			endpoint: endpoint,
 			provider: provider,
 			path:     path,
@@ -296,7 +326,7 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 	return nil
 }
 
-func (v *Viper) providerPathExists(p *remoteProvider) bool {
+func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 	for _, y := range v.remoteProviders {
 		if reflect.DeepEqual(y, p) {
 			return true
@@ -759,6 +789,10 @@ func (v *Viper) insensitiviseMaps() {
 
 // retrieve the first found remote configuration
 func (v *Viper) getKeyValueConfig() error {
+	if RemoteConfig == nil {
+		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/spf13/viper/remote'")
+	}
+
 	for _, rp := range v.remoteProviders {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
@@ -770,36 +804,12 @@ func (v *Viper) getKeyValueConfig() error {
 	return RemoteConfigError("No Files Found")
 }
 
-func (v *Viper) getRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
-	var cm crypt.ConfigManager
-	var err error
+func (v *Viper) getRemoteConfig(provider *defaultRemoteProvider) (map[string]interface{}, error) {
 
-	if provider.secretKeyring != "" {
-		kr, err := os.Open(provider.secretKeyring)
-		defer kr.Close()
-		if err != nil {
-			return nil, err
-		}
-		if provider.provider == "etcd" {
-			cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
-		} else {
-			cm, err = crypt.NewConsulConfigManager([]string{provider.endpoint}, kr)
-		}
-	} else {
-		if provider.provider == "etcd" {
-			cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
-		} else {
-			cm, err = crypt.NewStandardConsulConfigManager([]string{provider.endpoint})
-		}
-	}
+	reader, err := RemoteConfig.Get(provider)
 	if err != nil {
 		return nil, err
 	}
-	b, err := cm.Get(provider.path)
-	if err != nil {
-		return nil, err
-	}
-	reader := bytes.NewReader(b)
 	v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
@@ -817,39 +827,11 @@ func (v *Viper) watchKeyValueConfig() error {
 	return RemoteConfigError("No Files Found")
 }
 
-func (v *Viper) watchRemoteConfig(provider *remoteProvider) (map[string]interface{}, error) {
-	var cm crypt.ConfigManager
-	var err error
-
-	if provider.secretKeyring != "" {
-		kr, err := os.Open(provider.secretKeyring)
-		defer kr.Close()
-		if err != nil {
-			return nil, err
-		}
-		if provider.provider == "etcd" {
-			cm, err = crypt.NewEtcdConfigManager([]string{provider.endpoint}, kr)
-		} else {
-			cm, err = crypt.NewConsulConfigManager([]string{provider.endpoint}, kr)
-		}
-	} else {
-		if provider.provider == "etcd" {
-			cm, err = crypt.NewStandardEtcdConfigManager([]string{provider.endpoint})
-		} else {
-			cm, err = crypt.NewStandardConsulConfigManager([]string{provider.endpoint})
-		}
-	}
+func (v *Viper) watchRemoteConfig(provider *defaultRemoteProvider) (map[string]interface{}, error) {
+	reader, err := RemoteConfig.Watch(provider)
 	if err != nil {
 		return nil, err
 	}
-	resp := <-cm.Watch(provider.path, nil)
-	// b, err := cm.Watch(provider.path, nil)
-	err = resp.Error
-	if err != nil {
-		return nil, err
-	}
-
-	reader := bytes.NewReader(resp.Value)
 	v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }

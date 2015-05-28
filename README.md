@@ -201,6 +201,11 @@ Example:
 
 
 ### Remote Key/Value Store Support
+
+To enable remote support in Viper, do a blank import of the `viper/remote` package:
+
+`import _ github.com/spf13/viper/remote`
+
 Viper will read a config string (as JSON, TOML, or YAML) retrieved from a
 path in a Key/Value store such as Etcd or Consul.  These values take precedence
 over default values, but are overriden by configuration values retrieved from disk,
