@@ -126,24 +126,24 @@ func marshallConfigReader(in io.Reader, c map[string]interface{}, configType str
 	switch strings.ToLower(configType) {
 	case "yaml", "yml":
 		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			jww.ERROR.Panicf("Error parsing config: %s", err)
 		}
 
 	case "json":
 		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			jww.ERROR.Panicf("Error parsing config: %s", err)
 		}
 
 	case "toml":
 		if _, err := toml.Decode(buf.String(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			jww.ERROR.Panicf("Error parsing config: %s", err)
 		}
 
 	case "properties", "props", "prop":
 		var p *properties.Properties
 		var err error
 		if p, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			jww.ERROR.Panicf("Error parsing config: %s", err)
 		}
 		for _, key := range p.Keys() {
 			value, _ := p.Get(key)
