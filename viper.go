@@ -529,11 +529,11 @@ func (v *Viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
 
 	switch flag.Value.Type() {
 	case "int", "int8", "int16", "int32", "int64":
-		SetDefault(key, cast.ToInt(flag.Value.String()))
+		v.SetDefault(key, cast.ToInt(flag.Value.String()))
 	case "bool":
-		SetDefault(key, cast.ToBool(flag.Value.String()))
+		v.SetDefault(key, cast.ToBool(flag.Value.String()))
 	default:
-		SetDefault(key, flag.Value.String())
+		v.SetDefault(key, flag.Value.String())
 	}
 	return nil
 }
