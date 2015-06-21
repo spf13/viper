@@ -315,9 +315,10 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 	if provider != "" && endpoint != "" {
 		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
 		rp := &defaultRemoteProvider{
-			endpoint: endpoint,
-			provider: provider,
-			path:     path,
+			endpoint:      endpoint,
+			provider:      provider,
+			path:          path,
+			secretKeyring: secretkeyring,
 		}
 		if !v.providerPathExists(rp) {
 			v.remoteProviders = append(v.remoteProviders, rp)
