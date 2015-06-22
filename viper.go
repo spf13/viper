@@ -79,6 +79,16 @@ func (rce RemoteConfigError) Error() string {
 	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
 
+// Denotes failing to find configuration file.
+type ConfigFileNotFoundError struct {
+	name, locations string
+}
+
+// Returns the formatted configuration error.
+func (fnfe ConfigFileNotFoundError) Error() string {
+	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -522,11 +532,11 @@ func (v *Viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
 
 	switch flag.Value.Type() {
 	case "int", "int8", "int16", "int32", "int64":
-		SetDefault(key, cast.ToInt(flag.Value.String()))
+		v.SetDefault(key, cast.ToInt(flag.Value.String()))
 	case "bool":
-		SetDefault(key, cast.ToBool(flag.Value.String()))
+		v.SetDefault(key, cast.ToBool(flag.Value.String()))
 	default:
-		SetDefault(key, flag.Value.String())
+		v.SetDefault(key, flag.Value.String())
 	}
 	return nil
 }
@@ -738,22 +748,19 @@ func (v *Viper) ReadInConfig() error {
 
 	v.config = make(map[string]interface{})
 
-	v.marshalReader(bytes.NewReader(file), v.config)
-	return nil
+	return v.marshalReader(bytes.NewReader(file), v.config)
 }
 
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
-	v.marshalReader(in, v.config)
-	return nil
+	return v.marshalReader(in, v.config)
 }
 
 // func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
 // func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
 // 	v.config = make(map[string]interface{})
-// 	v.marshalReader(buf, v.config)
-// 	return nil
+// 	return v.marshalReader(buf, v.config)
 // }
 
 // Attempts to get configuration from a remote source
@@ -778,9 +785,12 @@ func (v *Viper) WatchRemoteConfig() error {
 
 // Marshall a Reader into a map
 // Should probably be an unexported function
-func marshalReader(in io.Reader, c map[string]interface{}) { v.marshalReader(in, c) }
-func (v *Viper) marshalReader(in io.Reader, c map[string]interface{}) {
-	marshallConfigReader(in, c, v.getConfigType())
+func marshalReader(in io.Reader, c map[string]interface{}) error {
+	return v.marshalReader(in, c)
+}
+
+func (v *Viper) marshalReader(in io.Reader, c map[string]interface{}) error {
+	return marshallConfigReader(in, c, v.getConfigType())
 }
 
 func (v *Viper) insensitiviseMaps() {
@@ -813,7 +823,7 @@ func (v *Viper) getRemoteConfig(provider *defaultRemoteProvider) (map[string]int
 	if err != nil {
 		return nil, err
 	}
-	v.marshalReader(reader, v.kvstore)
+	err = v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
 
@@ -835,7 +845,7 @@ func (v *Viper) watchRemoteConfig(provider *defaultRemoteProvider) (map[string]i
 	if err != nil {
 		return nil, err
 	}
-	v.marshalReader(reader, v.kvstore)
+	err = v.marshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
 
@@ -940,9 +950,22 @@ func (v *Viper) searchInPath(in string) (filename string) {
 	return ""
 }
 
-// search all configPaths for any config file.
-// Returns the first path that exists (and is a config file)
+// Choose where to look for a config file: either
+// in provided directories or in the working directory
 func (v *Viper) findConfigFile() (string, error) {
+
+	if len(v.configPaths) > 0 {
+		return v.findConfigInPaths()
+	} else {
+		return v.findConfigInCWD()
+	}
+
+}
+
+// Search all configPaths for any config file.
+// Returns the first path that exists (and has a config file)
+func (v *Viper) findConfigInPaths() (string, error) {
+
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
 	for _, cp := range v.configPaths {
@@ -951,14 +974,20 @@ func (v *Viper) findConfigFile() (string, error) {
 			return file, nil
 		}
 	}
+	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+}
 
-	// try the current working directory
+// Search the current working directory for any config file.
+func (v *Viper) findConfigInCWD() (string, error) {
+
 	wd, _ := os.Getwd()
+	jww.INFO.Println("Searching for config in ", wd)
+
 	file := v.searchInPath(wd)
 	if file != "" {
 		return file, nil
 	}
-	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+	return "", ConfigFileNotFoundError{v.configName, wd}
 }
 
 // Prints all configuration registries for debugging
