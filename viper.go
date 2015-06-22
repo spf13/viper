@@ -315,9 +315,10 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 	if provider != "" && endpoint != "" {
 		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
 		rp := &defaultRemoteProvider{
-			endpoint: endpoint,
-			provider: provider,
-			path:     path,
+			endpoint:      endpoint,
+			provider:      provider,
+			path:          path,
+			secretKeyring: secretkeyring,
 		}
 		if !v.providerPathExists(rp) {
 			v.remoteProviders = append(v.remoteProviders, rp)
@@ -343,6 +344,8 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 
 	if next, ok := source[path[0]]; ok {
 		switch next.(type) {
+		case map[interface{}]interface{}:
+			return v.searchMap(cast.ToStringMap(next), path[1:])
 		case map[string]interface{}:
 			// Type assertion is safe here since it is only reached
 			// if the type of `next` is the same as the type being asserted
