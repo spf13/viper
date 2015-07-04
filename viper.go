@@ -676,6 +676,14 @@ func (v *Viper) registerAlias(alias string, key string) {
 				delete(v.override, alias)
 				v.override[key] = val
 			}
+			if strings.Contains(alias, v.keyDelim) {
+				path := strings.Split(alias, v.keyDelim)
+				source := v.find(path[0])
+				if source != nil && reflect.TypeOf(source).Kind() == reflect.Map {
+					val := v.searchMap(cast.ToStringMap(source), path[1:])
+					v.config[key] = val
+				}
+			}
 			v.aliases[alias] = key
 		}
 	} else {

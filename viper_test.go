@@ -197,6 +197,15 @@ func TestAliasInConfigFile(t *testing.T) {
 	assert.Equal(t, false, Get("beard"))
 }
 
+func TestAliasNestedInConfigFile(t *testing.T) {
+	// the config file specifies "clothing.jacket".  If we make this an alias for
+	// "clothing-jacket", we still want the old config file to work with "clothing.jacket".
+	RegisterAlias("clothing.jacket", "clothing-jacket")
+	assert.Equal(t, "leather", Get("clothing-jacket"))
+	Set("clothing-jacket", "nylon")
+	assert.Equal(t, "nylon", Get("clothing.jacket"))
+}
+
 func TestYML(t *testing.T) {
 	initYAML()
 	assert.Equal(t, "steve", Get("name"))
