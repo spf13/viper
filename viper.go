@@ -681,7 +681,9 @@ func (v *Viper) registerAlias(alias string, key string) {
 				source := v.find(path[0])
 				if source != nil && reflect.TypeOf(source).Kind() == reflect.Map {
 					val := v.searchMap(cast.ToStringMap(source), path[1:])
-					v.config[key] = val
+					if val != nil {
+						v.config[key] = val
+					}
 				}
 			}
 			v.aliases[alias] = key
