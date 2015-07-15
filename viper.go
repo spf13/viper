@@ -749,6 +749,42 @@ func (v *Viper) ReadConfig(in io.Reader) error {
 	return nil
 }
 
+// Loads configuration from a directory tree where filenames are keys
+// and file contents are values.
+func ReadDir(dirname string) error { return v.ReadDir(dirname) }
+func (v *Viper) ReadDir(dirname string) error {
+	config, err := v.readDir(dirname, "")
+	if err == nil {
+		v.config = config
+	}
+	return err
+}
+
+func (v *Viper) readDir(dirname, keyPrefix string) (map[string]interface{}, error) {
+	entries, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		return nil, err
+	}
+
+	node := make(map[string]interface{})
+	for _, entry := range entries {
+		path := filepath.Join(dirname, entry.Name())
+		if entry.IsDir() {
+			node[entry.Name()], err = v.readDir(path, keyPrefix+v.keyDelim+entry.Name())
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			value, err := ioutil.ReadFile(path)
+			if err != nil {
+				return nil, err
+			}
+			node[entry.Name()] = strings.TrimRight(string(value), "\r\n")
+		}
+	}
+	return node, nil
+}
+
 // func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
 // func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
 // 	v.config = make(map[string]interface{})
