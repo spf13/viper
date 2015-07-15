@@ -751,13 +751,18 @@ func (v *Viper) ReadConfig(in io.Reader) error {
 
 // Loads configuration from a directory tree where filenames are keys
 // and file contents are values.
-func ReadDir(dirname string) error { return v.ReadDir(dirname) }
-func (v *Viper) ReadDir(dirname string) error {
-	config, err := v.readDir(dirname, "")
-	if err == nil {
-		v.config = config
+func ReadInConfigDir() error { return v.ReadInConfigDir() }
+func (v *Viper) ReadInConfigDir() error {
+	for _, cp := range v.configPaths {
+		if _, err := os.Stat(cp); err == nil {
+			config, err := v.readDir(cp, "")
+			if err == nil {
+				v.config = config
+			}
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func (v *Viper) readDir(dirname, keyPrefix string) (map[string]interface{}, error) {
