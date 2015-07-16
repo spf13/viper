@@ -63,9 +63,11 @@ remote configuration or flag.
 
 Examples:
 
-	viper.SetDefault("ContentDir", "content")
-	viper.SetDefault("LayoutDir", "layouts")
-	viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
+```go
+viper.SetDefault("ContentDir", "content")
+viper.SetDefault("LayoutDir", "layouts")
+viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
+```
 
 ### Reading Config Files
 
@@ -74,13 +76,15 @@ configuration so it knows where to look for the config file. Viper
 supports json, toml and yaml files. Viper can search multiple paths, but
 currently a single viper only supports a single config file.
 
-	viper.SetConfigName("config") // name of config file (without extension)
-	viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
-	viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
-	err := viper.ReadInConfig() // Find and read the config file
-    if err != nil { // Handle errors reading the config file
-        panic(fmt.Errorf("Fatal error config file: %s \n", err))
-    }
+```go
+viper.SetConfigName("config") // name of config file (without extension)
+viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
+viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
+err := viper.ReadInConfig() // Find and read the config file
+if err != nil { // Handle errors reading the config file
+	panic(fmt.Errorf("Fatal error config file: %s \n", err))
+}
+```
 
 ### Reading Config from io.Reader
 
@@ -88,7 +92,7 @@ Viper predefined many configuration sources, such as files, environment variable
 remote K/V store. But you are not bound to them. You can also implement your own way to
 require configuration and feed it to viper.
 
-````go
+```go
 viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
 // any approach to require this configuration into your program. 
@@ -110,26 +114,30 @@ beard: true
 viper.ReadConfig(bytes.NewBuffer(yamlExample))
 
 viper.Get("name") // this would be "steve"
-````
+```
 
 ### Setting Overrides
 
 These could be from a command line flag, or from your own application logic.
 
-    viper.Set("Verbose", true)
-    viper.Set("LogFile", LogFile)
+```go
+viper.Set("Verbose", true)
+viper.Set("LogFile", LogFile)
+```
 
 ### Registering and Using Aliases
 
 Aliases permit a single value to be referenced by multiple keys
 
-    viper.RegisterAlias("loud", "Verbose")
+```go
+viper.RegisterAlias("loud", "Verbose")
 
-    viper.Set("verbose", true) // same result as next line
-    viper.Set("loud", true)   // same result as prior line
+viper.Set("verbose", true) // same result as next line
+viper.Set("loud", true)   // same result as prior line
 
-    viper.GetBool("loud") // true
-    viper.GetBool("verbose") // true
+viper.GetBool("loud") // true
+viper.GetBool("verbose") // true
+```
 
 ### Working with Environment Variables
 
@@ -175,13 +183,14 @@ of using it can be found in `viper_test.go`.
 
 #### Env example
 
-	SetEnvPrefix("spf") // will be uppercased automatically
-	BindEnv("id")
+```go
+SetEnvPrefix("spf") // will be uppercased automatically
+BindEnv("id")
 
-	os.Setenv("SPF_ID", "13") // typically done outside of the app
+os.Setenv("SPF_ID", "13") // typically done outside of the app
 
-	id := Get("id") // 13
-
+id := Get("id") // 13
+```
 
 ### Working with Flags
 
@@ -196,9 +205,10 @@ The BindPFlag() method provides this functionality.
 
 Example:
 
-    serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
-    viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
-
+```go
+serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
+```
 
 ### Remote Key/Value Store Support
 
@@ -222,60 +232,69 @@ independently of it.
 `crypt` has a command-line helper that you can use to put configurations
 in your K/V store. `crypt` defaults to etcd on http://127.0.0.1:4001.
 
-	go get github.com/xordataexchange/crypt/bin/crypt
-	crypt set -plaintext /config/hugo.json /Users/hugo/settings/config.json
+```bash
+$ go get github.com/xordataexchange/crypt/bin/crypt
+$ crypt set -plaintext /config/hugo.json /Users/hugo/settings/config.json
+```
 
 Confirm that your value was set:
 
-	crypt get -plaintext /config/hugo.json
+```bash
+$ crypt get -plaintext /config/hugo.json
+```
 
 See the `crypt` documentation for examples of how to set encrypted values, or how
 to use Consul.
 
 ### Remote Key/Value Store Example - Unencrypted
 
-	viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
-	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
-	err := viper.ReadRemoteConfig()
+```go
+viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+err := viper.ReadRemoteConfig()
+```
 
 ### Remote Key/Value Store Example - Encrypted
 
-	viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
-	viper.SetConfigType("json") // because there is no file extension in a stream of bytes
-	err := viper.ReadRemoteConfig()
+```go
+viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+err := viper.ReadRemoteConfig()
+```
 
 ### Watching Changes in Etcd - Unencrypted
 
-    // alternatively, you can create a new viper instance.
-    var runtime_viper = viper.New()
+```go
+// alternatively, you can create a new viper instance.
+var runtime_viper = viper.New()
 
-    runtime_viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001", "/config/hugo.yml")
-    runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes
+runtime_viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001", "/config/hugo.yml")
+runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes
 
-    // read from remote config the first time.
-    err := runtime_viper.ReadRemoteConfig()
+// read from remote config the first time.
+err := runtime_viper.ReadRemoteConfig()
 
-    // marshal config
-    runtime_viper.Marshal(&runtime_conf)
+// marshal config
+runtime_viper.Marshal(&runtime_conf)
 
-    // open a goroutine to wath remote changes forever
-    go func(){
-        for {
-            time.Sleep(time.Second * 5) // delay after each request
-
-            // currenlty, only tested with etcd support
-            err := runtime_viper.WatchRemoteConfig()
-            if err != nil {
-                log.Errorf("unable to read remote config: %v", err)
-                continue
-            }
-
-            // marshal new config into our runtime config struct. you can also use channel 
-            // to implement a signal to notify the system of the changes
-            runtime_viper.Marshal(&runtime_conf)
-        }
-    }()
-
+// open a goroutine to wath remote changes forever
+go func(){
+	for {
+	    time.Sleep(time.Second * 5) // delay after each request
+	
+	    // currenlty, only tested with etcd support
+	    err := runtime_viper.WatchRemoteConfig()
+	    if err != nil {
+	        log.Errorf("unable to read remote config: %v", err)
+	        continue
+	    }
+	
+	    // marshal new config into our runtime config struct. you can also use channel 
+	    // to implement a signal to notify the system of the changes
+	    runtime_viper.Marshal(&runtime_conf)
+	}
+}()
+```
 
 ## Getting Values From Viper
 
@@ -299,18 +318,18 @@ its zero value if it’s not found. To check if a given key exists, the IsSet()
 method has been provided.
 
 Example:
-
-    viper.GetString("logfile") // case-insensitive Setting & Getting
-    if viper.GetBool("verbose") {
-        fmt.Println("verbose enabled")
-    }
-
+```go
+viper.GetString("logfile") // case-insensitive Setting & Getting
+if viper.GetBool("verbose") {
+    fmt.Println("verbose enabled")
+}
+```
 ### Accessing nested keys
 
 The accessor methods also accept formatted paths to deeply nested keys. 
 For example, if the following JSON file is loaded:
 
-```
+```json
 {
     "host": {
         "address": "localhost",
@@ -331,7 +350,8 @@ For example, if the following JSON file is loaded:
 ```
 
 Viper can access a nested field by passing a `.` delimited path of keys:
-```
+
+```go
 GetString("datastore.metric.host") // (returns "127.0.0.1")
 ```
 
@@ -348,7 +368,7 @@ remaining registries looking for it.
 Lastly, if there exists a key that matches the delimited key path, its value will
 be returned instead. E.g. 
 
-```
+```json
 {
     "datastore.metric.host": "0.0.0.0",
     "host": {
@@ -381,18 +401,19 @@ There are two methods to do this:
 
 Example:
 
-	type config struct {
-		Port int
-		Name string
-	}
+```go
+type config struct {
+	Port int
+	Name string
+}
 
-	var C config
+var C config
 
-	err := Marshal(&C)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
-
+err := Marshal(&C)
+if err != nil {
+	t.Fatalf("unable to decode into struct, %v", err)
+}
+```
 
 ## Viper or Vipers?
 
@@ -413,13 +434,15 @@ functions that viper package supports are mirrored as methods on a viper.
 
 Example:
 
-    x := viper.New()
-    y := viper.New()
+```go
+x := viper.New()
+y := viper.New()
 
-	x.SetDefault("ContentDir", "content")
-	y.SetDefault("ContentDir", "foobar")
+x.SetDefault("ContentDir", "content")
+y.SetDefault("ContentDir", "foobar")
 
-    ...
+//...
+```
 
 When working with multiple vipers, it is up to the user to keep track of
 the different vipers.
