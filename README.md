@@ -72,7 +72,7 @@ Examples:
 If you want to support a config file, Viper requires a minimal
 configuration so it knows where to look for the config file. Viper
 supports json, toml and yaml files. Viper can search multiple paths, but
-currently a single viper only supports a single config file.
+currently a single viper only supports a single config file, unless cascading is enabled.
 
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
@@ -84,14 +84,14 @@ currently a single viper only supports a single config file.
 
 ### Reading Config from io.Reader
 
-Viper predefined many configuration sources, such as files, environment variables, flags and 
+Viper predefined many configuration sources, such as files, environment variables, flags and
 remote K/V store. But you are not bound to them. You can also implement your own way to
 require configuration and feed it to viper.
 
 ````go
 viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
-// any approach to require this configuration into your program. 
+// any approach to require this configuration into your program.
 var yamlExample = []byte(`
 Hacker: true
 name: steve
@@ -111,6 +111,22 @@ viper.ReadConfig(bytes.NewBuffer(yamlExample))
 
 viper.Get("name") // this would be "steve"
 ````
+
+#### Enabling Cascading
+
+By default Viper stops reading configuration once it encounters the first available configuration file.
+That means each configuration file must contain all configuration values you need.
+By enabling cascading you can create sparse configuration files. Configuration will cascade down in
+the order that files are added  by AddConfigPath. For more see viper_test's cascading tests.
+
+Consider:
+
+ * \etc\myapp\myapp.json
+ * ($GOPATH)\src\myapp\myapp.json
+
+You can check in a default myapp.json for development and only override certain kvps in production
+
+	viper.EnableCascading(true)
 
 ### Setting Overrides
 
@@ -270,7 +286,7 @@ to use Consul.
                 continue
             }
 
-            // marshal new config into our runtime config struct. you can also use channel 
+            // marshal new config into our runtime config struct. you can also use channel
             // to implement a signal to notify the system of the changes
             runtime_viper.Marshal(&runtime_conf)
         }
@@ -307,7 +323,7 @@ Example:
 
 ### Accessing nested keys
 
-The accessor methods also accept formatted paths to deeply nested keys. 
+The accessor methods also accept formatted paths to deeply nested keys.
 For example, if the following JSON file is loaded:
 
 ```
@@ -346,7 +362,7 @@ On the other hand, if the primary key was not defined, Viper would go through th
 remaining registries looking for it.
 
 Lastly, if there exists a key that matches the delimited key path, its value will
-be returned instead. E.g. 
+be returned instead. E.g.
 
 ```
 {

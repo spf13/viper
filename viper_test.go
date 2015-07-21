@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -586,4 +588,107 @@ func TestReadDir(t *testing.T) {
 	assert.True(t, v.GetBool("app.debug"))
 	assert.Equal(t, "https://donuts/api/1/", v.Get("app.service.url"))
 	assert.Equal(t, "0123456789abcdef", v.Get("app.service.key"))
+}
+
+func TestCanCascadeConfigurationValues(t *testing.T) {
+
+	v2 := New()
+
+	generateCascadingTests(v2, "cascading")
+
+	v2.ReadInConfig()
+	v2.EnableCascading(true)
+
+	assert.Equal(t, "high", v2.GetString("0"), "Key 0 should be high")
+	assert.Equal(t, "med", v2.GetString("1"), "Key 1 should be med")
+	assert.Equal(t, "low", v2.GetString("2"), "key 2 should be low")
+
+	v2.EnableCascading(false)
+
+	assert.Nil(t, v2.Get("1"), "With enable cascading disabled, no value for 1 should exist")
+	assert.Nil(t, v2.Get("2"), "With enable cascading disabled, no value for 2 should exist")
+}
+
+func TestFindAllConfigPaths(t *testing.T) {
+
+	v2 := New()
+
+	file := "viper_test"
+
+	var expected = generateCascadingTests(v2, file)
+
+	found := v2.findAllConfigFiles()
+
+	for _, fp := range expected {
+		command := exec.Command("rm", fp)
+		command.Run()
+	}
+
+	assert.Equal(t, expected, removeDuplicates(found), "All files should exist")
+}
+
+func generateCascadingTests(v2 *Viper, file_name string) []string {
+
+	v2.SetConfigName(file_name)
+
+	tmp := os.Getenv("TMPDIR")
+	if tmp == "" {
+		tmp, _ = filepath.Abs(filepath.Dir("./"))
+	}
+	// $TMPDIR/a > $TMPDIR/b > %TMPDIR
+	paths := []string{path.Join(tmp, "a"), path.Join(tmp, "b"), tmp}
+
+	v2.SetConfigName(file_name)
+
+	var expected []string
+
+	for idx, fp := range paths {
+		v2.AddConfigPath(fp)
+
+		exec.Command("mkdir", "-m", "777", fp).Run()
+
+		full_path := path.Join(fp, file_name+".json")
+
+		var val string
+		switch idx {
+		case 0:
+			val = "high"
+			break
+		case 1:
+			val = "med"
+			break
+		case 2:
+			val = "low"
+		}
+
+		config := "{"
+		for i := 0; i <= idx; i++ {
+			config += fmt.Sprintf("\"%d\": \"%s\"", i, val)
+			if i == idx {
+				config += "\n"
+			} else {
+				config += ",\n"
+			}
+		}
+
+		config += "}"
+
+		ioutil.WriteFile(full_path, []byte(config), 0777)
+
+		expected = append(expected, full_path)
+	}
+
+	return expected
+}
+
+func removeDuplicates(a []string) []string {
+	result := []string{}
+	seen := map[string]string{}
+	for _, val := range a {
+		if _, ok := seen[val]; !ok {
+			result = append(result, val)
+			seen[val] = val
+		}
+	}
+	return result
 }
