@@ -456,7 +456,7 @@ func (v *Viper) GetStringMapString(key string) map[string]string {
 }
 
 // Returns the value associated with the key as a map to a slice of strings
-func GetStringMapStringSlice(key string) map[string]string { return v.GetStringMapStringSlice(key) }
+func GetStringMapStringSlice(key string) map[string][]string { return v.GetStringMapStringSlice(key) }
 func (v *Viper) GetStringMapStringSlice(key string) map[string]string {
 	return cast.ToStringMapStringSlice(v.Get(key))
 }
