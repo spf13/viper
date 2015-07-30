@@ -30,9 +30,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackspirou/cast"
 	"github.com/kr/pretty"
 	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 )
