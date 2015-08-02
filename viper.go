@@ -79,6 +79,16 @@ func (rce RemoteConfigError) Error() string {
 	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
 
+// Denotes failing to find configuration file.
+type ConfigFileNotFoundError struct {
+	name, locations string
+}
+
+// Returns the formatted configuration error.
+func (fnfe ConfigFileNotFoundError) Error() string {
+	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -943,6 +953,7 @@ func (v *Viper) searchInPath(in string) (filename string) {
 // search all configPaths for any config file.
 // Returns the first path that exists (and is a config file)
 func (v *Viper) findConfigFile() (string, error) {
+
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
 	for _, cp := range v.configPaths {
@@ -951,14 +962,7 @@ func (v *Viper) findConfigFile() (string, error) {
 			return file, nil
 		}
 	}
-
-	// try the current working directory
-	wd, _ := os.Getwd()
-	file := v.searchInPath(wd)
-	if file != "" {
-		return file, nil
-	}
-	return "", fmt.Errorf("config file not found in: %s", v.configPaths)
+	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 }
 
 // Prints all configuration registries for debugging

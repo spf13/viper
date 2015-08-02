@@ -8,7 +8,10 @@ package viper
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -124,6 +127,47 @@ func initTOML() {
 	r := bytes.NewReader(tomlExample)
 
 	marshalReader(r, v.config)
+}
+
+// make directories for testing
+func initDirs(t *testing.T) (string, string, func()) {
+
+	var (
+		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+		config   = `improbable`
+	)
+
+	root, err := ioutil.TempDir("", "")
+
+	cleanup := true
+	defer func() {
+		if cleanup {
+			os.Chdir("..")
+			os.RemoveAll(root)
+		}
+	}()
+
+	assert.Nil(t, err)
+
+	err = os.Chdir(root)
+	assert.Nil(t, err)
+
+	for _, dir := range testDirs {
+		err = os.Mkdir(dir, 0750)
+		assert.Nil(t, err)
+
+		err = ioutil.WriteFile(
+			path.Join(dir, config+".toml"),
+			[]byte("key = \"value is "+dir+"\"\n"),
+			0640)
+		assert.Nil(t, err)
+	}
+
+	cleanup = false
+	return root, config, func() {
+		os.Chdir("..")
+		os.RemoveAll(root)
+	}
 }
 
 //stubs for PFlag Values
@@ -556,4 +600,46 @@ func TestReadBufConfig(t *testing.T) {
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
 	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
 	assert.Equal(t, 35, v.Get("age"))
+}
+
+func TestDirsSearch(t *testing.T) {
+
+	root, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	entries, err := ioutil.ReadDir(root)
+	for _, e := range entries {
+		if e.IsDir() {
+			v.AddConfigPath(e.Name())
+		}
+	}
+
+	err = v.ReadInConfig()
+	assert.Nil(t, err)
+
+	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+}
+
+func TestWrongDirsSearchNotFound(t *testing.T) {
+
+	_, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	v.AddConfigPath(`whattayoutalkingbout`)
+	v.AddConfigPath(`thispathaintthere`)
+
+	err := v.ReadInConfig()
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
+	assert.Equal(t, `default`, v.GetString(`key`))
 }
