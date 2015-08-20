@@ -8,8 +8,12 @@ package viper
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
+	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +30,8 @@ hobbies:
 clothing:
   jacket: leather
   trousers: denim
+  pants:
+    size: large
 age: 35
 eyes : brown
 beard: true
@@ -54,12 +60,13 @@ var jsonExample = []byte(`{
     }
 }`)
 
-// Intended for testing, will reset all to default settings.
-func Reset() {
-	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml"}
-	SupportedRemoteProviders = []string{"etcd", "consul"}
-}
+var propertiesExample = []byte(`
+p_id: 0001
+p_type: donut
+p_name: Cake
+p_ppu: 0.55
+p_batters.batter.type: Regular
+`)
 
 var remoteExample = []byte(`{
 "id":"0002",
@@ -75,6 +82,10 @@ func initConfigs() {
 
 	SetConfigType("json")
 	r = bytes.NewReader(jsonExample)
+	marshalReader(r, v.config)
+
+	SetConfigType("properties")
+	r = bytes.NewReader(propertiesExample)
 	marshalReader(r, v.config)
 
 	SetConfigType("toml")
@@ -102,12 +113,61 @@ func initJSON() {
 	marshalReader(r, v.config)
 }
 
+func initProperties() {
+	Reset()
+	SetConfigType("properties")
+	r := bytes.NewReader(propertiesExample)
+
+	marshalReader(r, v.config)
+}
+
 func initTOML() {
 	Reset()
 	SetConfigType("toml")
 	r := bytes.NewReader(tomlExample)
 
 	marshalReader(r, v.config)
+}
+
+// make directories for testing
+func initDirs(t *testing.T) (string, string, func()) {
+
+	var (
+		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+		config   = `improbable`
+	)
+
+	root, err := ioutil.TempDir("", "")
+
+	cleanup := true
+	defer func() {
+		if cleanup {
+			os.Chdir("..")
+			os.RemoveAll(root)
+		}
+	}()
+
+	assert.Nil(t, err)
+
+	err = os.Chdir(root)
+	assert.Nil(t, err)
+
+	for _, dir := range testDirs {
+		err = os.Mkdir(dir, 0750)
+		assert.Nil(t, err)
+
+		err = ioutil.WriteFile(
+			path.Join(dir, config+".toml"),
+			[]byte("key = \"value is "+dir+"\"\n"),
+			0640)
+		assert.Nil(t, err)
+	}
+
+	cleanup = false
+	return root, config, func() {
+		os.Chdir("..")
+		os.RemoveAll(root)
+	}
 }
 
 //stubs for PFlag Values
@@ -150,7 +210,7 @@ func TestMarshalling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim"}, Get("clothing"))
+	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 
@@ -191,6 +251,11 @@ func TestJSON(t *testing.T) {
 	assert.Equal(t, "0001", Get("id"))
 }
 
+func TestProperties(t *testing.T) {
+	initProperties()
+	assert.Equal(t, "0001", Get("p_id"))
+}
+
 func TestTOML(t *testing.T) {
 	initTOML()
 	assert.Equal(t, "TOML Example", Get("title"))
@@ -228,6 +293,7 @@ func TestEnv(t *testing.T) {
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
+
 }
 
 func TestEnvPrefix(t *testing.T) {
@@ -250,12 +316,41 @@ func TestEnvPrefix(t *testing.T) {
 	assert.Equal(t, "crunk", Get("name"))
 }
 
+func TestAutoEnv(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	os.Setenv("FOO_BAR", "13")
+	assert.Equal(t, "13", Get("foo_bar"))
+}
+
+func TestAutoEnvWithPrefix(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	SetEnvPrefix("Baz")
+	os.Setenv("BAZ_BAR", "13")
+	assert.Equal(t, "13", Get("bar"))
+}
+
+func TestSetEnvReplacer(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	os.Setenv("REFRESH_INTERVAL", "30s")
+
+	replacer := strings.NewReplacer("-", "_")
+	SetEnvKeyReplacer(replacer)
+
+	assert.Equal(t, "30s", Get("refresh-interval"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes"}
+	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather"}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake"}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[interface{}]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters.batter.type": "Regular", "p_type": "donut"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -309,6 +404,41 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
 }
 
+func TestBindPFlags(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	var testValues = map[string]*string{
+		"host":     nil,
+		"port":     nil,
+		"endpoint": nil,
+	}
+
+	var mutatedTestValues = map[string]string{
+		"host":     "localhost",
+		"port":     "6060",
+		"endpoint": "/public",
+	}
+
+	for name, _ := range testValues {
+		testValues[name] = flagSet.String(name, "", "test")
+	}
+
+	err := BindPFlags(flagSet)
+	if err != nil {
+		t.Fatalf("error binding flag set, %v", err)
+	}
+
+	flagSet.VisitAll(func(flag *pflag.Flag) {
+		flag.Value.Set(mutatedTestValues[flag.Name])
+		flag.Changed = true
+	})
+
+	for name, expected := range mutatedTestValues {
+		assert.Equal(t, Get(name), expected)
+	}
+
+}
+
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
 	var testValue = newStringValue(testString, &testString)
@@ -351,4 +481,165 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	BindPFlag("eYEs", flag)
 	assert.Equal(t, "green", Get("eyes"))
 
+}
+
+func TestSizeInBytes(t *testing.T) {
+	input := map[string]uint{
+		"":               0,
+		"b":              0,
+		"12 bytes":       0,
+		"200000000000gb": 0,
+		"12 b":           12,
+		"43 MB":          43 * (1 << 20),
+		"10mb":           10 * (1 << 20),
+		"1gb":            1 << 30,
+	}
+
+	for str, expected := range input {
+		assert.Equal(t, expected, parseSizeInBytes(str), str)
+	}
+}
+
+func TestFindsNestedKeys(t *testing.T) {
+	initConfigs()
+	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
+
+	Set("super", map[string]interface{}{
+		"deep": map[string]interface{}{
+			"nested": "value",
+		},
+	})
+
+	expected := map[string]interface{}{
+		"super": map[string]interface{}{
+			"deep": map[string]interface{}{
+				"nested": "value",
+			},
+		},
+		"super.deep": map[string]interface{}{
+			"nested": "value",
+		},
+		"super.deep.nested":  "value",
+		"owner.organization": "MongoDB",
+		"batters.batter": []interface{}{
+			map[string]interface{}{
+				"type": "Regular",
+			},
+			map[string]interface{}{
+				"type": "Chocolate",
+			},
+			map[string]interface{}{
+				"type": "Blueberry",
+			},
+			map[string]interface{}{
+				"type": "Devil's Food",
+			},
+		},
+		"hobbies": []interface{}{
+			"skateboarding", "snowboarding", "go",
+		},
+		"title":  "TOML Example",
+		"newkey": "remote",
+		"batters": map[string]interface{}{
+			"batter": []interface{}{
+				map[string]interface{}{
+					"type": "Regular",
+				},
+				map[string]interface{}{
+					"type": "Chocolate",
+				}, map[string]interface{}{
+					"type": "Blueberry",
+				}, map[string]interface{}{
+					"type": "Devil's Food",
+				},
+			},
+		},
+		"eyes": "brown",
+		"age":  35,
+		"owner": map[string]interface{}{
+			"organization": "MongoDB",
+			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"dob":          dob,
+		},
+		"owner.Bio": "MongoDB Chief Developer Advocate & Hacker at Large",
+		"type":      "donut",
+		"id":        "0001",
+		"name":      "Cake",
+		"hacker":    true,
+		"ppu":       0.55,
+		"clothing": map[interface{}]interface{}{
+			"jacket":   "leather",
+			"trousers": "denim",
+			"pants": map[interface{}]interface{}{
+				"size": "large",
+			},
+		},
+		"clothing.jacket":     "leather",
+		"clothing.pants.size": "large",
+		"clothing.trousers":   "denim",
+		"owner.dob":           dob,
+		"beard":               true,
+	}
+
+	for key, expectedValue := range expected {
+
+		assert.Equal(t, expectedValue, v.Get(key))
+	}
+
+}
+
+func TestReadBufConfig(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	t.Log(v.AllKeys())
+
+	assert.True(t, v.InConfig("name"))
+	assert.False(t, v.InConfig("state"))
+	assert.Equal(t, "steve", v.Get("name"))
+	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
+	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, 35, v.Get("age"))
+}
+
+func TestDirsSearch(t *testing.T) {
+
+	root, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	entries, err := ioutil.ReadDir(root)
+	for _, e := range entries {
+		if e.IsDir() {
+			v.AddConfigPath(e.Name())
+		}
+	}
+
+	err = v.ReadInConfig()
+	assert.Nil(t, err)
+
+	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+}
+
+func TestWrongDirsSearchNotFound(t *testing.T) {
+
+	_, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	v.AddConfigPath(`whattayoutalkingbout`)
+	v.AddConfigPath(`thispathaintthere`)
+
+	err := v.ReadInConfig()
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
+	assert.Equal(t, `default`, v.GetString(`key`))
 }

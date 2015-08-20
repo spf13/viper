@@ -19,13 +19,26 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/BurntSushi/toml"
+	"github.com/magiconair/properties"
+	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
-func insensativiseMap(m map[string]interface{}) {
+// Denotes failing to parse configuration file.
+type ConfigParseError struct {
+	err error
+}
+
+// Returns the formatted configuration error.
+func (pe ConfigParseError) Error() string {
+	return fmt.Sprintf("While parsing config: %s", pe.err.Error())
+}
+
+func insensitiviseMap(m map[string]interface{}) {
 	for key, val := range m {
 		lower := strings.ToLower(key)
 		if key != lower {
@@ -116,26 +129,81 @@ func findCWD() (string, error) {
 	return path, nil
 }
 
-func marshallConfigReader(in io.Reader, c map[string]interface{}, configType string) {
+func marshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
-	switch configType {
+	switch strings.ToLower(configType) {
 	case "yaml", "yml":
 		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			return ConfigParseError{err}
 		}
 
 	case "json":
 		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			return ConfigParseError{err}
 		}
 
 	case "toml":
 		if _, err := toml.Decode(buf.String(), &c); err != nil {
-			jww.ERROR.Fatalf("Error parsing config: %s", err)
+			return ConfigParseError{err}
+		}
+
+	case "properties", "props", "prop":
+		var p *properties.Properties
+		var err error
+		if p, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
+			return ConfigParseError{err}
+		}
+		for _, key := range p.Keys() {
+			value, _ := p.Get(key)
+			c[key] = value
 		}
 	}
 
-	insensativiseMap(c)
+	insensitiviseMap(c)
+	return nil
+}
+
+func safeMul(a, b uint) uint {
+	c := a * b
+	if a > 1 && b > 1 && c/b != a {
+		return 0
+	}
+	return c
+}
+
+// parseSizeInBytes converts strings like 1GB or 12 mb into an unsigned integer number of bytes
+func parseSizeInBytes(sizeStr string) uint {
+	sizeStr = strings.TrimSpace(sizeStr)
+	lastChar := len(sizeStr) - 1
+	multiplier := uint(1)
+
+	if lastChar > 0 {
+		if sizeStr[lastChar] == 'b' || sizeStr[lastChar] == 'B' {
+			if lastChar > 1 {
+				switch unicode.ToLower(rune(sizeStr[lastChar-1])) {
+				case 'k':
+					multiplier = 1 << 10
+					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
+				case 'm':
+					multiplier = 1 << 20
+					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
+				case 'g':
+					multiplier = 1 << 30
+					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
+				default:
+					multiplier = 1
+					sizeStr = strings.TrimSpace(sizeStr[:lastChar])
+				}
+			}
+		}
+	}
+
+	size := cast.ToInt(sizeStr)
+	if size < 0 {
+		size = 0
+	}
+
+	return safeMul(uint(size), multiplier)
 }
