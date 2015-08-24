@@ -30,7 +30,7 @@ Viper is here to help with that.
 
 Viper does the following for you:
 
-1. Find, load, and marshal a configuration file in JSON, TOML, or YAML.
+1. Find, load, and unmarshal a configuration file in JSON, TOML, or YAML.
 2. Provide a mechanism to set default values for your different
    configuration options.
 3. Provide a mechanism to set override values for options specified through
@@ -272,8 +272,8 @@ runtime_viper.SetConfigType("yaml") // because there is no file extension in a s
 // read from remote config the first time.
 err := runtime_viper.ReadRemoteConfig()
 
-// marshal config
-runtime_viper.Marshal(&runtime_conf)
+// unmarshal config
+runtime_viper.Unmarshal(&runtime_conf)
 
 // open a goroutine to wath remote changes forever
 go func(){
@@ -287,9 +287,9 @@ go func(){
 	        continue
 	    }
 	
-	    // marshal new config into our runtime config struct. you can also use channel 
+	    // unmarshal new config into our runtime config struct. you can also use channel 
 	    // to implement a signal to notify the system of the changes
-	    runtime_viper.Marshal(&runtime_conf)
+	    runtime_viper.Unmarshal(&runtime_conf)
 	}
 }()
 ```
@@ -389,15 +389,15 @@ will be returned instead. E.g.
 GetString("datastore.metric.host") //returns "0.0.0.0"
 ```
 
-### Marshaling
+### Unmarshaling
 
-You also have the option of Marshaling all or a specific value to a struct, map,
+You also have the option of Unmarshaling all or a specific value to a struct, map,
 etc.
 
 There are two methods to do this:
 
- * `Marshal(rawVal interface{}) : error`
- * `MarshalKey(key string, rawVal interface{}) : error`
+ * `Unmarshal(rawVal interface{}) : error`
+ * `UnmarshalKey(key string, rawVal interface{}) : error`
 
 Example:
 
@@ -409,7 +409,7 @@ type config struct {
 
 var C config
 
-err := Marshal(&C)
+err := Unmarshal(&C)
 if err != nil {
 	t.Fatalf("unable to decode into struct, %v", err)
 }
