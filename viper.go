@@ -513,16 +513,16 @@ func (v *Viper) GetSizeInBytes(key string) uint {
 	return parseSizeInBytes(sizeStr)
 }
 
-// Takes a single key and marshals it into a Struct
-func MarshalKey(key string, rawVal interface{}) error { return v.MarshalKey(key, rawVal) }
-func (v *Viper) MarshalKey(key string, rawVal interface{}) error {
+// Takes a single key and unmarshals it into a Struct
+func UnmarshalKey(key string, rawVal interface{}) error { return v.UnmarshalKey(key, rawVal) }
+func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 	return mapstructure.Decode(v.Get(key), rawVal)
 }
 
-// Marshals the config into a Struct. Make sure that the tags
+// Unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
-func Marshal(rawVal interface{}) error { return v.Marshal(rawVal) }
-func (v *Viper) Marshal(rawVal interface{}) error {
+func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
+func (v *Viper) Unmarshal(rawVal interface{}) error {
 	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
 
 	if err != nil {
@@ -788,19 +788,19 @@ func (v *Viper) ReadInConfig() error {
 
 	v.config = make(map[string]interface{})
 
-	return v.marshalReader(bytes.NewReader(file), v.config)
+	return v.unmarshalReader(bytes.NewReader(file), v.config)
 }
 
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
-	return v.marshalReader(in, v.config)
+	return v.unmarshalReader(in, v.config)
 }
 
 // func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
 // func (v *Viper) ReadBufConfig(buf *bytes.Buffer) error {
 // 	v.config = make(map[string]interface{})
-// 	return v.marshalReader(buf, v.config)
+// 	return v.unmarshalReader(buf, v.config)
 // }
 
 // Attempts to get configuration from a remote source
@@ -823,14 +823,14 @@ func (v *Viper) WatchRemoteConfig() error {
 	return nil
 }
 
-// Marshall a Reader into a map
+// Unmarshall a Reader into a map
 // Should probably be an unexported function
-func marshalReader(in io.Reader, c map[string]interface{}) error {
-	return v.marshalReader(in, c)
+func unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	return v.unmarshalReader(in, c)
 }
 
-func (v *Viper) marshalReader(in io.Reader, c map[string]interface{}) error {
-	return marshallConfigReader(in, c, v.getConfigType())
+func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	return unmarshallConfigReader(in, c, v.getConfigType())
 }
 
 func (v *Viper) insensitiviseMaps() {
@@ -863,7 +863,7 @@ func (v *Viper) getRemoteConfig(provider *defaultRemoteProvider) (map[string]int
 	if err != nil {
 		return nil, err
 	}
-	err = v.marshalReader(reader, v.kvstore)
+	err = v.unmarshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
 
@@ -885,7 +885,7 @@ func (v *Viper) watchRemoteConfig(provider *defaultRemoteProvider) (map[string]i
 	if err != nil {
 		return nil, err
 	}
-	err = v.marshalReader(reader, v.kvstore)
+	err = v.unmarshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
 
