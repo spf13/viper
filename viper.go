@@ -143,13 +143,14 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
 
-	config   map[string]interface{}
-	override map[string]interface{}
-	defaults map[string]interface{}
-	kvstore  map[string]interface{}
-	pflags   map[string]*pflag.Flag
-	env      map[string]string
-	aliases  map[string]string
+	config         map[string]interface{}
+	override       map[string]interface{}
+	defaults       map[string]interface{}
+	kvstore        map[string]interface{}
+	pflags         map[string]*pflag.Flag
+	env            map[string]string
+	aliases        map[string]string
+	typeByDefValue bool
 }
 
 // Returns an initialized Viper instance.
@@ -164,6 +165,7 @@ func New() *Viper {
 	v.pflags = make(map[string]*pflag.Flag)
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
+	v.typeByDefValue = false
 
 	return v
 }
@@ -368,6 +370,25 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 	}
 }
 
+// SetTypeByDefaultValue enables or disables the inference of a key value's
+// type when the Get function is used based upon a key's default value as
+// opposed to the value returned based on the normal fetch logic.
+//
+// For example, if a key has a default value of []string{} and the same key
+// is set via an environment variable to "a b c", a call to the Get function
+// would return a string slice for the key if the key's type is inferred by
+// the default value and the Get function would return:
+//
+//   []string {"a", "b", "c"}
+//
+// Otherwise the Get function would return:
+//
+//   "a b c"
+func SetTypeByDefaultValue(enable bool) { v.SetTypeByDefaultValue(enable) }
+func (v *Viper) SetTypeByDefaultValue(enable bool) {
+	v.typeByDefValue = enable
+}
+
 // Viper is essentially repository for configurations
 // Get can retrieve any value given the key to use
 // Get has the behavior of returning the value associated with the first
@@ -379,7 +400,8 @@ func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	path := strings.Split(key, v.keyDelim)
 
-	val := v.find(strings.ToLower(key))
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey)
 
 	if val == nil {
 		source := v.find(path[0])
@@ -392,7 +414,19 @@ func (v *Viper) Get(key string) interface{} {
 		}
 	}
 
-	switch val.(type) {
+	var valType interface{}
+	if !v.typeByDefValue {
+		valType = val
+	} else {
+		defVal, defExists := v.defaults[lcaseKey]
+		if defExists {
+			valType = defVal
+		} else {
+			valType = val
+		}
+	}
+
+	switch valType.(type) {
 	case bool:
 		return cast.ToBool(val)
 	case string:
@@ -406,7 +440,7 @@ func (v *Viper) Get(key string) interface{} {
 	case time.Duration:
 		return cast.ToDuration(val)
 	case []string:
-		return val
+		return cast.ToStringSlice(val)
 	}
 	return val
 }
