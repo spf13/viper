@@ -20,6 +20,7 @@
 package viper
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/kr/pretty"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
@@ -872,6 +874,32 @@ func (v *Viper) InConfig(key string) bool {
 
 	_, exists := v.config[key]
 	return exists
+}
+
+// Save configuration to file
+func SaveConfig() error { return v.SaveConfig() }
+func (v *Viper) SaveConfig() error {
+
+	jww.INFO.Println("Attempting to write config into the file")
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
+	}
+
+	f, err := os.Create(v.getConfigFile())
+	defer f.Close()
+
+	if err != nil {
+		return err
+	}
+
+	w := bufio.NewWriter(f)
+
+	if err := toml.NewEncoder(w).Encode(v.AllSettings()); err != nil {
+		jww.FATAL.Println("Panic while writing into the file")
+	}
+	w.Flush()
+
+	return nil
 }
 
 // Set the default value for this key.
