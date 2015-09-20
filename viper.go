@@ -23,6 +23,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -1073,7 +1074,7 @@ func (v *Viper) InConfig(key string) bool {
 func SaveConfig() error { return v.SaveConfig() }
 func (v *Viper) SaveConfig() error {
 
-	jww.INFO.Println("Attempting to write config into the file")
+	jww.INFO.Println("Attempting to write config into the file.")
 	if !stringInSlice(v.getConfigType(), SupportedExts) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
@@ -1085,12 +1086,23 @@ func (v *Viper) SaveConfig() error {
 		return err
 	}
 
-	w := bufio.NewWriter(f)
+	switch v.getConfigType() {
+	case "json":
 
-	if err := toml.NewEncoder(w).Encode(v.AllSettings()); err != nil {
-		jww.FATAL.Println("Panic while writing into the file")
+		b, err := json.MarshalIndent(v.AllSettings(), "", "    ")
+		if err != nil {
+			jww.FATAL.Println("Panic while encoding into JSON format.")
+		}
+		f.WriteString(string(b))
+
+	case "toml":
+
+		w := bufio.NewWriter(f)
+		if err := toml.NewEncoder(w).Encode(v.AllSettings()); err != nil {
+			jww.FATAL.Println("Panic while encoding into TOML format.")
+		}
+		w.Flush()
 	}
-	w.Flush()
 
 	return nil
 }
@@ -1144,6 +1156,7 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
+	jww.DEBUG.Println("Reading file: ", v.getConfigFile())
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
 		return err
