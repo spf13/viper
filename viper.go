@@ -657,6 +657,20 @@ func (v *Viper) find(key string) interface{} {
 		return val
 	}
 
+	// Test for nested config parameter
+	if strings.Contains(key, v.keyDelim) {
+		path := strings.Split(key, v.keyDelim)
+
+		source := v.find(path[0])
+		if source != nil {
+			if reflect.TypeOf(source).Kind() == reflect.Map {
+				val := v.searchMap(cast.ToStringMap(source), path[1:])
+				jww.TRACE.Println(key, "found in nested config:", val)
+				return val
+			}
+		}
+	}
+
 	val, exists = v.kvstore[key]
 	if exists {
 		jww.TRACE.Println(key, "found in key/value store:", val)

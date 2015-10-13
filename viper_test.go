@@ -199,6 +199,15 @@ func TestBasics(t *testing.T) {
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))
+
+	SetDefault("clothing.jacket", "slacks")
+	assert.Equal(t, "slacks", Get("clothing.jacket"))
+
+	SetConfigType("yaml")
+	err := ReadConfig(bytes.NewBuffer(yamlExample))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "leather", Get("clothing.jacket"))
 }
 
 func TestUnmarshalling(t *testing.T) {
