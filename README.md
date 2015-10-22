@@ -275,12 +275,12 @@ err := runtime_viper.ReadRemoteConfig()
 // unmarshal config
 runtime_viper.Unmarshal(&runtime_conf)
 
-// open a goroutine to wath remote changes forever
+// open a goroutine to watch remote changes forever
 go func(){
 	for {
 	    time.Sleep(time.Second * 5) // delay after each request
 	
-	    // currenlty, only tested with etcd support
+	    // currently, only tested with etcd support
 	    err := runtime_viper.WatchRemoteConfig()
 	    if err != nil {
 	        log.Errorf("unable to read remote config: %v", err)
