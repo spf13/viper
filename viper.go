@@ -404,7 +404,17 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 		return source
 	}
 
-	if next, ok := source[path[0]]; ok {
+	var ok bool
+	var next interface{}
+	for k, v := range source {
+		if strings.ToLower(k) == strings.ToLower(path[0]) {
+			ok = true
+			next = v
+			break
+		}
+	}
+
+	if ok {
 		switch next.(type) {
 		case map[interface{}]interface{}:
 			return v.searchMap(cast.ToStringMap(next), path[1:])
@@ -454,7 +464,7 @@ func (v *Viper) Get(key string) interface{} {
 	val := v.find(lcaseKey)
 
 	if val == nil {
-		source := v.find(path[0])
+		source := v.find(strings.ToLower(path[0]))
 		if source != nil {
 			if reflect.TypeOf(source).Kind() == reflect.Map {
 				val = v.searchMap(cast.ToStringMap(source), path[1:])
