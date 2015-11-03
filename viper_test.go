@@ -78,23 +78,23 @@ func initConfigs() {
 	Reset()
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 
 	SetConfigType("json")
 	r = bytes.NewReader(jsonExample)
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 
 	SetConfigType("properties")
 	r = bytes.NewReader(propertiesExample)
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 
 	SetConfigType("toml")
 	r = bytes.NewReader(tomlExample)
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 
 	SetConfigType("json")
 	remote := bytes.NewReader(remoteExample)
-	marshalReader(remote, v.kvstore)
+	unmarshalReader(remote, v.kvstore)
 }
 
 func initYAML() {
@@ -102,7 +102,7 @@ func initYAML() {
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
 
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 }
 
 func initJSON() {
@@ -110,7 +110,7 @@ func initJSON() {
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
 
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 }
 
 func initProperties() {
@@ -118,7 +118,7 @@ func initProperties() {
 	SetConfigType("properties")
 	r := bytes.NewReader(propertiesExample)
 
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 }
 
 func initTOML() {
@@ -126,7 +126,7 @@ func initTOML() {
 	SetConfigType("toml")
 	r := bytes.NewReader(tomlExample)
 
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 }
 
 // make directories for testing
@@ -201,11 +201,11 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, 45, Get("age"))
 }
 
-func TestMarshalling(t *testing.T) {
+func TestUnmarshalling(t *testing.T) {
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
 
-	marshalReader(r, v.config)
+	unmarshalReader(r, v.config)
 	assert.True(t, InConfig("name"))
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
@@ -266,7 +266,7 @@ func TestRemotePrecedence(t *testing.T) {
 
 	remote := bytes.NewReader(remoteExample)
 	assert.Equal(t, "0001", Get("id"))
-	marshalReader(remote, v.kvstore)
+	unmarshalReader(remote, v.kvstore)
 	assert.Equal(t, "0001", Get("id"))
 	assert.NotEqual(t, "cronut", Get("type"))
 	assert.Equal(t, "remote", Get("newkey"))
@@ -378,7 +378,7 @@ func TestRecursiveAliases(t *testing.T) {
 	RegisterAlias("Roo", "baz")
 }
 
-func TestMarshal(t *testing.T) {
+func TestUnmarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")
 
@@ -389,7 +389,7 @@ func TestMarshal(t *testing.T) {
 
 	var C config
 
-	err := Marshal(&C)
+	err := Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
@@ -397,7 +397,7 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313})
 
 	Set("port", 1234)
-	err = Marshal(&C)
+	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}

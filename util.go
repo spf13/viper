@@ -129,7 +129,7 @@ func findCWD() (string, error) {
 	return path, nil
 }
 
-func marshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
+func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
