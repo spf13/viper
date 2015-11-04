@@ -6,3 +6,4 @@ go:
 
 script:
   - go test -v ./...
+sudo: false
