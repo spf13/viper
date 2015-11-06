@@ -73,11 +73,18 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 Viper requires minimal configuration so it knows where to look for config files.
 Viper supports JSON, TOML and YAML files. Viper can search multiple paths, but
 currently a single Viper instance only supports a single configuration file.
+Viper does not default to any configuration search paths leaving defaults decision
+to an application.
+
+Here is an example of how to use Viper to search for and read a configuration file.
+None of the specific paths are required, but at least one path should be provided
+where a configuration file is expected. 
 
 ```go
 viper.SetConfigName("config") // name of config file (without extension)
 viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
 viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
+viper.AddConfigPath(".")               // optionally look for config in the working directory
 err := viper.ReadInConfig() // Find and read the config file
 if err != nil { // Handle errors reading the config file
 	panic(fmt.Errorf("Fatal error config file: %s \n", err))
