@@ -13,6 +13,7 @@ and formats. It supports:
 
 * setting defaults
 * reading from JSON, TOML, and YAML config files
+* live watching and re-reading of config files (optional)
 * reading from environment variables
 * reading from remote config systems (Etcd or Consul), and watching changes
 * reading from command line flags
@@ -78,7 +79,7 @@ to an application.
 
 Here is an example of how to use Viper to search for and read a configuration file.
 None of the specific paths are required, but at least one path should be provided
-where a configuration file is expected. 
+where a configuration file is expected.
 
 ```go
 viper.SetConfigName("config") // name of config file (without extension)
@@ -89,6 +90,26 @@ err := viper.ReadInConfig() // Find and read the config file
 if err != nil { // Handle errors reading the config file
 	panic(fmt.Errorf("Fatal error config file: %s \n", err))
 }
+```
+
+### Watching and re-reading config files
+
+Viper supports the ability to have your application live read a config file while running.
+
+Gone are the days of needing to restart a server to have a config take effect,
+viper powered applications can read an update to a config file while running and
+not miss a beat.
+
+Simply tell the viper instance to watchConfig. 
+Optionally you can provide a function for Viper to run each time a change occurs.
+
+**Make sure you add all of the configPaths prior to calling `WatchConfig()`**
+
+```go
+		viper.WatchConfig()
+		viper.OnConfigChange(func(e fsnotify.Event) {
+			fmt.Println("Config file changed:", e.Name)
+		})
 ```
 
 ### Reading Config from io.Reader
@@ -286,15 +307,15 @@ runtime_viper.Unmarshal(&runtime_conf)
 go func(){
 	for {
 	    time.Sleep(time.Second * 5) // delay after each request
-	
+
 	    // currently, only tested with etcd support
 	    err := runtime_viper.WatchRemoteConfig()
 	    if err != nil {
 	        log.Errorf("unable to read remote config: %v", err)
 	        continue
 	    }
-	
-	    // unmarshal new config into our runtime config struct. you can also use channel 
+
+	    // unmarshal new config into our runtime config struct. you can also use channel
 	    // to implement a signal to notify the system of the changes
 	    runtime_viper.Unmarshal(&runtime_conf)
 	}

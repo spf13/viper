@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -35,6 +36,7 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
+	"gopkg.in/fsnotify.v1"
 )
 
 var v *Viper
@@ -151,6 +153,8 @@ type Viper struct {
 	env            map[string]string
 	aliases        map[string]string
 	typeByDefValue bool
+
+	onConfigChange func(fsnotify.Event)
 }
 
 // Returns an initialized Viper instance.
@@ -218,6 +222,52 @@ var SupportedExts []string = []string{"json", "toml", "yaml", "yml", "properties
 
 // Universally supported remote providers.
 var SupportedRemoteProviders []string = []string{"etcd", "consul"}
+
+func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
+func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
+	v.onConfigChange = run
+}
+
+func WatchConfig() { v.WatchConfig() }
+func (v *Viper) WatchConfig() {
+	go func() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer watcher.Close()
+
+		done := make(chan bool)
+		go func() {
+			for {
+				select {
+				case event := <-watcher.Events:
+					if event.Op&fsnotify.Write == fsnotify.Write {
+						err := v.ReadInConfig()
+						if err != nil {
+							log.Println("error:", err)
+						}
+						v.onConfigChange(event)
+					}
+				case err := <-watcher.Errors:
+					log.Println("error:", err)
+				}
+			}
+		}()
+
+		if v.configFile != "" {
+			watcher.Add(v.configFile)
+		} else {
+			for _, x := range v.configPaths {
+				err = watcher.Add(x)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		<-done
+	}()
+}
 
 // Explicitly define the path, name and extension of the config file
 // Viper will use this and not check any of the config paths
