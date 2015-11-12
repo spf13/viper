@@ -652,3 +652,102 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	// been ignored by the client, the default still loads
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
+
+var yamlMergeExampleTgt = []byte(`
+hello:
+    pop: 37890
+    world:
+    - us
+    - uk
+    - fr
+    - de
+`)
+
+var yamlMergeExampleSrc = []byte(`
+hello:
+    pop: 45000
+    universe:
+    - mw
+    - ad
+fu: bar
+`)
+
+func TestMergeConfig(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetInt("hello.pop"); pop != 37890 {
+		t.Fatalf("pop != 37890, = %d", pop)
+	}
+
+	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
+		t.Fatalf("len(world) != 4, = %d", len(world))
+	}
+
+	if fu := v.GetString("fu"); fu != "" {
+		t.Fatalf("fu != \"\", = %s", fu)
+	}
+
+	if err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetInt("hello.pop"); pop != 45000 {
+		t.Fatalf("pop != 45000, = %d", pop)
+	}
+
+	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
+		t.Fatalf("len(world) != 4, = %d", len(world))
+	}
+
+	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
+		t.Fatalf("len(universe) != 2, = %d", len(universe))
+	}
+
+	if fu := v.GetString("fu"); fu != "bar" {
+		t.Fatalf("fu != \"bar\", = %s", fu)
+	}
+}
+
+func TestMergeConfigNoMerge(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetInt("hello.pop"); pop != 37890 {
+		t.Fatalf("pop != 37890, = %d", pop)
+	}
+
+	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
+		t.Fatalf("len(world) != 4, = %d", len(world))
+	}
+
+	if fu := v.GetString("fu"); fu != "" {
+		t.Fatalf("fu != \"\", = %s", fu)
+	}
+
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetInt("hello.pop"); pop != 45000 {
+		t.Fatalf("pop != 45000, = %d", pop)
+	}
+
+	if world := v.GetStringSlice("hello.world"); len(world) != 0 {
+		t.Fatalf("len(world) != 0, = %d", len(world))
+	}
+
+	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
+		t.Fatalf("len(universe) != 2, = %d", len(universe))
+	}
+
+	if fu := v.GetString("fu"); fu != "bar" {
+		t.Fatalf("fu != \"bar\", = %s", fu)
+	}
+}
