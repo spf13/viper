@@ -901,10 +901,122 @@ func (v *Viper) ReadInConfig() error {
 	return v.unmarshalReader(bytes.NewReader(file), v.config)
 }
 
+// MergeInConfig merges a new configuration with an existing config.
+func MergeInConfig() error { return v.MergeInConfig() }
+func (v *Viper) MergeInConfig() error {
+	jww.INFO.Println("Attempting to merge in config file")
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
+	}
+
+	file, err := ioutil.ReadFile(v.getConfigFile())
+	if err != nil {
+		return err
+	}
+
+	return v.MergeConfig(bytes.NewReader(file))
+}
+
+// Viper will read a configuration file, setting existing keys to nil if the
+// key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
 	return v.unmarshalReader(in, v.config)
+}
+
+// MergeConfig merges a new configuration with an existing config.
+func MergeConfig(in io.Reader) error { return v.MergeConfig(in) }
+func (v *Viper) MergeConfig(in io.Reader) error {
+	if v.config == nil {
+		v.config = make(map[string]interface{})
+	}
+	cfg := make(map[string]interface{})
+	if err := v.unmarshalReader(in, cfg); err != nil {
+		return err
+	}
+	mergeMaps(cfg, v.config, nil)
+	return nil
+}
+
+func keyExists(k string, m map[string]interface{}) string {
+	lk := strings.ToLower(k)
+	for mk := range m {
+		lmk := strings.ToLower(mk)
+		if lmk == lk {
+			return mk
+		}
+	}
+	return ""
+}
+
+func castToMapStringInterface(
+	src map[interface{}]interface{}) map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for k, v := range src {
+		tgt[fmt.Sprintf("%v", k)] = v
+	}
+	return tgt
+}
+
+// mergeMaps merges two maps. The `itgt` parameter is for handling go-yaml's
+// insistence on parsing nested structures as `map[interface{}]interface{}`
+// instead of using a `string` as the key for nest structures beyond one level
+// deep. Both map types are supported as there is a go-yaml fork that uses
+// `map[string]interface{}` instead.
+func mergeMaps(
+	src, tgt map[string]interface{}, itgt map[interface{}]interface{}) {
+	for sk, sv := range src {
+		tk := keyExists(sk, tgt)
+		if tk == "" {
+			jww.TRACE.Printf("tk=\"\", tgt[%s]=%v", sk, sv)
+			tgt[sk] = sv
+			if itgt != nil {
+				itgt[sk] = sv
+			}
+			continue
+		}
+
+		tv, ok := tgt[tk]
+		if !ok {
+			jww.TRACE.Printf("tgt[%s] != ok, tgt[%s]=%v", tk, sk, sv)
+			tgt[sk] = sv
+			if itgt != nil {
+				itgt[sk] = sv
+			}
+			continue
+		}
+
+		svType := reflect.TypeOf(sv)
+		tvType := reflect.TypeOf(tv)
+		if svType != tvType {
+			jww.ERROR.Printf(
+				"svType != tvType; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
+				sk, svType, tvType, sv, tv)
+			continue
+		}
+
+		jww.TRACE.Printf("processing key=%s, st=%v, tt=%v, sv=%v, tv=%v",
+			sk, svType, tvType, sv, tv)
+
+		switch ttv := tv.(type) {
+		case map[interface{}]interface{}:
+			jww.TRACE.Printf("merging maps (must convert)")
+			tsv := sv.(map[interface{}]interface{})
+			ssv := castToMapStringInterface(tsv)
+			stv := castToMapStringInterface(ttv)
+			mergeMaps(ssv, stv, ttv)
+		case map[string]interface{}:
+			jww.TRACE.Printf("merging maps")
+			mergeMaps(sv.(map[string]interface{}), ttv, nil)
+		default:
+			jww.TRACE.Printf("setting value")
+			tgt[tk] = sv
+			if itgt != nil {
+				itgt[tk] = sv
+			}
+		}
+	}
 }
 
 // func ReadBufConfig(buf *bytes.Buffer) error { return v.ReadBufConfig(buf) }
