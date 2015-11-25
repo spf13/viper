@@ -63,7 +63,7 @@ func (str UnsupportedConfigError) Error() string {
 }
 
 // Denotes encountering an unsupported remote
-// provider. Currently only Etcd and Consul are
+// provider. Currently only etcd and Consul are
 // supported.
 type UnsupportedRemoteProviderError string
 
