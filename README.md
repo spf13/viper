@@ -15,7 +15,7 @@ and formats. It supports:
 * reading from JSON, TOML, and YAML config files
 * live watching and re-reading of config files (optional)
 * reading from environment variables
-* reading from remote config systems (Etcd or Consul), and watching changes
+* reading from remote config systems (etcd or Consul), and watching changes
 * reading from command line flags
 * reading from buffer
 * setting explicit values
@@ -243,7 +243,7 @@ package:
 `import _ "github.com/spf13/viper/remote"`
 
 Viper will read a config string (as JSON, TOML, or YAML) retrieved from a path
-in a Key/Value store such as Etcd or Consul.  These values take precedence over
+in a Key/Value store such as etcd or Consul.  These values take precedence over
 default values, but are overridden by configuration values retrieved from disk,
 flags, or environment variables.
 
@@ -288,7 +288,7 @@ viper.SetConfigType("json") // because there is no file extension in a stream of
 err := viper.ReadRemoteConfig()
 ```
 
-### Watching Changes in Etcd - Unencrypted
+### Watching Changes in etcd - Unencrypted
 
 ```go
 // alternatively, you can create a new viper instance.
