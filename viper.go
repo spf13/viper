@@ -742,8 +742,21 @@ func (v *Viper) find(key string) interface{} {
 // Check to see if the key has been set in any of the data locations
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
-	t := v.Get(key)
-	return t != nil
+	path := strings.Split(key, v.keyDelim)
+
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey)
+
+	if val == nil {
+		source := v.find(strings.ToLower(path[0]))
+		if source != nil {
+			if reflect.TypeOf(source).Kind() == reflect.Map {
+				val = v.searchMap(cast.ToStringMap(source), path[1:])
+			}
+		}
+	}
+
+	return val != nil
 }
 
 // Have Viper check ENV variables for all

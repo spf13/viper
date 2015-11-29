@@ -611,6 +611,17 @@ func TestReadBufConfig(t *testing.T) {
 	assert.Equal(t, 35, v.Get("age"))
 }
 
+func TestIsSet(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	assert.True(t, v.IsSet("clothing.jacket"))
+	assert.False(t, v.IsSet("clothing.jackets"))
+	assert.False(t, v.IsSet("helloworld"))
+	v.Set("helloworld", "fubar")
+	assert.True(t, v.IsSet("helloworld"))
+}
+
 func TestDirsSearch(t *testing.T) {
 
 	root, config, cleanup := initDirs(t)
