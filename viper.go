@@ -108,11 +108,11 @@ func (fnfe ConfigFileNotFoundError) Error() string {
 //  Defaults : {
 //  	"secret": "",
 //  	"user": "default",
-// 	    "endpoint": "https://localhost"
+// 	"endpoint": "https://localhost"
 //  }
 //  Config : {
 //  	"user": "root"
-//	    "secret": "defaultsecret"
+//	"secret": "defaultsecret"
 //  }
 //  Env : {
 //  	"secret": "somesecretkey"
