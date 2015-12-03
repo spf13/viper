@@ -433,6 +433,7 @@ Example:
 type config struct {
 	Port int
 	Name string
+	PathMap string `mapstructure:"path_map"`
 }
 
 var C config
