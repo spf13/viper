@@ -235,6 +235,30 @@ serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 ```
 
+The use of [pflag](https://github.com/spf13/pflag/) in Viper does not preclude
+the use of other packages that use the [flag](https://golang.org/pkg/flag/)
+package from the standard library. The pflag package can handle the flags
+defined for the flag package by importing these flags. This is accomplished
+by a calling a convenience function provided by the pflag package called
+AddGoFlagSet().
+
+Example:
+
+```go
+package main
+
+import (
+	"flag"
+	"github.com/spf13/pflag"
+)
+
+func main() {
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+    ...
+}
+```
+
 ### Remote Key/Value Store Support
 
 To enable remote support in Viper, do a blank import of the `viper/remote`
