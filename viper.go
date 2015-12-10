@@ -149,7 +149,7 @@ type Viper struct {
 	override       map[string]interface{}
 	defaults       map[string]interface{}
 	kvstore        map[string]interface{}
-	pflags         map[string]*pflag.Flag
+	pflags         map[string]FlagValue
 	env            map[string]string
 	aliases        map[string]string
 	typeByDefValue bool
@@ -166,7 +166,7 @@ func New() *Viper {
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
 	v.kvstore = make(map[string]interface{})
-	v.pflags = make(map[string]*pflag.Flag)
+	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
@@ -467,13 +467,13 @@ func (v *Viper) Get(key string) interface{} {
 	if val == nil {
 		if flag, exists := v.pflags[lcaseKey]; exists {
 			jww.TRACE.Println(key, "get pflag default", val)
-			switch flag.Value.Type() {
+			switch flag.ValueType() {
 			case "int", "int8", "int16", "int32", "int64":
-				val = cast.ToInt(flag.Value.String())
+				val = cast.ToInt(flag.ValueString())
 			case "bool":
-				val = cast.ToBool(flag.Value.String())
+				val = cast.ToBool(flag.ValueString())
 			default:
-				val = flag.Value.String()
+				val = flag.ValueString()
 			}
 		}
 	}
@@ -606,15 +606,10 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 // name as the config key.
 func BindPFlags(flags *pflag.FlagSet) (err error) { return v.BindPFlags(flags) }
 func (v *Viper) BindPFlags(flags *pflag.FlagSet) (err error) {
-	flags.VisitAll(func(flag *pflag.Flag) {
-		if err = v.BindPFlag(flag.Name, flag); err != nil {
-			return
-		}
-	})
-	return nil
+	return v.BindFlagValues(pflagValueSet{flags})
 }
 
-// Bind a specific key to a flag (as used by cobra)
+// Bind a specific key to a pflag (as used by cobra)
 // Example(where serverCmd is a Cobra instance):
 //
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
@@ -622,6 +617,29 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) (err error) {
 //
 func BindPFlag(key string, flag *pflag.Flag) (err error) { return v.BindPFlag(key, flag) }
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) (err error) {
+	return v.BindFlagValue(key, pflagValue{flag})
+}
+
+// Bind a full FlagValue set to the configuration, using each flag's long
+// name as the config key.
+func BindFlagValues(flags FlagValueSet) (err error) { return v.BindFlagValues(flags) }
+func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
+	flags.VisitAll(func(flag FlagValue) {
+		if err = v.BindFlagValue(flag.Name(), flag); err != nil {
+			return
+		}
+	})
+	return nil
+}
+
+// Bind a specific key to a FlagValue.
+// Example(where serverCmd is a Cobra instance):
+//
+//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	 Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
+//
+func BindFlagValue(key string, flag FlagValue) (err error) { return v.BindFlagValue(key, flag) }
+func (v *Viper) BindFlagValue(key string, flag FlagValue) (err error) {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
@@ -666,15 +684,15 @@ func (v *Viper) find(key string) interface{} {
 
 	// PFlag Override first
 	flag, exists := v.pflags[key]
-	if exists && flag.Changed {
-		jww.TRACE.Println(key, "found in override (via pflag):", flag.Value)
-		switch flag.Value.Type() {
+	if exists && flag.HasChanged() {
+		jww.TRACE.Println(key, "found in override (via pflag):", flag.ValueString())
+		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
-			return cast.ToInt(flag.Value.String())
+			return cast.ToInt(flag.ValueString())
 		case "bool":
-			return cast.ToBool(flag.Value.String())
+			return cast.ToBool(flag.ValueString())
 		default:
-			return flag.Value.String()
+			return flag.ValueString()
 		}
 	}
 
