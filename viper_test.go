@@ -65,18 +65,7 @@ id = "0001"
 type = "donut"
 name = "Cake"
 ppu = 0.55
-batter {
-	type = "Regular"
-}
-batter {
-	type = "Chocolate"
-}
-batter {
-	type = "Blueberry"
-}
-batter {
-	type = "Devil's Food"
-}`)
+`)
 
 var propertiesExample = []byte(`
 p_id: 0001
@@ -102,6 +91,10 @@ func initConfigs() {
 	r = bytes.NewReader(jsonExample)
 	unmarshalReader(r, v.config)
 
+	SetConfigType("hcl")
+	r = bytes.NewReader(hclExample)
+	unmarshalReader(r, v.config)
+
 	SetConfigType("properties")
 	r = bytes.NewReader(propertiesExample)
 	unmarshalReader(r, v.config)
@@ -113,10 +106,6 @@ func initConfigs() {
 	SetConfigType("json")
 	remote := bytes.NewReader(remoteExample)
 	unmarshalReader(remote, v.kvstore)
-
-	SetConfigType("hcl")
-	r = bytes.NewReader(hclExample)
-	unmarshalReader(r, v.config)
 }
 
 func initYAML() {
@@ -309,25 +298,6 @@ func TestHCL(t *testing.T) {
 	Set("id", "0002")
 	assert.Equal(t, "0002", Get("id"))
 	assert.NotEqual(t, "cronut", Get("type"))
-}
-
-func TestHCLList(t *testing.T) {
-	initHcl()
-	batters := []map[string]interface{}{
-		map[string]interface{}{
-			"type": "Regular",
-		},
-		map[string]interface{}{
-			"type": "Chocolate",
-		},
-		map[string]interface{}{
-			"type": "Blueberry",
-		},
-		map[string]interface{}{
-			"type": "Devil's Food",
-		},
-	}
-	assert.Equal(t, batters, Get("batter"))
 }
 
 func TestRemotePrecedence(t *testing.T) {
