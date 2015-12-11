@@ -871,9 +871,40 @@ func (v *Viper) ReadInConfig() error {
 	return v.unmarshalReader(bytes.NewReader(file), v.config)
 }
 
+// Viper will discover and load the configuration file from disk
+// and key/value stores, searching in one of the defined paths.
+// This method will only set existing keys if they exist in the
+// provided file.
+func ReadInConfigNoNil() error { return v.ReadInConfigNoNil() }
+func (v *Viper) ReadInConfigNoNil() error {
+	jww.INFO.Println("Attempting to read in config file")
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
+	}
+
+	file, err := ioutil.ReadFile(v.getConfigFile())
+	if err != nil {
+		return err
+	}
+
+	return v.ReadConfigNoNil(bytes.NewReader(file))
+}
+
+// Viper will read a configuration file, setting existing keys to nil if the
+// key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
+	return v.unmarshalReader(in, v.config)
+}
+
+// Viper will read a configuration file, but only set existing keys if they
+// exist in the provided file.
+func ReadConfigNoNil(in io.Reader) error { return v.ReadConfigNoNil(in) }
+func (v *Viper) ReadConfigNoNil(in io.Reader) error {
+	if v.config == nil {
+		v.config = make(map[string]interface{})
+	}
 	return v.unmarshalReader(in, v.config)
 }
 

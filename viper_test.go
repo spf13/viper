@@ -37,6 +37,13 @@ eyes : brown
 beard: true
 `)
 
+var yamlExample2 = []byte(`Hacker: false
+name: robert
+age: 40
+eyes : blue
+height: 5' 8"
+`)
+
 var tomlExample = []byte(`
 title = "TOML Example"
 
@@ -253,6 +260,19 @@ func TestAliasInConfigFile(t *testing.T) {
 func TestYML(t *testing.T) {
 	initYAML()
 	assert.Equal(t, "steve", Get("name"))
+}
+
+func TestReadConfigNoNil(t *testing.T) {
+	initYAML()
+	assert.Equal(t, "steve", Get("name"))
+
+	r := bytes.NewReader(yamlExample2)
+
+	v.ReadConfigNoNil(r)
+	assert.Equal(t, "robert", Get("name"))
+	assert.Equal(t, 40, Get("age"))
+	assert.Equal(t, true, Get("beard"))
+	assert.Equal(t, "5' 8\"", Get("height"))
 }
 
 func TestJSON(t *testing.T) {
