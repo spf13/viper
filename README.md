@@ -58,7 +58,7 @@ Viper configuration keys are case insensitive.
 ### Establishing Defaults
 
 A good configuration system will support default values. A default value is not
-required for a key, but it's useful in the event that a key hasn’t be set via
+required for a key, but it's useful in the event that a key hasn’t been set via
 config file, environment variable, remote configuration or flag.
 
 Examples:
