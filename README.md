@@ -259,6 +259,49 @@ func main() {
 }
 ```
 
+#### Flag interfaces
+
+Viper provides two Go interfaces to bind other flag systems if you don't use `Pflags`.
+
+`FlagValue` represents a single flag. This is a very simple example on how to implement this interface:
+
+```go
+type myFlag struct {}
+func (f myFlag) IsChanged() { return false }
+func (f myFlag) Name() { return "my-flag-name" }
+func (f myFlag) ValueString() { return "my-flag-value" }
+func (f myFlag) ValueType() { return "string" }
+```
+
+Once your flag implements this interface, you can simply tell Viper to bind it:
+
+```go
+viper.BindFlagValue("my-flag-name", myFlag{})
+```
+
+`FlagValueSet` represents a group of flags. This is a very simple example on how to implement this interface:
+
+```go
+type myFlagSet struct {
+	flags []myFlag
+}
+
+func (f myFlagSet) VisitAll(fn func(FlagValue)) {
+	for _, flag := range flags {
+		fn(flag)	
+	}
+}
+```
+
+Once your flag set implements this interface, you can simply tell Viper to bind it:
+
+```go
+fSet := myFlagSet{
+	flags: []myFlag{myFlag{}, myFlag{}},
+}
+viper.BindFlagValues("my-flags", fSet)
+```
+
 ### Remote Key/Value Store Support
 
 To enable remote support in Viper, do a blank import of the `viper/remote`
