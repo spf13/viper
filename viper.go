@@ -513,6 +513,18 @@ func (v *Viper) Get(key string) interface{} {
 	return val
 }
 
+// Returns new Viper instance representing a sub tree of this instance
+func Sub(key string) *Viper { return v.Sub(key) }
+func (v *Viper) Sub(key string) *Viper {
+	data, ok := v.Get(key).(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	subv := New()
+	subv.config = data
+	return subv
+}
+
 // Returns the value associated with the key as a string
 func GetString(key string) string { return v.GetString(key) }
 func (v *Viper) GetString(key string) string {

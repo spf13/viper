@@ -724,3 +724,16 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	// been ignored by the client, the default still loads
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
+
+func TestSub(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	subv := v.Sub("clothing.pants")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, subv, (*Viper)(nil))
+}
+

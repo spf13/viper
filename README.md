@@ -441,6 +441,52 @@ will be returned instead. E.g.
 GetString("datastore.metric.host") //returns "0.0.0.0"
 ```
 
+### Extract sub-tree
+
+Extract sub-tree from Viper.
+
+For example, `viper` represents:
+
+```json
+app:
+  cache1:
+    max-items: 100
+    item-size: 64
+  cache2:
+    max-items: 200
+    item-size: 80
+```
+
+After executing:
+
+```go
+subv := viper.Sub("app.cache1")
+```
+
+`subv` represents:
+
+```json
+max-items: 100
+item-size: 64
+```
+
+Suppose we have:
+
+```go
+func NewCache(cfg *Viper) *Cache {...}
+```
+
+which creates a cache based on config information formatted as `subv`.
+Now it's easy to create these 2 caches separately as:
+
+```go
+cfg1 := viper.Sub("app.cache1")
+cache1 := NewCache(cfg1)
+
+cfg2 := viper.Sub("app.cache2")
+cache2 := NewCache(cfg2)
+```
+
 ### Unmarshaling
 
 You also have the option of Unmarshaling all or a specific value to a struct, map,
