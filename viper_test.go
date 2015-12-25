@@ -730,7 +730,10 @@ func TestSub(t *testing.T) {
 	v.SetConfigType("yaml")
 	v.ReadConfig(bytes.NewBuffer(yamlExample))
 
-	subv := v.Sub("clothing.pants")
+	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+
+	subv = v.Sub("clothing.pants")
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
 
 	subv = v.Sub("clothing.pants.size")

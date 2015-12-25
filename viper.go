@@ -526,13 +526,14 @@ func (v *Viper) Get(key string) interface{} {
 // Returns new Viper instance representing a sub tree of this instance
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
-	data, ok := v.Get(key).(map[string]interface{})
-	if !ok {
+	subv := New()
+	data := v.Get(key)
+	if reflect.TypeOf(data).Kind() == reflect.Map {
+		subv.config = cast.ToStringMap(data)
+		return subv
+	} else {
 		return nil
 	}
-	subv := New()
-	subv.config = data
-	return subv
 }
 
 // Returns the value associated with the key as a string
