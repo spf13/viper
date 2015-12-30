@@ -623,6 +623,37 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	return nil
 }
 
+// A wrapper around mapstructure.Decode that mimics the WeakDecode functionality
+// while erroring on non existing vals in the destination struct
+func weakDecodeExact(input, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		ErrorUnused:      true,
+		Metadata:         nil,
+		Result:           output,
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(input)
+}
+
+// Unmarshals the config into a Struct, erroring if a field is non-existant
+// in the destination struct
+func (v *Viper) UnmarshalExact(rawVal interface{}) error {
+	err := weakDecodeExact(v.AllSettings(), rawVal)
+
+	if err != nil {
+		return err
+	}
+
+	v.insensitiviseMaps()
+
+	return nil
+}
+
 // Bind a full flag set to the configuration, using each flag's long
 // name as the config key.
 func BindPFlags(flags *pflag.FlagSet) (err error) { return v.BindPFlags(flags) }

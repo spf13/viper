@@ -37,6 +37,14 @@ eyes : brown
 beard: true
 `)
 
+var yamlExampleWithExtras = []byte(`Existing: true
+Bogus: true
+`)
+
+type testUnmarshalExtra struct {
+	Existing bool
+}
+
 var tomlExample = []byte(`
 title = "TOML Example"
 
@@ -253,6 +261,18 @@ func TestUnmarshalling(t *testing.T) {
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
 	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
+}
+
+func TestUnmarshalExact(t *testing.T) {
+	vip := New()
+	target := &testUnmarshalExtra{}
+	vip.SetConfigType("yaml")
+	r := bytes.NewReader(yamlExampleWithExtras)
+	vip.ReadConfig(r)
+	err := vip.UnmarshalExact(target)
+	if err == nil {
+		t.Fatal("UnmarshalExact should error when populating a struct from a conf that contains unused fields")
+	}
 }
 
 func TestOverrides(t *testing.T) {
@@ -844,14 +864,14 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 	Set("name", "Steve")
 	Set("lastname", "Owen")
 
-	RegisterAlias("UserID","Id")
-	RegisterAlias("Firstname","name")
-	RegisterAlias("Surname","lastname")
+	RegisterAlias("UserID", "Id")
+	RegisterAlias("Firstname", "name")
+	RegisterAlias("Surname", "lastname")
 
 	type config struct {
-		Id int
+		Id        int
 		FirstName string
-		Surname string
+		Surname   string
 	}
 
 	var C config
