@@ -174,15 +174,15 @@ func New() *Viper {
 	return v
 }
 
-// Default retrieves the default Viper instance. To be loaded later
-// with SetDefault.
-func Default() *Viper {
+// DefaultConfig retrieves the default Viper instance. To be loaded
+// later with SetDefaultConfig.
+func DefaultConfig() *Viper {
 	return v
 }
 
-// SetDefault applies this Viper instance as the default. Used when
-// calling the functions defined in the viper package.
-func SetDefault(conf *Viper) {
+// SetDefaultConfig applies this Viper instance as the default. Used
+// when calling the functions defined in the viper package.
+func SetDefaultConfig(conf *Viper) {
 	v = conf
 }
 
