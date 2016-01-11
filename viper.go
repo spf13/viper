@@ -40,6 +40,7 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	"gopkg.in/fsnotify.v1"
+	"gopkg.in/yaml.v2"
 )
 
 var v *Viper
@@ -909,6 +910,14 @@ func (v *Viper) SaveConfig() error {
 			jww.FATAL.Println("Panic while encoding into TOML format.")
 		}
 		w.Flush()
+
+	case "yaml", "yml":
+
+		b, err := yaml.Marshal(v.AllSettings())
+		if err != nil {
+			jww.FATAL.Println("Panic while encoding into YAML format.")
+		}
+		f.WriteString(string(b))
 	}
 
 	return nil
