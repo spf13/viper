@@ -242,7 +242,7 @@ func (v *Viper) WatchConfig() {
 			for {
 				select {
 				case event := <-watcher.Events:
-					if event.Op&fsnotify.Write == fsnotify.Write {
+					if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 						err := v.ReadInConfig()
 						if err != nil {
 							log.Println("error:", err)
@@ -255,16 +255,7 @@ func (v *Viper) WatchConfig() {
 			}
 		}()
 
-		if v.configFile != "" {
-			watcher.Add(v.configFile)
-		} else {
-			for _, x := range v.configPaths {
-				err = watcher.Add(x)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
+		watcher.Add(v.getConfigFile())
 		<-done
 	}()
 }
