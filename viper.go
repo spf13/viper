@@ -237,17 +237,24 @@ func (v *Viper) WatchConfig() {
 		}
 		defer watcher.Close()
 
+		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
+		configFile := filepath.Clean(v.getConfigFile())
+		configDir, _ := filepath.Split(configFile)
+
 		done := make(chan bool)
 		go func() {
 			for {
 				select {
 				case event := <-watcher.Events:
-					if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
-						err := v.ReadInConfig()
-						if err != nil {
-							log.Println("error:", err)
+					// we only care about the config file
+					if filepath.Clean(event.Name) == configFile {
+						if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
+							err := v.ReadInConfig()
+							if err != nil {
+								log.Println("error:", err)
+							}
+							v.onConfigChange(event)
 						}
-						v.onConfigChange(event)
 					}
 				case err := <-watcher.Errors:
 					log.Println("error:", err)
@@ -255,7 +262,7 @@ func (v *Viper) WatchConfig() {
 			}
 		}()
 
-		watcher.Add(v.getConfigFile())
+		watcher.Add(configDir)
 		<-done
 	}()
 }
