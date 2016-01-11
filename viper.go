@@ -33,6 +33,8 @@ import (
 	"strings"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/BurntSushi/toml"
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
@@ -1102,6 +1104,14 @@ func (v *Viper) SaveConfig() error {
 			jww.FATAL.Println("Panic while encoding into TOML format.")
 		}
 		w.Flush()
+
+	case "yaml", "yml":
+
+		b, err := yaml.Marshal(v.AllSettings())
+		if err != nil {
+			jww.FATAL.Println("Panic while encoding into YAML format.")
+		}
+		f.WriteString(string(b))
 	}
 
 	return nil
