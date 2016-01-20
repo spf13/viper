@@ -1149,6 +1149,10 @@ func (v *Viper) AllKeys() []string {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
+	for key, _ := range v.aliases {
+		m[strings.ToLower(key)] = struct{}{}
+	}
+
 	a := []string{}
 	for x, _ := range m {
 		a = append(a, x)
