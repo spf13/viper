@@ -838,3 +838,28 @@ func TestMergeConfigNoMerge(t *testing.T) {
 		t.Fatalf("fu != \"bar\", = %s", fu)
 	}
 }
+
+func TestUnmarshalingWithAliases(t *testing.T) {
+	SetDefault("Id", 1)
+	Set("name", "Steve")
+	Set("lastname", "Owen")
+
+	RegisterAlias("UserID","Id")
+	RegisterAlias("Firstname","name")
+	RegisterAlias("Surname","lastname")
+
+	type config struct {
+		Id int
+		FirstName string
+		Surname string
+	}
+
+	var C config
+
+	err := Unmarshal(&C)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+
+	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
+}
