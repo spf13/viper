@@ -950,6 +950,18 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 	return nil
 }
 
+// Merge a configuration into another.
+func Merge( other *Viper ) { v.Merge( other ) }
+func (v *Viper) Merge( other *Viper ) {
+	mergeMaps( other.config, v.config, nil )
+	mergeMaps( other.override, v.override, nil )
+	mergeMaps( other.defaults, v.defaults, nil )
+	mergeMaps( other.kvstore, v.kvstore, nil )
+	for key,val := range other.pflags { v.pflags[key] = val }
+	for key,val := range other.env { v.env[key] = val }
+	for key,val := range other.aliases { v.aliases[key] = val }
+}
+
 func keyExists(k string, m map[string]interface{}) string {
 	lk := strings.ToLower(k)
 	for mk := range m {
