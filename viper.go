@@ -757,8 +757,10 @@ func (v *Viper) find(key string) interface{} {
 		if source != nil {
 			if reflect.TypeOf(source).Kind() == reflect.Map {
 				val := v.searchMap(cast.ToStringMap(source), path[1:])
-				jww.TRACE.Println(key, "found in nested config:", val)
-				return val
+				if val != nil {
+					jww.TRACE.Println(key, "found in nested config:", val)
+					return val
+				}
 			}
 		}
 	}
