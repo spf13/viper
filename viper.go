@@ -1082,11 +1082,10 @@ func (v *Viper) SaveConfig() error {
 	}
 
 	f, err := os.Create(v.getConfigFile())
-	defer f.Close()
-
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	switch v.getConfigType() {
 	case "json":
