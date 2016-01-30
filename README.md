@@ -12,7 +12,7 @@ to work within an application, and can handle all types of configuration needs
 and formats. It supports:
 
 * setting defaults
-* reading from JSON, TOML, YAML and HCL config files
+* reading from JSON, TOML, YAML, HCL, and Java properties config files
 * live watching and re-reading of config files (optional)
 * reading from environment variables
 * reading from remote config systems (etcd or Consul), and watching changes
@@ -31,7 +31,7 @@ Viper is here to help with that.
 
 Viper does the following for you:
 
-1. Find, load, and unmarshal a configuration file in JSON, TOML, YAML or HCL.
+1. Find, load, and unmarshal a configuration file in JSON, TOML, YAML, HCL, or Java properties formats.
 2. Provide a mechanism to set default values for your different
    configuration options.
 3. Provide a mechanism to set override values for options specified through
@@ -72,7 +72,7 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 ### Reading Config Files
 
 Viper requires minimal configuration so it knows where to look for config files.
-Viper supports JSON, TOML, YAML and HCL files. Viper can search multiple paths, but
+Viper supports JSON, TOML, YAML, HCL, and Java Properties files. Viper can search multiple paths, but
 currently a single Viper instance only supports a single configuration file.
 Viper does not default to any configuration search paths leaving defaults decision
 to an application.
@@ -343,7 +343,7 @@ how to use Consul.
 
 ```go
 viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
-viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop"
 err := viper.ReadRemoteConfig()
 ```
 
@@ -351,7 +351,7 @@ err := viper.ReadRemoteConfig()
 
 ```go
 viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
-viper.SetConfigType("json") // because there is no file extension in a stream of bytes
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes,  supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop"
 err := viper.ReadRemoteConfig()
 ```
 
@@ -362,7 +362,7 @@ err := viper.ReadRemoteConfig()
 var runtime_viper = viper.New()
 
 runtime_viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001", "/config/hugo.yml")
-runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes
+runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop"
 
 // read from remote config the first time.
 err := runtime_viper.ReadRemoteConfig()
