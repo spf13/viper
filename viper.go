@@ -447,6 +447,12 @@ func (v *Viper) SetTypeByDefaultValue(enable bool) {
 	v.typeByDefValue = enable
 }
 
+// GetConfig returns v.config
+func GetConfig() map[string]interface{} { return v.GetConfig() }
+func (v *Viper) GetConfig() map[string]interface{} {
+	return v.config
+}
+
 // Viper is essentially repository for configurations
 // Get can retrieve any value given the key to use
 // Get has the behavior of returning the value associated with the first
