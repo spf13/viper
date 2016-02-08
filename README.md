@@ -2,6 +2,16 @@
 
 Go configuration with fangs!
 
+Many Go projects are built using Viper including:
+
+* [Hugo](http://gohugo.io)
+* [EMC RexRay](http://rexray.readthedocs.org/en/stable/)
+* [Imgur's Incus](https://github.com/Imgur/incus)
+* [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
+* [Docker Notary](https://github.com/docker/Notary)
+* [BloomApi](https://www.bloomapi.com/)
+* [DOIt](https://github.com/bryanl/doit)
+
  [![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper) [![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
