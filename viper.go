@@ -238,7 +238,13 @@ func (v *Viper) WatchConfig() {
 		defer watcher.Close()
 
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
-		configFile := filepath.Clean(v.getConfigFile())
+		filename, err := v.getConfigFile()
+		if err != nil {
+			log.Println("error:", err)
+			return
+		}
+
+		configFile := filepath.Clean(filename)
 		configDir, _ := filepath.Split(configFile)
 
 		done := make(chan bool)
@@ -896,11 +902,16 @@ func (v *Viper) Set(key string, value interface{}) {
 func ReadInConfig() error { return v.ReadInConfig() }
 func (v *Viper) ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
+	filename, err := v.getConfigFile()
+	if err != nil {
+		return err
+	}
+
 	if !stringInSlice(v.getConfigType(), SupportedExts) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := ioutil.ReadFile(v.getConfigFile())
+	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -918,7 +929,12 @@ func (v *Viper) MergeInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := ioutil.ReadFile(v.getConfigFile())
+	filename, err := v.getConfigFile()
+	if err != nil {
+		return err
+	}
+
+	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -1191,7 +1207,11 @@ func (v *Viper) getConfigType() string {
 		return v.configType
 	}
 
-	cf := v.getConfigFile()
+	cf, err := v.getConfigFile()
+	if err != nil {
+		return ""
+	}
+
 	ext := filepath.Ext(cf)
 
 	if len(ext) > 1 {
@@ -1201,15 +1221,15 @@ func (v *Viper) getConfigType() string {
 	}
 }
 
-func (v *Viper) getConfigFile() string {
+func (v *Viper) getConfigFile() (string, error) {
 	// if explicitly set, then use it
 	if v.configFile != "" {
-		return v.configFile
+		return v.configFile, nil
 	}
 
 	cf, err := v.findConfigFile()
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	v.configFile = cf

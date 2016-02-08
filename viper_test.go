@@ -225,7 +225,9 @@ func (s *stringValue) String() string {
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
-	assert.Equal(t, "/tmp/config.yaml", v.getConfigFile())
+	filename, err := v.getConfigFile()
+	assert.Equal(t, "/tmp/config.yaml", filename)
+	assert.NoError(t, err)
 }
 
 func TestDefault(t *testing.T) {
@@ -718,7 +720,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{"", ""}), reflect.TypeOf(err))
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
