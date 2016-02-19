@@ -371,6 +371,30 @@ func TestEnv(t *testing.T) {
 
 }
 
+func TestEnvNestedKeys(t *testing.T) {
+	initJSON()
+
+	BindEnv("id")
+	BindEnv("f", "FOOD")
+
+	// Validate the default value
+	assert.Equal(t, "fancy", Get("icing.type"))
+
+	os.Setenv("ID", "13")
+	os.Setenv("FOOD", "apple")
+	os.Setenv("NAME", "crunk")
+	os.Setenv("ICING_TYPE", "plain")
+
+	assert.Equal(t, "13", Get("id"))
+	assert.Equal(t, "apple", Get("f"))
+	assert.Equal(t, "Cake", Get("name"))
+
+	AutomaticEnv()
+
+	assert.Equal(t, "plain", Get("icing.type"))
+	assert.Equal(t, "crunk", Get("name"))
+}
+
 func TestEnvPrefix(t *testing.T) {
 	initJSON()
 
