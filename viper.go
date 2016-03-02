@@ -37,6 +37,7 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	"gopkg.in/fsnotify.v1"
+	"github.com/doublerebel/bellows"
 )
 
 var v *Viper
@@ -612,7 +613,8 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
 func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
+	expanded := bellows.Expand(v.AllSettings())
+	err := mapstructure.WeakDecode(expanded, rawVal)
 
 	if err != nil {
 		return err
@@ -908,8 +910,11 @@ func (v *Viper) InConfig(key string) bool {
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
-	key = v.realKey(strings.ToLower(key))
-	v.defaults[key] = value
+	flat := bellows.FlattenPrefixed(value, key)
+	for flatkey, flatval := range flat {
+		flatkey = v.realKey(strings.ToLower(flatkey))
+		v.defaults[flatkey] = flatval
+	}
 }
 
 // Sets the value for the key in the override regiser.
