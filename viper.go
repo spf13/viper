@@ -326,9 +326,10 @@ func (v *Viper) AddConfigPath(in string) {
 }
 
 // AddRemoteProvider adds a remote configuration source.
-// Remote Providers are searched in the order they are added.
+// Remote Providers are searched in the order they are added, and use first found provider.
 // provider is a string value, "etcd" or "consul" are currently supported.
 // endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
+// multiple addresses can configured in one url separated by commas
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
@@ -1156,36 +1157,36 @@ func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
 	m := map[string]struct{}{}
 
-	for key, _ := range v.defaults {
+	for key := range v.defaults {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.pflags {
+	for key := range v.pflags {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.env {
+	for key := range v.env {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.config {
+	for key := range v.config {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.kvstore {
+	for key := range v.kvstore {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.override {
+	for key := range v.override {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.aliases {
+	for key := range v.aliases {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
 	a := []string{}
-	for x, _ := range m {
+	for x := range m {
 		a = append(a, x)
 	}
 
