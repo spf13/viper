@@ -605,15 +605,35 @@ func (v *Viper) GetSizeInBytes(key string) uint {
 // Takes a single key and unmarshals it into a Struct
 func UnmarshalKey(key string, rawVal interface{}) error { return v.UnmarshalKey(key, rawVal) }
 func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
-	return mapstructure.Decode(v.Get(key), rawVal)
+	config := &mapstructure.DecoderConfig{
+		Metadata:   nil,
+		Result:     rawVal,
+		DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(v.Get(key))
 }
 
 // Unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
 func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
+	config := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           rawVal,
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
+	}
 
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(v.AllSettings())
 	if err != nil {
 		return err
 	}
@@ -631,6 +651,7 @@ func weakDecodeExact(input, output interface{}) error {
 		Metadata:         nil,
 		Result:           output,
 		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
