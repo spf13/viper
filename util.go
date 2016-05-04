@@ -58,7 +58,11 @@ func absPathify(inPath string) string {
 
 	if strings.HasPrefix(inPath, "$") {
 		end := strings.Index(inPath, string(os.PathSeparator))
-		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+		if end == -1 {
+			inPath = os.Getenv(inPath[1:])
+		} else {
+			inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+		}
 	}
 
 	if filepath.IsAbs(inPath) {
