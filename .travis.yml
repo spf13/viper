@@ -5,6 +5,10 @@ go:
   - 1.6.1
   - tip
 
+matrix:
+  allow_failures:
+    - go: tip
+
 script:
   - go test -v ./...
 sudo: false
