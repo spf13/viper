@@ -41,6 +41,15 @@ var yamlExampleWithExtras = []byte(`Existing: true
 Bogus: true
 `)
 
+var yamlExampleWithSubtreeCaps = []byte(`Hacker: true
+name: steve
+clothing:
+  JACKET: leather
+  TROUSERS: denim
+  pants:
+    size: large
+`)
+
 type testUnmarshalExtra struct {
 	Existing bool
 }
@@ -755,6 +764,18 @@ func TestSub(t *testing.T) {
 
 	subv = v.Sub("clothing.pants")
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, subv, (*Viper)(nil))
+}
+
+func TestSubWithCaps(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExampleWithSubtreeCaps))
+
+	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.JACKET"), subv.Get("jacket"))
 
 	subv = v.Sub("clothing.pants.size")
 	assert.Equal(t, subv, (*Viper)(nil))
