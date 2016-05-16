@@ -1106,16 +1106,14 @@ func (v *Viper) getKeyValueConfig() error {
 	if RemoteConfig == nil {
 		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/spf13/viper/remote'")
 	}
-
 	for _, rp := range v.remoteProviders {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
 			continue
 		}
 		v.kvstore = val
-		return nil
 	}
-	return RemoteConfigError("No Files Found")
+	return nil
 }
 
 func (v *Viper) getRemoteConfig(provider *defaultRemoteProvider) (map[string]interface{}, error) {
@@ -1155,36 +1153,36 @@ func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
 	m := map[string]struct{}{}
 
-	for key, _ := range v.defaults {
+	for key := range v.defaults {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.pflags {
+	for key := range v.pflags {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.env {
+	for key := range v.env {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.config {
+	for key := range v.config {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.kvstore {
+	for key := range v.kvstore {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.override {
+	for key := range v.override {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
-	for key, _ := range v.aliases {
+	for key := range v.aliases {
 		m[strings.ToLower(key)] = struct{}{}
 	}
 
 	a := []string{}
-	for x, _ := range m {
+	for x := range m {
 		a = append(a, x)
 	}
 
