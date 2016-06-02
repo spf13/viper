@@ -935,7 +935,13 @@ func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
-	v.defaults[key] = value
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
+
+	// set innermost value
+	deepestMap[lastKey] = value
 }
 
 // Set sets the value for the key in the override regiser.
@@ -945,7 +951,13 @@ func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
-	v.override[key] = value
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.override, path[0:len(path)-1])
+
+	// set innermost value
+	deepestMap[lastKey] = value
 }
 
 // ReadInConfig will discover and load the configuration file from disk
