@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,15 +32,18 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
+	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 )
 
 var v *Viper
+var fs afero.Fs
 
 func init() {
 	v = New()
+	fs = afero.NewOsFs()
 }
 
 type remoteConfigFactory interface {
@@ -930,7 +932,7 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := ioutil.ReadFile(v.getConfigFile())
+	file, err := afero.ReadFile(fs, v.getConfigFile())
 	if err != nil {
 		return err
 	}
@@ -948,7 +950,7 @@ func (v *Viper) MergeInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := ioutil.ReadFile(v.getConfigFile())
+	file, err := afero.ReadFile(fs, v.getConfigFile())
 	if err != nil {
 		return err
 	}
