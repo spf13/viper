@@ -1208,6 +1208,7 @@ func SetConfigName(in string) { v.SetConfigName(in) }
 func (v *Viper) SetConfigName(in string) {
 	if in != "" {
 		v.configName = in
+		v.configFile = ""
 	}
 }
 
