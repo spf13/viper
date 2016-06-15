@@ -21,9 +21,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/BurntSushi/toml"
 	"github.com/hashicorp/hcl"
 	"github.com/magiconair/properties"
+	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"gopkg.in/yaml.v2"
@@ -155,8 +155,13 @@ func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType s
 		}
 
 	case "toml":
-		if _, err := toml.Decode(buf.String(), &c); err != nil {
+		tomlTree, err := toml.Load(buf.String())
+		if err != nil {
 			return ConfigParseError{err}
+		}
+		tomlMap := tomlTree.ToMap()
+		for key, value := range tomlMap {
+			c[key] = value
 		}
 
 	case "properties", "props", "prop":
