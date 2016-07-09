@@ -611,7 +611,19 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
 func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
+	config := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           rawVal,
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(v.AllSettings())
 
 	if err != nil {
 		return err
