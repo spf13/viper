@@ -551,6 +551,12 @@ func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
+// Returns the value associated with the key as an integer
+func GetInt64(key string) int64 { return v.GetInt64(key) }
+func (v *Viper) GetInt64(key string) int64 {
+	return cast.ToInt64(v.Get(key))
+}
+
 // Returns the value associated with the key as a float64
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
 func (v *Viper) GetFloat64(key string) float64 {
