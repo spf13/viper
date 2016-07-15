@@ -424,7 +424,11 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 			// if the type of `next` is the same as the type being asserted
 			return v.searchMap(next.(map[string]interface{}), path[1:])
 		default:
-			return next
+			if len(path) == 1 {
+				return next
+			}
+			// got a value but nested key expected, return "nil" for not found
+			return nil
 		}
 	} else {
 		return nil
