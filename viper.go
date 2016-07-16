@@ -1286,55 +1286,114 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 	return v.kvstore, err
 }
 
-// AllKeys returns all keys regardless where they are set.
+// AllKeys returns all keys holding a value, regardless of where they are set.
+// Nested keys are returned with a v.keyDelim (= ".") separator
 func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
-	m := map[string]struct{}{}
+	m := map[string]bool{}
+	// add all paths, by order of descending priority to ensure correct shadowing
+	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
+	m = v.flattenAndMergeMap(m, v.override, "")
+	m = v.mergeFlatMap(m, v.pflags)
+	m = v.mergeFlatMap(m, v.env)
+	m = v.flattenAndMergeMap(m, v.config, "")
+	m = v.flattenAndMergeMap(m, v.kvstore, "")
+	m = v.flattenAndMergeMap(m, v.defaults, "")
 
-	for key := range v.defaults {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.pflags {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.env {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.config {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.kvstore {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.override {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.aliases {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
+	// convert set of paths to list
 	a := []string{}
 	for x := range m {
 		a = append(a, x)
 	}
-
 	return a
 }
 
-// AllSettings returns all settings as a map[string]interface{}.
+// flattenAndMergeMap recursively flattens the given map into a map[string]bool
+// of key paths (used as a set, easier to manipulate than a []string):
+// - each path is merged into a single key string, delimited with v.keyDelim (= ".")
+// - if a path is shadowed by an earlier value in the initial shadow map,
+//   it is skipped.
+// The resulting set of paths is merged to the given shadow set at the same time.
+func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interface{}, prefix string) map[string]bool {
+	if shadow != nil && prefix != "" && shadow[prefix] {
+		// prefix is shadowed => nothing more to flatten
+		return shadow
+	}
+	if shadow == nil {
+		shadow = make(map[string]bool)
+	}
+
+	var m2 map[string]interface{}
+	if prefix != "" {
+		prefix += v.keyDelim
+	}
+	for k, val := range m {
+		fullKey := prefix + k
+		switch val.(type) {
+		case map[string]interface{}:
+			m2 = val.(map[string]interface{})
+		case map[interface{}]interface{}:
+			m2 = cast.ToStringMap(val)
+		default:
+			// immediate value
+			shadow[strings.ToLower(fullKey)] = true
+			continue
+		}
+		// recursively merge to shadow map
+		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
+	}
+	return shadow
+}
+
+// mergeFlatMap merges the given maps, excluding values of the second map
+// shadowed by values from the first map.
+func (v *Viper) mergeFlatMap(shadow map[string]bool, mi interface{}) map[string]bool {
+	// unify input map
+	var m map[string]interface{}
+	switch mi.(type) {
+	case map[string]string, map[string]FlagValue:
+		m = cast.ToStringMap(mi)
+	default:
+		return shadow
+	}
+
+	// scan keys
+outer:
+	for k, _ := range m {
+		path := strings.Split(k, v.keyDelim)
+		// scan intermediate paths
+		var parentKey string
+		for i := 1; i < len(path); i++ {
+			parentKey = strings.Join(path[0:i], v.keyDelim)
+			if shadow[parentKey] {
+				// path is shadowed, continue
+				continue outer
+			}
+		}
+		// add key
+		shadow[strings.ToLower(k)] = true
+	}
+	return shadow
+}
+
+// AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
 	m := map[string]interface{}{}
-	for _, x := range v.AllKeys() {
-		m[x] = v.Get(x)
+	// start from the list of keys, and construct the map one value at a time
+	for _, k := range v.AllKeys() {
+		value := v.Get(k)
+		if value == nil {
+			// should not happen, since AllKeys() returns only keys holding a value,
+			// check just in case anything changes
+			continue
+		}
+		path := strings.Split(k, v.keyDelim)
+		lastKey := strings.ToLower(path[len(path)-1])
+		deepestMap := deepSearch(m, path[0:len(path)-1])
+		// set innermost value
+		deepestMap[lastKey] = value
 	}
-
 	return m
 }
 

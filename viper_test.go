@@ -422,9 +422,9 @@ func TestSetEnvReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters", "p_type", "p_name", "foos"}
+	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.trousers", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[interface{}]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -886,13 +886,14 @@ func TestMergeConfigNoMerge(t *testing.T) {
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
-	SetDefault("ID", 1)
-	Set("name", "Steve")
-	Set("lastname", "Owen")
+	v := New()
+	v.SetDefault("ID", 1)
+	v.Set("name", "Steve")
+	v.Set("lastname", "Owen")
 
-	RegisterAlias("UserID", "ID")
-	RegisterAlias("Firstname", "name")
-	RegisterAlias("Surname", "lastname")
+	v.RegisterAlias("UserID", "ID")
+	v.RegisterAlias("Firstname", "name")
+	v.RegisterAlias("Surname", "lastname")
 
 	type config struct {
 		ID        int
@@ -901,8 +902,7 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 	}
 
 	var C config
-
-	err := Unmarshal(&C)
+	err := v.Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
@@ -925,6 +925,10 @@ func TestShadowedNestedValue(t *testing.T) {
 	assert.Equal(t, "leather", GetString("clothing.jacket"))
 	assert.Nil(t, Get("clothing.jacket.price"))
 	assert.Equal(t, polyester, GetString("clothing.shirt"))
+
+	clothingSettings := AllSettings()["clothing"].(map[string]interface{})
+	assert.Equal(t, "leather", clothingSettings["jacket"])
+	assert.Equal(t, polyester, clothingSettings["shirt"])
 }
 
 func TestDotParameter(t *testing.T) {
