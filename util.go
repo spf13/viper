@@ -45,6 +45,10 @@ func insensitiviseMap(m map[string]interface{}) {
 		if key != lower {
 			delete(m, key)
 			m[lower] = val
+			if m2, ok := val.(map[string]interface{}); ok {
+				// nested map: recursively insensitivise
+				insensitiviseMap(m2)
+			}
 		}
 	}
 }
