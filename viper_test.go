@@ -45,14 +45,6 @@ type testUnmarshalExtra struct {
 	Existing bool
 }
 
-var tomlExample = []byte(`
-title = "TOML Example"
-
-[owner]
-organization = "MongoDB"
-Bio = "MongoDB Chief Developer Advocate & Hacker at Large"
-dob = 1979-05-27T07:32:00Z # First class dates? Why not?`)
-
 var jsonExample = []byte(`{
 "id": "0001",
 "type": "donut",
@@ -120,9 +112,7 @@ func initConfigs() {
 	r = bytes.NewReader(propertiesExample)
 	unmarshalReader(r, v.config)
 
-	SetConfigType("toml")
-	r = bytes.NewReader(tomlExample)
-	unmarshalReader(r, v.config)
+	initTOML(false)
 
 	SetConfigType("json")
 	remote := bytes.NewReader(remoteExample)
@@ -149,14 +139,6 @@ func initProperties() {
 	Reset()
 	SetConfigType("properties")
 	r := bytes.NewReader(propertiesExample)
-
-	unmarshalReader(r, v.config)
-}
-
-func initTOML() {
-	Reset()
-	SetConfigType("toml")
-	r := bytes.NewReader(tomlExample)
 
 	unmarshalReader(r, v.config)
 }
@@ -318,7 +300,7 @@ func TestProperties(t *testing.T) {
 }
 
 func TestTOML(t *testing.T) {
-	initTOML()
+	initTOML(true)
 	assert.Equal(t, "TOML Example", Get("title"))
 }
 
@@ -722,7 +704,7 @@ func TestDirsSearch(t *testing.T) {
 	err = v.ReadInConfig()
 	assert.Nil(t, err)
 
-	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+	assertConfigValue(t, v)
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
