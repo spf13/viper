@@ -883,3 +883,12 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 
 	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
 }
+
+func TestShadowedNestedValue(t *testing.T) {
+	polyester := "polyester"
+	initYAML()
+	SetDefault("clothing.shirt", polyester)
+
+	assert.Equal(t, GetString("clothing.jacket"), "leather")
+	assert.Equal(t, GetString("clothing.shirt"), polyester)
+}
