@@ -901,3 +901,9 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 
 	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
 }
+
+func TestSetConfigNameClearsFileCache(t *testing.T) {
+	SetConfigFile("/tmp/config.yaml")
+	SetConfigName("default")
+	assert.Empty(t, v.getConfigFile())
+}
