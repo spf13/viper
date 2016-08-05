@@ -39,11 +39,9 @@ import (
 )
 
 var v *Viper
-var fs afero.Fs
 
 func init() {
 	v = New()
-	fs = afero.NewOsFs()
 }
 
 type remoteConfigFactory interface {
@@ -134,6 +132,9 @@ type Viper struct {
 	// A set of paths to look for the config file in
 	configPaths []string
 
+	// The filesystem to read config from.
+	fs afero.Fs
+
 	// A set of remote providers to search for the configuration
 	remoteProviders []*defaultRemoteProvider
 
@@ -163,6 +164,7 @@ func New() *Viper {
 	v := new(Viper)
 	v.keyDelim = "."
 	v.configName = "config"
+	v.fs = afero.NewOsFs()
 	v.config = make(map[string]interface{})
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
@@ -938,7 +940,7 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := afero.ReadFile(fs, v.getConfigFile())
+	file, err := afero.ReadFile(v.fs, v.getConfigFile())
 	if err != nil {
 		return err
 	}
@@ -956,7 +958,7 @@ func (v *Viper) MergeInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	file, err := afero.ReadFile(fs, v.getConfigFile())
+	file, err := afero.ReadFile(v.fs, v.getConfigFile())
 	if err != nil {
 		return err
 	}
@@ -1208,6 +1210,12 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	}
 
 	return m
+}
+
+// Se the filesystem to use to read configuration.
+func SetFs(fs afero.Fs) { v.SetFs(fs) }
+func (v *Viper) SetFs(fs afero.Fs) {
+	v.fs = fs
 }
 
 // Name for the config file.

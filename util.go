@@ -77,7 +77,7 @@ func absPathify(inPath string) string {
 
 // Check if File / Directory Exists
 func exists(path string) (bool, error) {
-	_, err := fs.Stat(path)
+	_, err := v.fs.Stat(path)
 	if err == nil {
 		return true, nil
 	}
