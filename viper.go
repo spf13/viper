@@ -450,6 +450,11 @@ func (v *Viper) SetTypeByDefaultValue(enable bool) {
 	v.typeByDefValue = enable
 }
 
+// GetViper gets the global Viper instance.
+func GetViper() *Viper {
+	return v
+}
+
 // Viper is essentially repository for configurations
 // Get can retrieve any value given the key to use
 // Get has the behavior of returning the value associated with the first
