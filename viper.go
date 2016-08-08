@@ -926,6 +926,9 @@ func (v *Viper) Set(key string, value interface{}) {
 func ReadInConfig() error { return v.ReadInConfig() }
 func (v *Viper) ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
+	if v.getConfigFile() == "" {
+		return ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+	}
 	if !stringInSlice(v.getConfigType(), SupportedExts) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
