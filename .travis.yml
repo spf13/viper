@@ -1,8 +1,8 @@
 language: go
 go:
-  - 1.4.3
   - 1.5.4
   - 1.6.3
+  - 1.7
   - tip
   
 os:
@@ -12,6 +12,7 @@ os:
 matrix:
   allow_failures:
     - go: tip
+  fast_finish: true
 
 script:
   - go test -v ./...
