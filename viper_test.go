@@ -491,7 +491,7 @@ func TestBindPFlags(t *testing.T) {
 		"endpoint": "/public",
 	}
 
-	for name, _ := range testValues {
+	for name := range testValues {
 		testValues[name] = flagSet.String(name, "", "test")
 	}
 
