@@ -654,7 +654,7 @@ func weakDecodeExact(input, output interface{}) error {
 	return decoder.Decode(input)
 }
 
-// Unmarshals the config into a Struct, erroring if a field is non-existant
+// Unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct
 func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	err := weakDecodeExact(v.AllSettings(), rawVal)
