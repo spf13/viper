@@ -250,6 +250,29 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, "leather", Get("clothing.jacket"))
 }
 
+func TestDefaultValueOnGetters(t *testing.T) {
+	SetConfigType("yaml")
+	r := bytes.NewReader(yamlExample)
+
+	unmarshalReader(r, v.config)
+	assert.False(t, InConfig("surname"))
+	assert.Equal(t, "doe", GetDefaultString("surname", "doe"))
+	assert.False(t, InConfig("month"))
+	assert.Equal(t, 1, GetDefaultInt("month", 1))
+	assert.False(t, InConfig("year"))
+	assert.Equal(t, int64(20), GetDefaultInt64("year", 20))
+	assert.False(t, InConfig("false-bool"))
+	assert.Equal(t, true, GetDefaultBoolean("false-bool", true))
+	assert.False(t, InConfig("float-64"))
+	assert.Equal(t, float64(2.4), GetDefaultFloat64("float-64", 2.4))
+	localTime := time.Now()
+	assert.False(t, InConfig("no-time"))
+	assert.Equal(t, localTime, GetDefaultTime("no-time", localTime))
+	secDuration := time.Second
+	assert.False(t, InConfig("no-duration"))
+	assert.Equal(t, secDuration, GetDefaultDuration("no-duration", secDuration))
+}
+
 func TestUnmarshalling(t *testing.T) {
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
