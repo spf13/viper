@@ -406,14 +406,23 @@ The following functions and methods exist:
 
  * `Get(key string) : interface{}`
  * `GetBool(key string) : bool`
+ * `GetDefaultBool(key string, value bool) : bool`
  * `GetFloat64(key string) : float64`
+ * `GetDefaultFloat64(key string, value float64) : float64`
  * `GetInt(key string) : int`
+ * `GetDefaultInt(key string, value int) : int`
  * `GetString(key string) : string`
+ * `GetDefaultString(key string, value string) : string`
  * `GetStringMap(key string) : map[string]interface{}`
+ * `GetDefaultStringMap(key string, value map[string]interface{}) : map[string]interface{}`
  * `GetStringMapString(key string) : map[string]string`
+ * `GetDefaultStringMapString(key string, value map[string]string) : map[string]string`
  * `GetStringSlice(key string) : []string`
+ * `GetDefaultStringSlice(key string, value []string) : []string`
  * `GetTime(key string) : time.Time`
+ * `GetDefaultTime(key string, value time.Time) : time.Time`
  * `GetDuration(key string) : time.Duration`
+ * `GetDefaultDuration(key string, value time.Duration) : time.Duration`
  * `IsSet(key string) : bool`
 
 One important thing to recognize is that each Get function will return a zero
