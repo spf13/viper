@@ -1115,8 +1115,7 @@ func (v *Viper) getKeyValueConfig() error {
 	return RemoteConfigError("No Files Found")
 }
 
-func (v *Viper) getRemoteConfig(provider *defaultRemoteProvider) (map[string]interface{}, error) {
-
+func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
 	reader, err := RemoteConfig.Get(provider)
 	if err != nil {
 		return nil, err
@@ -1138,7 +1137,7 @@ func (v *Viper) watchKeyValueConfig() error {
 	return RemoteConfigError("No Files Found")
 }
 
-func (v *Viper) watchRemoteConfig(provider *defaultRemoteProvider) (map[string]interface{}, error) {
+func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
 	reader, err := RemoteConfig.Watch(provider)
 	if err != nil {
 		return nil, err
