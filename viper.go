@@ -687,10 +687,10 @@ func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
 // BindFlagValues binds a full FlagValue set to the configuration, using each flag's long
 // name as the config key.
 func BindFlagValues(flags FlagValueSet) error { return v.BindFlagValues(flags) }
-func (v *Viper) BindFlagValues(flags FlagValueSet) error {
+func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
 	flags.VisitAll(func(flag FlagValue) {
 		if err = v.BindFlagValue(flag.Name(), flag); err != nil {
-			return err
+			return
 		}
 	})
 	return nil
