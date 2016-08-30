@@ -29,12 +29,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Denotes failing to parse configuration file.
+// ConfigParseError denotes failing to parse configuration file.
 type ConfigParseError struct {
 	err error
 }
 
-// Returns the formatted configuration error.
+// Error returns the formatted configuration error.
 func (pe ConfigParseError) Error() string {
 	return fmt.Sprintf("While parsing config: %s", pe.err.Error())
 }
