@@ -249,7 +249,7 @@ func (v *Viper) WatchConfig() {
 			for {
 				select {
 				case event := <-watcher.Events:
-					// we only care about the config file
+				// we only care about the config file
 					if filepath.Clean(event.Name) == configFile {
 						if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 							err := v.ReadInConfig()
@@ -548,10 +548,28 @@ func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
+// Returns the value associated with the key as a string or the passed default value
+func GetDefaultString(key string, defaultValue string) string { return v.GetDefaultString(key, defaultValue) }
+func (v *Viper) GetDefaultString(key string, defaultValue string) string {
+	if value := v.Get(key); value != nil {
+		return cast.ToString(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as a boolean
 func GetBool(key string) bool { return v.GetBool(key) }
 func (v *Viper) GetBool(key string) bool {
 	return cast.ToBool(v.Get(key))
+}
+
+// Returns the value associated with the key as a boolean or the passed default value
+func GetDefaultBoolean(key string, defaultValue bool) bool { return v.GetDefaultBoolean(key, defaultValue) }
+func (v *Viper) GetDefaultBoolean(key string, defaultValue bool) bool {
+	if value := v.Get(key); value != nil {
+		return cast.ToBool(value)
+	}
+	return defaultValue
 }
 
 // Returns the value associated with the key as an integer
@@ -560,10 +578,28 @@ func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
+// Returns the value associated with the key as an int or the passed default value
+func GetDefaultInt(key string, defaultValue int) int { return v.GetDefaultInt(key, defaultValue) }
+func (v *Viper) GetDefaultInt(key string, defaultValue int) int {
+	if value := v.Get(key); value != nil {
+		return cast.ToInt(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as an integer
 func GetInt64(key string) int64 { return v.GetInt64(key) }
 func (v *Viper) GetInt64(key string) int64 {
 	return cast.ToInt64(v.Get(key))
+}
+
+// Returns the value associated with the key as an int64 or the passed default value
+func GetDefaultInt64(key string, defaultValue int64) int64 { return v.GetDefaultInt64(key, defaultValue) }
+func (v *Viper) GetDefaultInt64(key string, defaultValue int64) int64 {
+	if value := v.Get(key); value != nil {
+		return cast.ToInt64(value)
+	}
+	return defaultValue
 }
 
 // Returns the value associated with the key as a float64
@@ -572,10 +608,28 @@ func (v *Viper) GetFloat64(key string) float64 {
 	return cast.ToFloat64(v.Get(key))
 }
 
+// Returns the value associated with the key as a float64 or the passed default value
+func GetDefaultFloat64(key string, defaultValue float64) float64 { return v.GetDefaultFloat64(key, defaultValue) }
+func (v *Viper) GetDefaultFloat64(key string, defaultValue float64) float64 {
+	if value := v.Get(key); value != nil {
+		return cast.ToFloat64(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as time
 func GetTime(key string) time.Time { return v.GetTime(key) }
 func (v *Viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
+}
+
+// Returns the value associated with the key as time or the passed default value
+func GetDefaultTime(key string, defaultValue time.Time) time.Time { return v.GetDefaultTime(key, defaultValue) }
+func (v *Viper) GetDefaultTime(key string, defaultValue time.Time) time.Time {
+	if value := v.Get(key); value != nil {
+		return cast.ToTime(value)
+	}
+	return defaultValue
 }
 
 // Returns the value associated with the key as a duration
@@ -584,10 +638,28 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
+// Returns the value associated with the key as a duration or the passed default value
+func GetDefaultDuration(key string, defaultValue time.Duration) time.Duration { return v.GetDefaultDuration(key, defaultValue) }
+func (v *Viper) GetDefaultDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := v.Get(key); value != nil {
+		return cast.ToDuration(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as a slice of strings
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
+}
+
+// Returns the value associated with the key as a duration or the passed default value
+func GetDefaultStringSlice(key string, defaultValue []string) []string { return v.GetDefaultStringSlice(key, defaultValue) }
+func (v *Viper) GetDefaultStringSlice(key string, defaultValue []string) []string {
+	if value := v.Get(key); value != nil {
+		return cast.ToStringSlice(value)
+	}
+	return defaultValue
 }
 
 // Returns the value associated with the key as a map of interfaces
@@ -596,16 +668,43 @@ func (v *Viper) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(v.Get(key))
 }
 
+// Returns the value associated with the key as a map or the passed default value
+func GetDefaultStringMap(key string, defaultValue map[string]interface{}) map[string]interface{} { return v.GetDefaultStringMap(key, defaultValue) }
+func (v *Viper) GetDefaultStringMap(key string, defaultValue map[string]interface{}) map[string]interface{} {
+	if value := v.Get(key); value != nil {
+		return cast.ToStringMap(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as a map of strings
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 func (v *Viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
 }
 
+// Returns the value associated with the key as a map of strings or the passed default value
+func GetDefaultStringMapString(key string, defaultValue map[string]string) map[string]string { return v.GetDefaultStringMapString(key, defaultValue) }
+func (v *Viper) GetDefaultStringMapString(key string, defaultValue map[string]string) map[string]string {
+	if value := v.Get(key); value != nil {
+		return cast.ToStringMapString(value)
+	}
+	return defaultValue
+}
+
 // Returns the value associated with the key as a map to a slice of strings.
 func GetStringMapStringSlice(key string) map[string][]string { return v.GetStringMapStringSlice(key) }
 func (v *Viper) GetStringMapStringSlice(key string) map[string][]string {
 	return cast.ToStringMapStringSlice(v.Get(key))
+}
+
+// Returns the value associated with the key as a map to a slice of string or the passed default value
+func GetDefaultStringMapStringSlice(key string, defaultValue map[string][]string) map[string][]string { return v.GetDefaultStringMapStringSlice(key, defaultValue) }
+func (v *Viper) GetDefaultStringMapStringSlice(key string, defaultValue map[string][]string) map[string][]string {
+	if value := v.Get(key); value != nil {
+		return cast.ToStringMapStringSlice(value)
+	}
+	return defaultValue
 }
 
 // Returns the size of the value associated with the given key
@@ -1005,7 +1104,7 @@ func keyExists(k string, m map[string]interface{}) string {
 }
 
 func castToMapStringInterface(
-	src map[interface{}]interface{}) map[string]interface{} {
+src map[interface{}]interface{}) map[string]interface{} {
 	tgt := map[string]interface{}{}
 	for k, v := range src {
 		tgt[fmt.Sprintf("%v", k)] = v
@@ -1019,7 +1118,7 @@ func castToMapStringInterface(
 // deep. Both map types are supported as there is a go-yaml fork that uses
 // `map[string]interface{}` instead.
 func mergeMaps(
-	src, tgt map[string]interface{}, itgt map[interface{}]interface{}) {
+src, tgt map[string]interface{}, itgt map[interface{}]interface{}) {
 	for sk, sv := range src {
 		tk := keyExists(sk, tgt)
 		if tk == "" {
