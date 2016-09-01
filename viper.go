@@ -157,6 +157,9 @@ type Viper struct {
 	typeByDefValue bool
 
 	onConfigChange func(fsnotify.Event)
+
+	//name of default tenant
+	tenantDefault string
 }
 
 // Returns an initialized Viper instance.
@@ -268,6 +271,12 @@ func (v *Viper) WatchConfig() {
 		watcher.Add(configDir)
 		<-done
 	}()
+}
+
+// Explicitly define the tenant default that will be override by others tenants
+func SetTenantDefault(tenDefault string) { v.SetTenantDefault(tenDefault) }
+func (v *Viper) SetTenantDefault(tenDefault string) {
+	v.tenantDefault = tenDefault
 }
 
 // Explicitly define the path, name and extension of the config file
@@ -542,10 +551,36 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 }
 
+// Returns the value associated with the key as a string considering the tenant selected
+func GetStringTenant(tenant string, key string) string { return v.GetStringTenant(tenant, key) }
+func (v *Viper) GetStringTenant(tenant string, key string) string {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToString(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToString(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToString(v.Get(key))
+}
+
 // Returns the value associated with the key as a string
 func GetString(key string) string { return v.GetString(key) }
 func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
+}
+
+// Returns the value associated with the key as a boolean considering the tenant selected
+func GetBoolTenant(tenant string, key string) bool { return v.GetBoolTenant(tenant, key) }
+func (v *Viper) GetBoolTenant(tenant string, key string) bool {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToBool(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToBool(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToBool(v.Get(key))
 }
 
 // Returns the value associated with the key as a boolean
@@ -554,10 +589,36 @@ func (v *Viper) GetBool(key string) bool {
 	return cast.ToBool(v.Get(key))
 }
 
+// Returns the value associated with the key as a int considering the tenant selected
+func GetIntTenant(tenant string, key string) int { return v.GetIntTenant(tenant, key) }
+func (v *Viper) GetIntTenant(tenant string, key string) int {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToInt(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToInt(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToInt(v.Get(key))
+}
+
 // Returns the value associated with the key as an integer
 func GetInt(key string) int { return v.GetInt(key) }
 func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
+}
+
+// Returns the value associated with the key as a int considering the tenant selected
+func GetInt64Tenant(tenant string, key string) int64 { return v.GetInt64Tenant(tenant, key) }
+func (v *Viper) GetInt64Tenant(tenant string, key string) int64 {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToInt64(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToInt64(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToInt64(v.Get(key))
 }
 
 // Returns the value associated with the key as an integer
@@ -566,10 +627,36 @@ func (v *Viper) GetInt64(key string) int64 {
 	return cast.ToInt64(v.Get(key))
 }
 
+// Returns the value associated with the key as a float considering the tenant selected
+func GetFloat64Tenant(tenant string, key string) float64 { return v.GetFloat64Tenant(tenant, key) }
+func (v *Viper) GetFloat64Tenant(tenant string, key string) float64 {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToFloat64(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToFloat64(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToFloat64(v.Get(key))
+}
+
 // Returns the value associated with the key as a float64
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
 func (v *Viper) GetFloat64(key string) float64 {
 	return cast.ToFloat64(v.Get(key))
+}
+
+// Returns the value associated with the key as a time considering the tenant selected
+func GetTimeTenant(tenant string, key string) time.Time { return v.GetTimeTenant(tenant, key) }
+func (v *Viper) GetTimeTenant(tenant string, key string) time.Time {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToTime(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToTime(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToTime(v.Get(key))
 }
 
 // Returns the value associated with the key as time
@@ -578,10 +665,40 @@ func (v *Viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
 }
 
+// Returns the value associated with the key as a duration considering the tenant selected
+func GetDurationTenant(tenant string, key string) time.Duration {
+	return v.GetDurationTenant(tenant, key)
+}
+func (v *Viper) GetDurationTenant(tenant string, key string) time.Duration {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToDuration(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToDuration(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToDuration(v.Get(key))
+}
+
 // Returns the value associated with the key as a duration
 func GetDuration(key string) time.Duration { return v.GetDuration(key) }
 func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
+}
+
+// Returns the value associated with the key as a slice of strings considering the tenant selected
+func GetStringSliceTenant(tenant string, key string) []string {
+	return v.GetStringSliceTenant(tenant, key)
+}
+func (v *Viper) GetStringSliceTenant(tenant string, key string) []string {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToStringSlice(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToStringSlice(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToStringSlice(v.Get(key))
 }
 
 // Returns the value associated with the key as a slice of strings
@@ -590,16 +707,61 @@ func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
+// Returns the value associated with the key as a map of interfaces considering the tenant selected
+func GetStringMapTenant(tenant string, key string) map[string]interface{} {
+	return v.GetStringMapTenant(tenant, key)
+}
+func (v *Viper) GetStringMapTenant(tenant string, key string) map[string]interface{} {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToStringMap(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToStringMap(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToStringMap(v.Get(key))
+}
+
 // Returns the value associated with the key as a map of interfaces
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 func (v *Viper) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(v.Get(key))
 }
 
+// Returns the value associated with the key as a map of strings considering the tenant selected
+func GetStringMapStringTenant(tenant string, key string) map[string]string {
+	return v.GetStringMapStringTenant(tenant, key)
+}
+func (v *Viper) GetStringMapStringTenant(tenant string, key string) map[string]string {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToStringMapString(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToStringMapString(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToStringMapString(v.Get(key))
+}
+
 // Returns the value associated with the key as a map of strings
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 func (v *Viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
+}
+
+// Returns the value associated with the key as map to a slice of strings considering the tenant selected
+func GetStringMapStringSliceTenant(tenant string, key string) map[string][]string {
+	return v.GetStringMapStringSliceTenant(tenant, key)
+}
+func (v *Viper) GetStringMapStringSliceTenant(tenant string, key string) map[string][]string {
+	if v.IsSet(tenant + "." + key) {
+		return cast.ToStringMapStringSlice(v.Get(tenant + "." + key))
+	}
+
+	if v.tenantDefault != "" {
+		return cast.ToStringMapStringSlice(v.Get(v.tenantDefault + "." + key))
+	}
+	return cast.ToStringMapStringSlice(v.Get(key))
 }
 
 // Returns the value associated with the key as a map to a slice of strings.
