@@ -102,6 +102,21 @@ var remoteExample = []byte(`{
 "newkey":"remote"
 }`)
 
+var tenantExample = []byte(`
+title = "TOML Example"
+attr = "Foo"
+
+[owner]
+title = "TOML!"`)
+
+var tenantExampleWithDefault = []byte(`
+[default]
+title = "TOML Example"
+attr = "Foo"
+
+[owner]
+title = "TOML!"`)
+
 func initConfigs() {
 	Reset()
 	SetConfigType("yaml")
@@ -758,6 +773,25 @@ func TestSub(t *testing.T) {
 
 	subv = v.Sub("clothing.pants.size")
 	assert.Equal(t, subv, (*Viper)(nil))
+}
+
+func TestTenant(t *testing.T) {
+	v := New()
+	v.SetConfigType("toml")
+	v.ReadConfig(bytes.NewBuffer(tenantExample))
+
+	assert.Equal(t, v.GetStringTenant("owner", "title"), "TOML!")
+	assert.Equal(t, v.GetStringTenant("owner", "attr"), "Foo")
+}
+
+func TestTenantWithDefault(t *testing.T) {
+	v := New()
+	v.SetConfigType("toml")
+	v.SetTenantDefault("default")
+	v.ReadConfig(bytes.NewBuffer(tenantExampleWithDefault))
+
+	assert.Equal(t, v.GetStringTenant("owner", "title"), "TOML!")
+	assert.Equal(t, v.GetStringTenant("owner", "attr"), "Foo")
 }
 
 var yamlMergeExampleTgt = []byte(`

@@ -599,6 +599,56 @@ y.SetDefault("ContentDir", "foobar")
 When working with multiple vipers, it is up to the user to keep track of the
 different vipers.
 
+### Working with tenant
+
+Sometime you want your config to be override by a more specific one, use tenant for it.
+
+Example:
+
+config file:
+```json
+[shared]
+name = "name_shared"
+
+[tenant_a]
+name = "name_a"
+
+[tenant_b]
+
+```
+
+code:
+```go
+viper.SetTenantDefault("shared")
+viper.SetConfigName("teste")
+viper.AddConfigPath(".")
+viper.ReadInConfig()
+
+fmt.Printf(viper.GetStringTenant("tenant_a", "name")) // name_a
+fmt.Printf(viper.GetStringTenant("tenant_b", "name")) // name_shared
+```
+
+config file:
+```json
+name = "name_shared"
+
+[tenant_a]
+name = "name_a"
+
+[tenant_b]
+
+```
+
+code:
+```go
+viper.SetConfigName("teste")
+viper.AddConfigPath(".")
+viper.ReadInConfig()
+
+fmt.Printf(viper.GetStringTenant("tenant_a", "name")) // name_a
+fmt.Printf(viper.GetStringTenant("tenant_b", "name")) // name_shared
+```
+
 ## Q & A
 
 Q: Why not INI files?
