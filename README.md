@@ -25,7 +25,7 @@ and formats. It supports:
 * reading from JSON, TOML, YAML, HCL, and Java properties config files
 * live watching and re-reading of config files (optional)
 * reading from environment variables
-* reading from remote config systems (etcd or Consul), and watching changes
+* reading from remote config systems (etcd, Consul or zookeeper), and watching changes
 * reading from command line flags
 * reading from buffer
 * setting explicit values
@@ -320,7 +320,7 @@ package:
 `import _ "github.com/spf13/viper/remote"`
 
 Viper will read a config string (as JSON, TOML, YAML or HCL) retrieved from a path
-in a Key/Value store such as etcd or Consul.  These values take precedence over
+in a Key/Value store such as etcd, Consul or zookeeper.  These values take precedence over
 default values, but are overridden by configuration values retrieved from disk,
 flags, or environment variables.
 
