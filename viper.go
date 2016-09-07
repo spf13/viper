@@ -1081,7 +1081,7 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 	deepestMap[lastKey] = value
 }
 
-// Set sets the value for the key in the override regiser.
+// Sets the value for the key in the override register.
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) { v.Set(key, value) }
