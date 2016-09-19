@@ -907,3 +907,12 @@ func TestSetConfigNameClearsFileCache(t *testing.T) {
 	SetConfigName("default")
 	assert.Empty(t, v.getConfigFile())
 }
+
+func TestShadowedNestedValue(t *testing.T) {
+	polyester := "polyester"
+	initYAML()
+	SetDefault("clothing.shirt", polyester)
+
+	assert.Equal(t, GetString("clothing.jacket"), "leather")
+	assert.Equal(t, GetString("clothing.shirt"), polyester)
+}
