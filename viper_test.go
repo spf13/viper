@@ -200,6 +200,10 @@ func initDirs(t *testing.T) (string, string, func()) {
 			path.Join(dir, config+".toml"),
 			[]byte("key = \"value is "+dir+"\"\n"),
 			0640)
+		err = ioutil.WriteFile(
+			path.Join(dir, config+".notsupported"),
+			[]byte("key = \"value is"+dir+"\"\n"),
+			0640)
 		assert.Nil(t, err)
 	}
 
@@ -725,6 +729,24 @@ func TestDirsSearch(t *testing.T) {
 	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
 }
 
+func TestUnsupportedConfigFileType(t *testing.T) {
+	root, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetConfigType("notsupported")
+	entries, err := ioutil.ReadDir(root)
+	for _, e := range entries {
+		if e.IsDir() {
+			v.AddConfigPath(e.Name())
+		}
+	}
+	err = v.ReadInConfig()
+
+	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+}
+
 func TestWrongDirsSearchNotFound(t *testing.T) {
 
 	_, config, cleanup := initDirs(t)
@@ -738,7 +760,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.Equal(t, reflect.TypeOf(UnsupportedConfigError("")), reflect.TypeOf(err))
+	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{}), reflect.TypeOf(err))
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
