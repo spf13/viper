@@ -308,6 +308,10 @@ func (v *Viper) getEnv(key string) string {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
+
+	// Replace dots with underscores, since that is the sensible mapping
+	// for environment variables. The -1 means replace all insstances of "." with "_"
+	key = strings.Replace(key, ".", "_", -1)
 	return os.Getenv(key)
 }
 
