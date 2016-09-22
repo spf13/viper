@@ -749,12 +749,15 @@ func (v *Viper) find(key string) interface{} {
 	// PFlag Override first
 	flag, exists := v.pflags[key]
 	if exists && flag.HasChanged() {
-		jww.TRACE.Println(key, "found in override (via pflag):", flag.ValueString())
+		jww.TRACE.Printf("%q found in pflag override (%s): %s", key, flag.ValueType(), flag.ValueString())
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
 		case "bool":
 			return cast.ToBool(flag.ValueString())
+		case "stringSlice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			return strings.TrimSuffix(s, "]")
 		default:
 			return flag.ValueString()
 		}
@@ -762,7 +765,7 @@ func (v *Viper) find(key string) interface{} {
 
 	val, exists = v.override[key]
 	if exists {
-		jww.TRACE.Println(key, "found in override:", val)
+		jww.TRACE.Printf("%q found in override: %s", key, val)
 		return val
 	}
 
@@ -770,24 +773,24 @@ func (v *Viper) find(key string) interface{} {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
 		if val = v.getEnv(v.mergeWithEnvPrefix(key)); val != "" {
-			jww.TRACE.Println(key, "found in environment with val:", val)
+			jww.TRACE.Printf("%q found in environment: %s", key, val)
 			return val
 		}
 	}
 
 	envkey, exists := v.env[key]
 	if exists {
-		jww.TRACE.Println(key, "registered as env var", envkey)
+		jww.TRACE.Printf("%q registered as env var %q", key, envkey)
 		if val = v.getEnv(envkey); val != "" {
-			jww.TRACE.Println(envkey, "found in environment with val:", val)
+			jww.TRACE.Printf("%q found in environment: %s", envkey, val)
 			return val
 		}
-		jww.TRACE.Println(envkey, "env value unset:")
+		jww.TRACE.Printf("%q env value unset", envkey)
 	}
 
 	val, exists = v.config[key]
 	if exists {
-		jww.TRACE.Println(key, "found in config:", val)
+		jww.TRACE.Printf("%q found in config (%T): %s", key, val, val)
 		return val
 	}
 
@@ -800,7 +803,7 @@ func (v *Viper) find(key string) interface{} {
 			if reflect.TypeOf(source).Kind() == reflect.Map {
 				val := v.searchMap(cast.ToStringMap(source), path[1:])
 				if val != nil {
-					jww.TRACE.Println(key, "found in nested config:", val)
+					jww.TRACE.Printf("%q found in nested config: %s", key, val)
 					return val
 				}
 			}
@@ -809,13 +812,13 @@ func (v *Viper) find(key string) interface{} {
 
 	val, exists = v.kvstore[key]
 	if exists {
-		jww.TRACE.Println(key, "found in key/value store:", val)
+		jww.TRACE.Printf("%q found in key/value store: %s", key, val)
 		return val
 	}
 
 	val, exists = v.defaults[key]
 	if exists {
-		jww.TRACE.Println(key, "found in defaults:", val)
+		jww.TRACE.Printf("%q found in defaults: ", key, val)
 		return val
 	}
 
