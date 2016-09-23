@@ -453,10 +453,12 @@ func TestRecursiveAliases(t *testing.T) {
 func TestUnmarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")
+	Set("duration", "1s1ms")
 
 	type config struct {
-		Port int
-		Name string
+		Port     int
+		Name     string
+		Duration time.Duration
 	}
 
 	var C config
@@ -466,14 +468,14 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313})
+	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond})
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234})
+	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond})
 }
 
 func TestBindPFlags(t *testing.T) {

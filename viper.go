@@ -624,7 +624,7 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
 func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := mapstructure.WeakDecode(v.AllSettings(), rawVal)
+	err := decode(v.AllSettings(), defaultDecoderConfig(rawVal))
 
 	if err != nil {
 		return err
@@ -635,16 +635,19 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	return nil
 }
 
-// A wrapper around mapstructure.Decode that mimics the WeakDecode functionality
-// while erroring on non existing vals in the destination struct.
-func weakDecodeExact(input, output interface{}) error {
-	config := &mapstructure.DecoderConfig{
-		ErrorUnused:      true,
+// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
+// of time.Duration values
+func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
+	return &mapstructure.DecoderConfig{
 		Metadata:         nil,
 		Result:           output,
 		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
 	}
+}
 
+// A wrapper around mapstructure.Decode that mimics the WeakDecode functionality
+func decode(input interface{}, config *mapstructure.DecoderConfig) error {
 	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
 		return err
@@ -655,7 +658,10 @@ func weakDecodeExact(input, output interface{}) error {
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
 func (v *Viper) UnmarshalExact(rawVal interface{}) error {
-	err := weakDecodeExact(v.AllSettings(), rawVal)
+	config := defaultDecoderConfig(rawVal)
+	config.ErrorUnused = true
+
+	err := decode(v.AllSettings(), config)
 
 	if err != nil {
 		return err
