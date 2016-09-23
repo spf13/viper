@@ -493,7 +493,7 @@ func TestBindPFlags(t *testing.T) {
 		"endpoint": "/public",
 	}
 
-	for name, _ := range testValues {
+	for name := range testValues {
 		testValues[name] = flagSet.String(name, "", "test")
 	}
 
@@ -765,6 +765,7 @@ func TestSub(t *testing.T) {
 var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
+    lagrenum: 765432101234567
     world:
     - us
     - uk
@@ -775,6 +776,7 @@ hello:
 var yamlMergeExampleSrc = []byte(`
 hello:
     pop: 45000
+    lagrenum: 7654321001234567
     universe:
     - mw
     - ad
@@ -792,6 +794,14 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("pop != 37890, = %d", pop)
 	}
 
+	if pop := v.GetInt("hello.lagrenum"); pop != 765432101234567 {
+		t.Fatalf("lagrenum != 765432101234567, = %d", pop)
+	}
+
+	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
+		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
+	}
+
 	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
 		t.Fatalf("len(world) != 4, = %d", len(world))
 	}
@@ -806,6 +816,14 @@ func TestMergeConfig(t *testing.T) {
 
 	if pop := v.GetInt("hello.pop"); pop != 45000 {
 		t.Fatalf("pop != 45000, = %d", pop)
+	}
+
+	if pop := v.GetInt("hello.lagrenum"); pop != 7654321001234567 {
+		t.Fatalf("lagrenum != 7654321001234567, = %d", pop)
+	}
+
+	if pop := v.GetInt64("hello.lagrenum"); pop != int64(7654321001234567) {
+		t.Fatalf("int64 lagrenum != 7654321001234567, = %d", pop)
 	}
 
 	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
@@ -884,4 +902,19 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 	}
 
 	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
+}
+
+func TestSetConfigNameClearsFileCache(t *testing.T) {
+	SetConfigFile("/tmp/config.yaml")
+	SetConfigName("default")
+	assert.Empty(t, v.getConfigFile())
+}
+
+func TestShadowedNestedValue(t *testing.T) {
+	polyester := "polyester"
+	initYAML()
+	SetDefault("clothing.shirt", polyester)
+
+	assert.Equal(t, GetString("clothing.jacket"), "leather")
+	assert.Equal(t, GetString("clothing.shirt"), polyester)
 }
