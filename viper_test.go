@@ -919,6 +919,18 @@ func TestShadowedNestedValue(t *testing.T) {
 	assert.Equal(t, GetString("clothing.shirt"), polyester)
 }
 
+func TestGetBool(t *testing.T) {
+	key := "BooleanKey"
+	v = New()
+	v.Set(key, true)
+	if !v.GetBool(key) {
+		t.Fatal("GetBool returned false")
+	}
+	if v.GetBool("NotFound") {
+		t.Fatal("GetBool returned true")
+	}
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
