@@ -918,3 +918,28 @@ func TestShadowedNestedValue(t *testing.T) {
 	assert.Equal(t, GetString("clothing.jacket"), "leather")
 	assert.Equal(t, GetString("clothing.shirt"), polyester)
 }
+
+func BenchmarkGetBool(b *testing.B) {
+	key := "BenchmarkGetBool"
+	v = New()
+	v.Set(key, true)
+
+	for i := 0; i < b.N; i++ {
+		if !v.GetBool(key) {
+			b.Fatal("GetBool returned false")
+		}
+	}
+}
+
+// This is the "perfect result" for the above.
+func BenchmarkGetBoolFromMap(b *testing.B) {
+	m := make(map[string]bool)
+	key := "BenchmarkGetBool"
+	m[key] = true
+
+	for i := 0; i < b.N; i++ {
+		if !m[key] {
+			b.Fatal("Map value was false")
+		}
+	}
+}
