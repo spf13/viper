@@ -21,6 +21,7 @@ package viper
 
 import (
 	"bytes"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
@@ -879,8 +880,13 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		case "bool":
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			return strings.TrimSuffix(s, "]")
+			s := flag.ValueString()
+			s = s[1 : len(s)-1] // trim []
+			if len(s) == 0 {
+				return []string{}
+			}
+			res, _ := readAsCSV(s)
+			return res
 		default:
 			return flag.ValueString()
 		}
@@ -1501,6 +1507,15 @@ func (v *Viper) findConfigFile() (string, error) {
 		}
 	}
 	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+}
+
+func readAsCSV(val string) ([]string, error) {
+	if val == "" {
+		return []string{}, nil
+	}
+	stringReader := strings.NewReader(val)
+	csvReader := csv.NewReader(stringReader)
+	return csvReader.Read()
 }
 
 // Debug prints all configuration registries for debugging
