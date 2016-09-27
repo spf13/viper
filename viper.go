@@ -329,9 +329,10 @@ func (v *Viper) AddConfigPath(in string) {
 }
 
 // AddRemoteProvider adds a remote configuration source.
-// Remote Providers are searched in the order they are added.
+// Remote Providers are searched in the order they are added, and use first found provider.
 // provider is a string value, "etcd" or "consul" are currently supported.
 // endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
+// multiple addresses can configured in one url separated by commas
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
