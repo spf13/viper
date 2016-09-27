@@ -468,14 +468,14 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond})
+	assert.Equal(t, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond}, &C)
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond})
+	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
 }
 
 func TestBindPFlags(t *testing.T) {
@@ -508,7 +508,7 @@ func TestBindPFlags(t *testing.T) {
 	})
 
 	for name, expected := range mutatedTestValues {
-		assert.Equal(t, Get(name), expected)
+		assert.Equal(t, expected, Get(name))
 	}
 
 }
@@ -759,10 +759,10 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
 
 	subv = v.Sub("clothing.pants.size")
-	assert.Equal(t, subv, (*Viper)(nil))
+	assert.Equal(t, (*Viper)(nil), subv)
 
 	subv = v.Sub("missing.key")
-	assert.Equal(t, subv, (*Viper)(nil))
+	assert.Equal(t, (*Viper)(nil), subv)
 }
 
 var yamlMergeExampleTgt = []byte(`
@@ -883,16 +883,16 @@ func TestMergeConfigNoMerge(t *testing.T) {
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
-	SetDefault("Id", 1)
+	SetDefault("ID", 1)
 	Set("name", "Steve")
 	Set("lastname", "Owen")
 
-	RegisterAlias("UserID", "Id")
+	RegisterAlias("UserID", "ID")
 	RegisterAlias("Firstname", "name")
 	RegisterAlias("Surname", "lastname")
 
 	type config struct {
-		Id        int
+		ID        int
 		FirstName string
 		Surname   string
 	}
@@ -904,7 +904,7 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
+	assert.Equal(t, &config{ID: 1, FirstName: "Steve", Surname: "Owen"}, &C)
 }
 
 func TestSetConfigNameClearsFileCache(t *testing.T) {
@@ -918,8 +918,8 @@ func TestShadowedNestedValue(t *testing.T) {
 	initYAML()
 	SetDefault("clothing.shirt", polyester)
 
-	assert.Equal(t, GetString("clothing.jacket"), "leather")
-	assert.Equal(t, GetString("clothing.shirt"), polyester)
+	assert.Equal(t, "leather", GetString("clothing.jacket"))
+	assert.Equal(t, polyester, GetString("clothing.shirt"))
 }
 
 func TestGetBool(t *testing.T) {
