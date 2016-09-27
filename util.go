@@ -153,7 +153,12 @@ func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType s
 		}
 		for _, key := range p.Keys() {
 			value, _ := p.Get(key)
-			c[key] = value
+			// recursively build nested maps
+			path := strings.Split(key, ".")
+			lastKey := strings.ToLower(path[len(path)-1])
+			deepestMap := deepSearch(c, path[0:len(path)-1])
+			// set innermost value
+			deepestMap[lastKey] = value
 		}
 	}
 
