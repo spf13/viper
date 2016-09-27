@@ -479,6 +479,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestBindPFlags(t *testing.T) {
+	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	var testValues = map[string]*string{
@@ -497,7 +498,7 @@ func TestBindPFlags(t *testing.T) {
 		testValues[name] = flagSet.String(name, "", "test")
 	}
 
-	err := BindPFlags(flagSet)
+	err := v.BindPFlags(flagSet)
 	if err != nil {
 		t.Fatalf("error binding flag set, %v", err)
 	}
@@ -508,7 +509,7 @@ func TestBindPFlags(t *testing.T) {
 	})
 
 	for name, expected := range mutatedTestValues {
-		assert.Equal(t, expected, Get(name))
+		assert.Equal(t, expected, v.Get(name))
 	}
 
 }

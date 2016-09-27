@@ -759,7 +759,13 @@ func (v *Viper) find(key string) interface{} {
 	// if the requested key is an alias, then return the proper key
 	key = v.realKey(key)
 
-	// PFlag Override first
+	// Set() override first
+	val, exists = v.override[key]
+	if exists {
+		return val
+	}
+
+	// PFlag override next
 	flag, exists := v.pflags[key]
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
@@ -787,7 +793,6 @@ func (v *Viper) find(key string) interface{} {
 			return val
 		}
 	}
-
 	envkey, exists := v.env[key]
 	if exists {
 		if val = v.getEnv(envkey); val != "" {
@@ -795,12 +800,13 @@ func (v *Viper) find(key string) interface{} {
 		}
 	}
 
+	// Config file next
 	val, exists = v.config[key]
 	if exists {
 		return val
 	}
 
-	// Test for nested config parameter
+	//   test for nested config parameter
 	if strings.Contains(key, v.keyDelim) {
 		path := strings.Split(key, v.keyDelim)
 
@@ -815,11 +821,13 @@ func (v *Viper) find(key string) interface{} {
 		}
 	}
 
+	// K/V store next
 	val, exists = v.kvstore[key]
 	if exists {
 		return val
 	}
 
+	// Default as last chance
 	val, exists = v.defaults[key]
 	if exists {
 		return val
