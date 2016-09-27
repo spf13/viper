@@ -918,8 +918,10 @@ func TestShadowedNestedValue(t *testing.T) {
 	polyester := "polyester"
 	initYAML()
 	SetDefault("clothing.shirt", polyester)
+	SetDefault("clothing.jacket.price", 100)
 
 	assert.Equal(t, "leather", GetString("clothing.jacket"))
+	assert.Nil(t, Get("clothing.jacket.price"))
 	assert.Equal(t, polyester, GetString("clothing.shirt"))
 }
 
