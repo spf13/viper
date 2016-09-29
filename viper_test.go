@@ -923,6 +923,17 @@ func TestShadowedNestedValue(t *testing.T) {
 	assert.Equal(t, polyester, GetString("clothing.shirt"))
 }
 
+func TestDotParameter(t *testing.T) {
+	initJSON()
+	// shoud take precedence over batters defined in jsonExample
+	r := bytes.NewReader([]byte(`{ "batters.batter": [ { "type": "Small" } ] }`))
+	unmarshalReader(r, v.config)
+
+	actual := Get("batters.batter")
+	expected := []interface{}{map[string]interface{}{"type": "Small"}}
+	assert.Equal(t, expected, actual)
+}
+
 func TestGetBool(t *testing.T) {
 	key := "BooleanKey"
 	v = New()
