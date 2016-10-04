@@ -12,6 +12,10 @@ Many Go projects are built using Viper including:
 * [BloomApi](https://www.bloomapi.com/)
 * [doctl](https://github.com/digitalocean/doctl)
 
+Some use cases:
+
+* [Logrus Helper](https://github.com/heirko/go-contrib/tree/master/logrusHelper), an helper to mixin Viper and [Logrus](https://github.com/Sirupsen/logrus) 
+
  [![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper) [![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
