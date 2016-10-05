@@ -760,6 +760,9 @@ func TestSub(t *testing.T) {
 
 	subv = v.Sub("clothing.pants.size")
 	assert.Equal(t, subv, (*Viper)(nil))
+
+	subv = v.Sub("missing.key")
+	assert.Equal(t, subv, (*Viper)(nil))
 }
 
 var yamlMergeExampleTgt = []byte(`

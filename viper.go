@@ -532,6 +532,10 @@ func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
 	data := v.Get(key)
+	if data == nil {
+		return nil
+	}
+
 	if reflect.TypeOf(data).Kind() == reflect.Map {
 		subv.config = cast.ToStringMap(data)
 		return subv
