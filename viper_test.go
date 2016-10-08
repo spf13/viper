@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -104,8 +105,9 @@ var remoteExample = []byte(`{
 
 func initConfigs() {
 	Reset()
+	var r io.Reader
 	SetConfigType("yaml")
-	r := bytes.NewReader(yamlExample)
+	r = bytes.NewReader(yamlExample)
 	unmarshalReader(r, v.config)
 
 	SetConfigType("json")
@@ -259,7 +261,7 @@ func TestUnmarshalling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
+	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 
@@ -420,9 +422,9 @@ func TestSetEnvReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner", "name", "beard", "ppu", "batters", "hobbies", "clothing", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos"}
+	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.trousers", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos"}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[interface{}]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[interface{}]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters.batter.type": "Regular", "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -468,17 +470,18 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond})
+	assert.Equal(t, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond}, &C)
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
-	assert.Equal(t, &C, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond})
+	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
 }
 
 func TestBindPFlags(t *testing.T) {
+	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	var testValues = map[string]*string{
@@ -497,7 +500,7 @@ func TestBindPFlags(t *testing.T) {
 		testValues[name] = flagSet.String(name, "", "test")
 	}
 
-	err := BindPFlags(flagSet)
+	err := v.BindPFlags(flagSet)
 	if err != nil {
 		t.Fatalf("error binding flag set, %v", err)
 	}
@@ -508,7 +511,7 @@ func TestBindPFlags(t *testing.T) {
 	})
 
 	for name, expected := range mutatedTestValues {
-		assert.Equal(t, Get(name), expected)
+		assert.Equal(t, expected, v.Get(name))
 	}
 
 }
@@ -641,7 +644,7 @@ func TestFindsNestedKeys(t *testing.T) {
 		"name":      "Cake",
 		"hacker":    true,
 		"ppu":       0.55,
-		"clothing": map[interface{}]interface{}{
+		"clothing": map[string]interface{}{
 			"jacket":   "leather",
 			"trousers": "denim",
 			"pants": map[interface{}]interface{}{
@@ -690,7 +693,7 @@ func TestReadBufConfig(t *testing.T) {
 	assert.False(t, v.InConfig("state"))
 	assert.Equal(t, "steve", v.Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[interface{}]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
 	assert.Equal(t, 35, v.Get("age"))
 }
 
@@ -759,10 +762,10 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
 
 	subv = v.Sub("clothing.pants.size")
-	assert.Equal(t, subv, (*Viper)(nil))
+	assert.Equal(t, (*Viper)(nil), subv)
 
 	subv = v.Sub("missing.key")
-	assert.Equal(t, subv, (*Viper)(nil))
+	assert.Equal(t, (*Viper)(nil), subv)
 }
 
 var yamlMergeExampleTgt = []byte(`
@@ -883,28 +886,28 @@ func TestMergeConfigNoMerge(t *testing.T) {
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
-	SetDefault("Id", 1)
-	Set("name", "Steve")
-	Set("lastname", "Owen")
+	v := New()
+	v.SetDefault("ID", 1)
+	v.Set("name", "Steve")
+	v.Set("lastname", "Owen")
 
-	RegisterAlias("UserID", "Id")
-	RegisterAlias("Firstname", "name")
-	RegisterAlias("Surname", "lastname")
+	v.RegisterAlias("UserID", "ID")
+	v.RegisterAlias("Firstname", "name")
+	v.RegisterAlias("Surname", "lastname")
 
 	type config struct {
-		Id        int
+		ID        int
 		FirstName string
 		Surname   string
 	}
 
 	var C config
-
-	err := Unmarshal(&C)
+	err := v.Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &C, &config{Id: 1, FirstName: "Steve", Surname: "Owen"})
+	assert.Equal(t, &config{ID: 1, FirstName: "Steve", Surname: "Owen"}, &C)
 }
 
 func TestSetConfigNameClearsFileCache(t *testing.T) {
@@ -917,9 +920,26 @@ func TestShadowedNestedValue(t *testing.T) {
 	polyester := "polyester"
 	initYAML()
 	SetDefault("clothing.shirt", polyester)
+	SetDefault("clothing.jacket.price", 100)
 
-	assert.Equal(t, GetString("clothing.jacket"), "leather")
-	assert.Equal(t, GetString("clothing.shirt"), polyester)
+	assert.Equal(t, "leather", GetString("clothing.jacket"))
+	assert.Nil(t, Get("clothing.jacket.price"))
+	assert.Equal(t, polyester, GetString("clothing.shirt"))
+
+	clothingSettings := AllSettings()["clothing"].(map[string]interface{})
+	assert.Equal(t, "leather", clothingSettings["jacket"])
+	assert.Equal(t, polyester, clothingSettings["shirt"])
+}
+
+func TestDotParameter(t *testing.T) {
+	initJSON()
+	// shoud take precedence over batters defined in jsonExample
+	r := bytes.NewReader([]byte(`{ "batters.batter": [ { "type": "Small" } ] }`))
+	unmarshalReader(r, v.config)
+
+	actual := Get("batters.batter")
+	expected := []interface{}{map[string]interface{}{"type": "Small"}}
+	assert.Equal(t, expected, actual)
 }
 
 func TestGetBool(t *testing.T) {

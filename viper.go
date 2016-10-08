@@ -107,11 +107,11 @@ func (fnfe ConfigFileNotFoundError) Error() string {
 //  Defaults : {
 //  	"secret": "",
 //  	"user": "default",
-// 	"endpoint": "https://localhost"
+//  	"endpoint": "https://localhost"
 //  }
 //  Config : {
 //  	"user": "root"
-//	"secret": "defaultsecret"
+//  	"secret": "defaultsecret"
 //  }
 //  Env : {
 //  	"secret": "somesecretkey"
@@ -399,8 +399,9 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 	return false
 }
 
+// searchMap recursively searches for a value for path in source map.
+// Returns nil if not found.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
-
 	if len(path) == 0 {
 		return source
 	}
@@ -424,11 +425,133 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 			// if the type of `next` is the same as the type being asserted
 			return v.searchMap(next.(map[string]interface{}), path[1:])
 		default:
-			return next
+			if len(path) == 1 {
+				return next
+			}
+			// got a value but nested key expected, return "nil" for not found
+			return nil
 		}
-	} else {
-		return nil
 	}
+	return nil
+}
+
+// searchMapWithPathPrefixes recursively searches for a value for path in source map.
+//
+// While searchMap() considers each path element as a single map key, this
+// function searches for, and prioritizes, merged path elements.
+// e.g., if in the source, "foo" is defined with a sub-key "bar", and "foo.bar"
+// is also defined, this latter value is returned for path ["foo", "bar"].
+//
+// This should be useful only at config level (other maps may not contain dots
+// in their keys).
+func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
+	if len(path) == 0 {
+		return source
+	}
+
+	// search for path prefixes, starting from the longest one
+	for i := len(path); i > 0; i-- {
+		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
+
+		var ok bool
+		var next interface{}
+		for k, v := range source {
+			if strings.ToLower(k) == prefixKey {
+				ok = true
+				next = v
+				break
+			}
+		}
+
+		if ok {
+			var val interface{}
+			switch next.(type) {
+			case map[interface{}]interface{}:
+				val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
+			case map[string]interface{}:
+				// Type assertion is safe here since it is only reached
+				// if the type of `next` is the same as the type being asserted
+				val = v.searchMapWithPathPrefixes(next.(map[string]interface{}), path[i:])
+			default:
+				if len(path) == i {
+					val = next
+				}
+				// got a value but nested key expected, do nothing and look for next prefix
+			}
+			if val != nil {
+				return val
+			}
+		}
+	}
+
+	// not found
+	return nil
+}
+
+// isPathShadowedInDeepMap makes sure the given path is not shadowed somewhere
+// on its path in the map.
+// e.g., if "foo.bar" has a value in the given map, it “shadows”
+//       "foo.bar.baz" in a lower-priority map
+func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]interface{}) string {
+	var parentVal interface{}
+	for i := 1; i < len(path); i++ {
+		parentVal = v.searchMap(m, path[0:i])
+		if parentVal == nil {
+			// not found, no need to add more path elements
+			return ""
+		}
+		switch parentVal.(type) {
+		case map[interface{}]interface{}:
+			continue
+		case map[string]interface{}:
+			continue
+		default:
+			// parentVal is a regular value which shadows "path"
+			return strings.Join(path[0:i], v.keyDelim)
+		}
+	}
+	return ""
+}
+
+// isPathShadowedInFlatMap makes sure the given path is not shadowed somewhere
+// in a sub-path of the map.
+// e.g., if "foo.bar" has a value in the given map, it “shadows”
+//       "foo.bar.baz" in a lower-priority map
+func (v *Viper) isPathShadowedInFlatMap(path []string, mi interface{}) string {
+	// unify input map
+	var m map[string]interface{}
+	switch mi.(type) {
+	case map[string]string, map[string]FlagValue:
+		m = cast.ToStringMap(mi)
+	default:
+		return ""
+	}
+
+	// scan paths
+	var parentKey string
+	for i := 1; i < len(path); i++ {
+		parentKey = strings.Join(path[0:i], v.keyDelim)
+		if _, ok := m[parentKey]; ok {
+			return parentKey
+		}
+	}
+	return ""
+}
+
+// isPathShadowedInAutoEnv makes sure the given path is not shadowed somewhere
+// in the environment, when automatic env is on.
+// e.g., if "foo.bar" has a value in the environment, it “shadows”
+//       "foo.bar.baz" in a lower-priority map
+func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
+	var parentKey string
+	var val string
+	for i := 1; i < len(path); i++ {
+		parentKey = strings.Join(path[0:i], v.keyDelim)
+		if val = v.getEnv(v.mergeWithEnvPrefix(parentKey)); val != "" {
+			return parentKey
+		}
+	}
+	return ""
 }
 
 // SetTypeByDefaultValue enables or disables the inference of a key value's
@@ -465,46 +588,16 @@ func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey)
-
-	if val == nil {
-		path := strings.Split(key, v.keyDelim)
-		source := v.find(strings.ToLower(path[0]))
-		if source != nil {
-			if reflect.TypeOf(source).Kind() == reflect.Map {
-				val = v.searchMap(cast.ToStringMap(source), path[1:])
-			}
-		}
-	}
-
-	// if no other value is returned and a flag does exist for the value,
-	// get the flag's value even if the flag's value has not changed
-	if val == nil {
-		if flag, exists := v.pflags[lcaseKey]; exists {
-			jww.TRACE.Println(key, "get pflag default", val)
-			switch flag.ValueType() {
-			case "int", "int8", "int16", "int32", "int64":
-				val = cast.ToInt(flag.ValueString())
-			case "bool":
-				val = cast.ToBool(flag.ValueString())
-			default:
-				val = flag.ValueString()
-			}
-		}
-	}
-
 	if val == nil {
 		return nil
 	}
 
-	var valType interface{}
-	if !v.typeByDefValue {
-		valType = val
-	} else {
-		defVal, defExists := v.defaults[lcaseKey]
-		if defExists {
+	valType := val
+	if v.typeByDefValue {
+		path := strings.Split(lcaseKey, v.keyDelim)
+		defVal := v.searchMap(v.defaults, path)
+		if defVal != nil {
 			valType = defVal
-		} else {
-			valType = val
 		}
 	}
 
@@ -752,10 +845,27 @@ func (v *Viper) find(key string) interface{} {
 	var val interface{}
 	var exists bool
 
+	// compute the path through the nested maps to the nested value
+	path := strings.Split(key, v.keyDelim)
+	if shadow := v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)); shadow != "" {
+		return nil
+	}
+
 	// if the requested key is an alias, then return the proper key
 	key = v.realKey(key)
+	// re-compute the path
+	path = strings.Split(key, v.keyDelim)
 
-	// PFlag Override first
+	// Set() override first
+	val = v.searchMap(v.override, path)
+	if val != nil {
+		return val
+	}
+	if shadow := v.isPathShadowedInDeepMap(path, v.override); shadow != "" {
+		return nil
+	}
+
+	// PFlag override next
 	flag, exists := v.pflags[key]
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
@@ -770,56 +880,74 @@ func (v *Viper) find(key string) interface{} {
 			return flag.ValueString()
 		}
 	}
-
-	val, exists = v.override[key]
-	if exists {
-		return val
+	if shadow := v.isPathShadowedInFlatMap(path, v.pflags); shadow != "" {
+		return nil
 	}
 
+	// Env override next
 	if v.automaticEnvApplied {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
 		if val = v.getEnv(v.mergeWithEnvPrefix(key)); val != "" {
 			return val
 		}
+		if shadow := v.isPathShadowedInAutoEnv(path); shadow != "" {
+			return nil
+		}
 	}
-
 	envkey, exists := v.env[key]
 	if exists {
 		if val = v.getEnv(envkey); val != "" {
 			return val
 		}
 	}
-
-	val, exists = v.config[key]
-	if exists {
-		return val
+	if shadow := v.isPathShadowedInFlatMap(path, v.env); shadow != "" {
+		return nil
 	}
 
-	// Test for nested config parameter
-	if strings.Contains(key, v.keyDelim) {
-		path := strings.Split(key, v.keyDelim)
+	// Config file next
+	val = v.searchMapWithPathPrefixes(v.config, path)
+	if val != nil {
+		return val
+	}
+	if shadow := v.isPathShadowedInDeepMap(path, v.config); shadow != "" {
+		return nil
+	}
 
-		source := v.find(path[0])
-		if source != nil {
-			if reflect.TypeOf(source).Kind() == reflect.Map {
-				val := v.searchMap(cast.ToStringMap(source), path[1:])
-				if val != nil {
-					return val
-				}
-			}
+	// K/V store next
+	val = v.searchMap(v.kvstore, path)
+	if val != nil {
+		return val
+	}
+	if shadow := v.isPathShadowedInDeepMap(path, v.kvstore); shadow != "" {
+		return nil
+	}
+
+	// Default next
+	val = v.searchMap(v.defaults, path)
+	if val != nil {
+		return val
+	}
+	if shadow := v.isPathShadowedInDeepMap(path, v.defaults); shadow != "" {
+		return nil
+	}
+
+	// last chance: if no other value is returned and a flag does exist for the value,
+	// get the flag's value even if the flag's value has not changed
+	if flag, exists := v.pflags[key]; exists {
+		switch flag.ValueType() {
+		case "int", "int8", "int16", "int32", "int64":
+			return cast.ToInt(flag.ValueString())
+		case "bool":
+			return cast.ToBool(flag.ValueString())
+		case "stringSlice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			return strings.TrimSuffix(s, "]")
+		default:
+			return flag.ValueString()
 		}
 	}
-
-	val, exists = v.kvstore[key]
-	if exists {
-		return val
-	}
-
-	val, exists = v.defaults[key]
-	if exists {
-		return val
-	}
+	// last item, no need to check shadowing
 
 	return nil
 }
@@ -827,20 +955,8 @@ func (v *Viper) find(key string) interface{} {
 // IsSet checks to see if the key has been set in any of the data locations.
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
-	path := strings.Split(key, v.keyDelim)
-
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey)
-
-	if val == nil {
-		source := v.find(strings.ToLower(path[0]))
-		if source != nil {
-			if reflect.TypeOf(source).Kind() == reflect.Map {
-				val = v.searchMap(cast.ToStringMap(source), path[1:])
-			}
-		}
-	}
-
 	return val != nil
 }
 
@@ -923,7 +1039,13 @@ func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
-	v.defaults[key] = value
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
+
+	// set innermost value
+	deepestMap[lastKey] = value
 }
 
 // Set sets the value for the key in the override regiser.
@@ -933,7 +1055,13 @@ func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
-	v.override[key] = value
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.override, path[0:len(path)-1])
+
+	// set innermost value
+	deepestMap[lastKey] = value
 }
 
 // ReadInConfig will discover and load the configuration file from disk
@@ -1009,6 +1137,14 @@ func castToMapStringInterface(
 	tgt := map[string]interface{}{}
 	for k, v := range src {
 		tgt[fmt.Sprintf("%v", k)] = v
+	}
+	return tgt
+}
+
+func castMapStringToMapInterface(src map[string]string) map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for k, v := range src {
+		tgt[k] = v
 	}
 	return tgt
 }
@@ -1150,55 +1286,114 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 	return v.kvstore, err
 }
 
-// AllKeys returns all keys regardless where they are set.
+// AllKeys returns all keys holding a value, regardless of where they are set.
+// Nested keys are returned with a v.keyDelim (= ".") separator
 func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
-	m := map[string]struct{}{}
+	m := map[string]bool{}
+	// add all paths, by order of descending priority to ensure correct shadowing
+	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
+	m = v.flattenAndMergeMap(m, v.override, "")
+	m = v.mergeFlatMap(m, v.pflags)
+	m = v.mergeFlatMap(m, v.env)
+	m = v.flattenAndMergeMap(m, v.config, "")
+	m = v.flattenAndMergeMap(m, v.kvstore, "")
+	m = v.flattenAndMergeMap(m, v.defaults, "")
 
-	for key := range v.defaults {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.pflags {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.env {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.config {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.kvstore {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.override {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
-	for key := range v.aliases {
-		m[strings.ToLower(key)] = struct{}{}
-	}
-
+	// convert set of paths to list
 	a := []string{}
 	for x := range m {
 		a = append(a, x)
 	}
-
 	return a
 }
 
-// AllSettings returns all settings as a map[string]interface{}.
+// flattenAndMergeMap recursively flattens the given map into a map[string]bool
+// of key paths (used as a set, easier to manipulate than a []string):
+// - each path is merged into a single key string, delimited with v.keyDelim (= ".")
+// - if a path is shadowed by an earlier value in the initial shadow map,
+//   it is skipped.
+// The resulting set of paths is merged to the given shadow set at the same time.
+func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interface{}, prefix string) map[string]bool {
+	if shadow != nil && prefix != "" && shadow[prefix] {
+		// prefix is shadowed => nothing more to flatten
+		return shadow
+	}
+	if shadow == nil {
+		shadow = make(map[string]bool)
+	}
+
+	var m2 map[string]interface{}
+	if prefix != "" {
+		prefix += v.keyDelim
+	}
+	for k, val := range m {
+		fullKey := prefix + k
+		switch val.(type) {
+		case map[string]interface{}:
+			m2 = val.(map[string]interface{})
+		case map[interface{}]interface{}:
+			m2 = cast.ToStringMap(val)
+		default:
+			// immediate value
+			shadow[strings.ToLower(fullKey)] = true
+			continue
+		}
+		// recursively merge to shadow map
+		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
+	}
+	return shadow
+}
+
+// mergeFlatMap merges the given maps, excluding values of the second map
+// shadowed by values from the first map.
+func (v *Viper) mergeFlatMap(shadow map[string]bool, mi interface{}) map[string]bool {
+	// unify input map
+	var m map[string]interface{}
+	switch mi.(type) {
+	case map[string]string, map[string]FlagValue:
+		m = cast.ToStringMap(mi)
+	default:
+		return shadow
+	}
+
+	// scan keys
+outer:
+	for k, _ := range m {
+		path := strings.Split(k, v.keyDelim)
+		// scan intermediate paths
+		var parentKey string
+		for i := 1; i < len(path); i++ {
+			parentKey = strings.Join(path[0:i], v.keyDelim)
+			if shadow[parentKey] {
+				// path is shadowed, continue
+				continue outer
+			}
+		}
+		// add key
+		shadow[strings.ToLower(k)] = true
+	}
+	return shadow
+}
+
+// AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
 	m := map[string]interface{}{}
-	for _, x := range v.AllKeys() {
-		m[x] = v.Get(x)
+	// start from the list of keys, and construct the map one value at a time
+	for _, k := range v.AllKeys() {
+		value := v.Get(k)
+		if value == nil {
+			// should not happen, since AllKeys() returns only keys holding a value,
+			// check just in case anything changes
+			continue
+		}
+		path := strings.Split(k, v.keyDelim)
+		lastKey := strings.ToLower(path[len(path)-1])
+		deepestMap := deepSearch(m, path[0:len(path)-1])
+		// set innermost value
+		deepestMap[lastKey] = value
 	}
-
 	return m
 }
 
@@ -1289,7 +1484,6 @@ func (v *Viper) findConfigFile() (string, error) {
 // purposes.
 func Debug() { v.Debug() }
 func (v *Viper) Debug() {
-	fmt.Println("Aliases:")
 	fmt.Printf("Aliases:\n%#v\n", v.aliases)
 	fmt.Printf("Override:\n%#v\n", v.override)
 	fmt.Printf("PFlags:\n%#v\n", v.pflags)

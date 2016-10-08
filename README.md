@@ -458,16 +458,17 @@ Viper can access a nested field by passing a `.` delimited path of keys:
 GetString("datastore.metric.host") // (returns "127.0.0.1")
 ```
 
-This obeys the precedence rules established above; the search for the root key
-(in this example, `datastore`) will cascade through the remaining configuration
-registries until found. The search for the sub-keys (`metric` and `host`),
-however, will not.
+This obeys the precedence rules established above; the search for the path
+will cascade through the remaining configuration registries until found.
 
-For example, if the `metric` key was not defined in the configuration loaded
-from file, but was defined in the defaults, Viper would return the zero value.
+For example, given this configuration file, both `datastore.metric.host` and
+`datastore.metric.port` are already defined (and may be overridden). If in addition
+`datastore.metric.protocol` was defined in the defaults, Viper would also find it.
 
-On the other hand, if the primary key was not defined, Viper would go through
-the remaining registries looking for it.
+However, if `datastore.metric` was overridden (by a flag, an environment variable,
+the `Set()` method, …) with an immediate value, then all sub-keys of
+`datastore.metric` become undefined, they are “shadowed” by the higher-priority
+configuration level.
 
 Lastly, if there exists a key that matches the delimited key path, its value
 will be returned instead. E.g.
@@ -491,7 +492,7 @@ will be returned instead. E.g.
     }
 }
 
-GetString("datastore.metric.host") //returns "0.0.0.0"
+GetString("datastore.metric.host") // returns "0.0.0.0"
 ```
 
 ### Extract sub-tree
