@@ -399,17 +399,42 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 	return false
 }
 
+// searchMapForKey may end up traversing the map if the key references a nested
+// item (foo.bar), but will use a fast path for the common case.
+// Note: This assumes that the key given is already lowercase.
+func (v *Viper) searchMapForKey(source map[string]interface{}, lcaseKey string) interface{} {
+	if !strings.Contains(lcaseKey, v.keyDelim) {
+		v, ok := source[lcaseKey]
+		if ok {
+			return v
+		}
+		return nil
+	}
+
+	path := strings.Split(lcaseKey, v.keyDelim)
+	return v.searchMap(source, path)
+}
+
 // searchMap recursively searches for a value for path in source map.
 // Returns nil if not found.
+// Note: This assumes that the path entries are lower cased.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
 	}
 
+	// Fast path
+	if len(path) == 1 {
+		if v, ok := source[path[0]]; ok {
+			return v
+		}
+		return nil
+	}
+
 	var ok bool
 	var next interface{}
 	for k, v := range source {
-		if strings.ToLower(k) == strings.ToLower(path[0]) {
+		if k == path[0] {
 			ok = true
 			next = v
 			break
@@ -594,8 +619,8 @@ func (v *Viper) Get(key string) interface{} {
 
 	valType := val
 	if v.typeByDefValue {
-		path := strings.Split(lcaseKey, v.keyDelim)
-		defVal := v.searchMap(v.defaults, path)
+		// TODO(bep) this branch isn't covered by a single test.
+		defVal := v.searchMapForKey(v.defaults, lcaseKey)
 		if defVal != nil {
 			valType = defVal
 		}
@@ -841,32 +866,39 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.
 // Viper will check to see if an alias exists first.
-func (v *Viper) find(key string) interface{} {
-	var val interface{}
-	var exists bool
+// Note: this assumes a lower-cased key given.
+func (v *Viper) find(lcaseKey string) interface{} {
+
+	var (
+		val    interface{}
+		exists bool
+		path   = strings.Split(lcaseKey, v.keyDelim)
+		nested = len(path) > 1
+	)
 
 	// compute the path through the nested maps to the nested value
-	path := strings.Split(key, v.keyDelim)
-	if shadow := v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)); shadow != "" {
+	if nested && v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)) != "" {
 		return nil
 	}
 
 	// if the requested key is an alias, then return the proper key
-	key = v.realKey(key)
-	// re-compute the path
-	path = strings.Split(key, v.keyDelim)
+	lcaseKey = v.realKey(lcaseKey)
 
 	// Set() override first
-	val = v.searchMap(v.override, path)
+	val = v.searchMapForKey(v.override, lcaseKey)
 	if val != nil {
 		return val
 	}
-	if shadow := v.isPathShadowedInDeepMap(path, v.override); shadow != "" {
+
+	path = strings.Split(lcaseKey, v.keyDelim)
+	nested = len(path) > 1
+
+	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
 		return nil
 	}
 
 	// PFlag override next
-	flag, exists := v.pflags[key]
+	flag, exists := v.pflags[lcaseKey]
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
@@ -880,7 +912,8 @@ func (v *Viper) find(key string) interface{} {
 			return flag.ValueString()
 		}
 	}
-	if shadow := v.isPathShadowedInFlatMap(path, v.pflags); shadow != "" {
+
+	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
 		return nil
 	}
 
@@ -888,14 +921,14 @@ func (v *Viper) find(key string) interface{} {
 	if v.automaticEnvApplied {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
-		if val = v.getEnv(v.mergeWithEnvPrefix(key)); val != "" {
+		if val = v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); val != "" {
 			return val
 		}
-		if shadow := v.isPathShadowedInAutoEnv(path); shadow != "" {
+		if nested && v.isPathShadowedInAutoEnv(path) != "" {
 			return nil
 		}
 	}
-	envkey, exists := v.env[key]
+	envkey, exists := v.env[lcaseKey]
 	if exists {
 		if val = v.getEnv(envkey); val != "" {
 			return val
@@ -934,7 +967,7 @@ func (v *Viper) find(key string) interface{} {
 
 	// last chance: if no other value is returned and a flag does exist for the value,
 	// get the flag's value even if the flag's value has not changed
-	if flag, exists := v.pflags[key]; exists {
+	if flag, exists := v.pflags[lcaseKey]; exists {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())

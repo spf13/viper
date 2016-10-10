@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
+
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
@@ -131,12 +133,18 @@ func initConfigs() {
 	unmarshalReader(remote, v.kvstore)
 }
 
-func initYAML() {
+func initConfig(typ, config string) {
 	Reset()
-	SetConfigType("yaml")
-	r := bytes.NewReader(yamlExample)
+	SetConfigType(typ)
+	r := strings.NewReader(config)
 
-	unmarshalReader(r, v.config)
+	if err := unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+}
+
+func initYAML() {
+	initConfig("yaml", string(yamlExample))
 }
 
 func initJSON() {
@@ -435,13 +443,8 @@ func TestAllKeys(t *testing.T) {
 	assert.Equal(t, all, AllSettings())
 }
 
-func TestCaseInSensitive(t *testing.T) {
-	assert.Equal(t, true, Get("hacker"))
-	Set("Title", "Checking Case")
-	assert.Equal(t, "Checking Case", Get("tItle"))
-}
-
 func TestAliasesOfAliases(t *testing.T) {
+	Set("Title", "Checking Case")
 	RegisterAlias("Foo", "Bar")
 	RegisterAlias("Bar", "Title")
 	assert.Equal(t, "Checking Case", Get("FOO"))
@@ -538,7 +541,6 @@ func TestBindPFlag(t *testing.T) {
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
-
 	assert.Equal(t, "brown", Get("eyes"))
 
 	BindEnv("eYEs", "TURTLE_EYES")
@@ -917,8 +919,19 @@ func TestSetConfigNameClearsFileCache(t *testing.T) {
 }
 
 func TestShadowedNestedValue(t *testing.T) {
+
+	config := `name: steve
+clothing:
+  jacket: leather
+  trousers: denim
+  pants:
+    size: large
+`
+	initConfig("yaml", config)
+
+	assert.Equal(t, "steve", GetString("name"))
+
 	polyester := "polyester"
-	initYAML()
 	SetDefault("clothing.shirt", polyester)
 	SetDefault("clothing.jacket.price", 100)
 
@@ -942,16 +955,63 @@ func TestDotParameter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestGetBool(t *testing.T) {
-	key := "BooleanKey"
-	v = New()
-	v.Set(key, true)
-	if !v.GetBool(key) {
-		t.Fatal("GetBool returned false")
+func TestCaseInSensitive(t *testing.T) {
+	for _, config := range []struct {
+		typ     string
+		content string
+	}{
+		{"yaml", `
+aBcD: 1
+eF:
+  gH: 2
+  iJk: 3
+  Lm:
+    nO: 4
+    P:
+      Q: 5
+      R: 6
+`},
+		{"json", `{
+  "aBcD": 1,
+  "eF": {
+    "iJk": 3,
+    "Lm": {
+      "P": {
+        "Q": 5,
+        "R": 6
+      },
+      "nO": 4
+    },
+    "gH": 2
+  }
+}`},
+		{"toml", `aBcD = 1
+[eF]
+gH = 2
+iJk = 3
+[eF.Lm]
+nO = 4
+[eF.Lm.P]
+Q = 5
+R = 6
+`},
+	} {
+		doTestCaseInSensitive(t, config.typ, config.content)
 	}
-	if v.GetBool("NotFound") {
-		t.Fatal("GetBool returned true")
-	}
+}
+
+func doTestCaseInSensitive(t *testing.T, typ, config string) {
+	initConfig(typ, config)
+	Set("RfD", true)
+	assert.Equal(t, true, Get("rfd"))
+	assert.Equal(t, true, Get("rFD"))
+	assert.Equal(t, 1, cast.ToInt(Get("abcd")))
+	assert.Equal(t, 1, cast.ToInt(Get("Abcd")))
+	assert.Equal(t, 2, cast.ToInt(Get("ef.gh")))
+	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
+	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
+	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
+
 }
 
 func BenchmarkGetBool(b *testing.B) {
