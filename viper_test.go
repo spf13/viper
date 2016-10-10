@@ -966,6 +966,18 @@ func BenchmarkGetBool(b *testing.B) {
 	}
 }
 
+func BenchmarkGet(b *testing.B) {
+	key := "BenchmarkGet"
+	v = New()
+	v.Set(key, true)
+
+	for i := 0; i < b.N; i++ {
+		if !v.Get(key).(bool) {
+			b.Fatal("Get returned false")
+		}
+	}
+}
+
 // This is the "perfect result" for the above.
 func BenchmarkGetBoolFromMap(b *testing.B) {
 	m := make(map[string]bool)
