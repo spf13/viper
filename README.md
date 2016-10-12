@@ -277,10 +277,10 @@ Viper provides two Go interfaces to bind other flag systems if you don't use `Pf
 
 ```go
 type myFlag struct {}
-func (f myFlag) IsChanged() { return false }
-func (f myFlag) Name() { return "my-flag-name" }
-func (f myFlag) ValueString() { return "my-flag-value" }
-func (f myFlag) ValueType() { return "string" }
+func (f myFlag) HasChanged() bool { return false }
+func (f myFlag) Name() string { return "my-flag-name" }
+func (f myFlag) ValueString() string { return "my-flag-value" }
+func (f myFlag) ValueType() string { return "string" }
 ```
 
 Once your flag implements this interface, you can simply tell Viper to bind it:
