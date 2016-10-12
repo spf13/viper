@@ -41,15 +41,23 @@ func (pe ConfigParseError) Error() string {
 
 func insensitiviseMap(m map[string]interface{}) {
 	for key, val := range m {
+		switch val.(type) {
+		case map[interface{}]interface{}:
+			// nested map: cast and recursively insensitivise
+			val = cast.ToStringMap(val)
+			insensitiviseMap(val.(map[string]interface{}))
+		case map[string]interface{}:
+			// nested map: recursively insensitivise
+			insensitiviseMap(val.(map[string]interface{}))
+		}
+
 		lower := strings.ToLower(key)
 		if key != lower {
+			// remove old key (not lower-cased)
 			delete(m, key)
-			m[lower] = val
-			if m2, ok := val.(map[string]interface{}); ok {
-				// nested map: recursively insensitivise
-				insensitiviseMap(m2)
-			}
 		}
+		// update map
+		m[lower] = val
 	}
 }
 
