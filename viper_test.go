@@ -271,7 +271,7 @@ func TestUnmarshalling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
+	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 
@@ -639,10 +639,10 @@ func TestFindsNestedKeys(t *testing.T) {
 		"age":  35,
 		"owner": map[string]interface{}{
 			"organization": "MongoDB",
-			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
 			"dob":          dob,
 		},
-		"owner.Bio": "MongoDB Chief Developer Advocate & Hacker at Large",
+		"owner.bio": "MongoDB Chief Developer Advocate & Hacker at Large",
 		"type":      "donut",
 		"id":        "0001",
 		"name":      "Cake",
@@ -651,7 +651,7 @@ func TestFindsNestedKeys(t *testing.T) {
 		"clothing": map[string]interface{}{
 			"jacket":   "leather",
 			"trousers": "denim",
-			"pants": map[interface{}]interface{}{
+			"pants": map[string]interface{}{
 				"size": "large",
 			},
 		},
@@ -697,7 +697,7 @@ func TestReadBufConfig(t *testing.T) {
 	assert.False(t, v.InConfig("state"))
 	assert.Equal(t, "steve", v.Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, v.Get("clothing"))
 	assert.Equal(t, 35, v.Get("age"))
 }
 
