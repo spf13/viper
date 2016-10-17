@@ -718,18 +718,31 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
 func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := decode(v.AllSettings(), defaultDecoderConfig(rawVal))
+	return v.UnmashalWithConfig(rawVal, defaultDecoderConfig(rawVal))
+}
 
+// UnmarshalWithTagName will set the tag name of the
+func UnmarshalWithTagName(rawVal interface{}, tag string) error { return v.UnmarshalWithTagName(rawVal, tag) }
+func (v *Viper) UnmarshalWithTagName(rawVal interface{}, tag string) error {
+	decoderConfig := defaultDecoderConfig(rawVal)
+	decoderConfig.TagName = tag
+
+	return v.UnmashalWithConfig(rawVal, decoderConfig)
+}
+
+// UnmashalWithConfig will use the decoder config to unmashal into the interface
+func UnmarshalWithConfig(rawVal interface{}, decoderConfig *mapstructure.DecoderConfig) error { return v.UnmashalWithConfig(rawVal, decoderConfig) }
+func (v *Viper) UnmashalWithConfig(rawVal interface{}, decoderConfig *mapstructure.DecoderConfig) error {
+	err := decode(v.AllSettings(), decoderConfig)
 	if err != nil {
 		return err
 	}
 
 	v.insensitiviseMaps()
-
 	return nil
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
+// defaultDecoderConfig returns default mapstructure.DecoderConfig with support
 // of time.Duration values
 func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 	return &mapstructure.DecoderConfig{
@@ -751,19 +764,12 @@ func decode(input interface{}, config *mapstructure.DecoderConfig) error {
 
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
+func UnmarshalExact(rawVal interface{}) error { return v.UnmarshalExact(rawVal) }
 func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	config := defaultDecoderConfig(rawVal)
 	config.ErrorUnused = true
 
-	err := decode(v.AllSettings(), config)
-
-	if err != nil {
-		return err
-	}
-
-	v.insensitiviseMaps()
-
-	return nil
+	return v.UnmashalWithConfig(rawVal, config)
 }
 
 // BindPFlags binds a full flag set to the configuration, using each flag's long
