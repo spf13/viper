@@ -445,6 +445,23 @@ func TestAllKeys(t *testing.T) {
 	assert.Equal(t, all, AllSettings())
 }
 
+func TestAllKeysWithEnv(t *testing.T) {
+	v := New()
+
+	// bind and define environment variables (including a nested one)
+	v.BindEnv("id")
+	v.BindEnv("foo.bar")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	os.Setenv("ID", "13")
+	os.Setenv("FOO_BAR", "baz")
+
+	expectedKeys := sort.StringSlice{"id", "foo.bar"}
+	expectedKeys.Sort()
+	keys := sort.StringSlice(v.AllKeys())
+	keys.Sort()
+	assert.Equal(t, expectedKeys, keys)
+}
+
 func TestAliasesOfAliases(t *testing.T) {
 	Set("Title", "Checking Case")
 	RegisterAlias("Foo", "Bar")
