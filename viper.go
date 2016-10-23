@@ -1162,6 +1162,14 @@ func castMapStringToMapInterface(src map[string]string) map[string]interface{} {
 	return tgt
 }
 
+func castMapFlagToMapInterface(src map[string]FlagValue) map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for k, v := range src {
+		tgt[k] = v
+	}
+	return tgt
+}
+
 // mergeMaps merges two maps. The `itgt` parameter is for handling go-yaml's
 // insistence on parsing nested structures as `map[interface{}]interface{}`
 // instead of using a `string` as the key for nest structures beyond one level
@@ -1307,8 +1315,8 @@ func (v *Viper) AllKeys() []string {
 	// add all paths, by order of descending priority to ensure correct shadowing
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
 	m = v.flattenAndMergeMap(m, v.override, "")
-	m = v.mergeFlatMap(m, v.pflags)
-	m = v.mergeFlatMap(m, v.env)
+	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
+	m = v.mergeFlatMap(m, castMapStringToMapInterface(v.env))
 	m = v.flattenAndMergeMap(m, v.config, "")
 	m = v.flattenAndMergeMap(m, v.kvstore, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
@@ -1360,16 +1368,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 
 // mergeFlatMap merges the given maps, excluding values of the second map
 // shadowed by values from the first map.
-func (v *Viper) mergeFlatMap(shadow map[string]bool, mi interface{}) map[string]bool {
-	// unify input map
-	var m map[string]interface{}
-	switch mi.(type) {
-	case map[string]string, map[string]FlagValue:
-		m = cast.ToStringMap(mi)
-	default:
-		return shadow
-	}
-
+func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
 	for k, _ := range m {
