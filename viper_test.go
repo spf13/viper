@@ -978,7 +978,7 @@ func TestDotParameter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestCaseInSensitive(t *testing.T) {
+func TestCaseInsensitive(t *testing.T) {
 	for _, config := range []struct {
 		typ     string
 		content string
@@ -1019,11 +1019,70 @@ Q = 5
 R = 6
 `},
 	} {
-		doTestCaseInSensitive(t, config.typ, config.content)
+		doTestCaseInsensitive(t, config.typ, config.content)
 	}
 }
 
-func doTestCaseInSensitive(t *testing.T, typ, config string) {
+func TestCaseInsensitiveSet(t *testing.T) {
+	Reset()
+	m1 := map[string]interface{}{
+		"Foo": 32,
+		"Bar": map[interface{}]interface {
+		}{
+			"ABc": "A",
+			"cDE": "B"},
+	}
+
+	m2 := map[string]interface{}{
+		"Foo": 52,
+		"Bar": map[interface{}]interface {
+		}{
+			"bCd": "A",
+			"eFG": "B"},
+	}
+
+	Set("Given1", m1)
+	Set("Number1", 42)
+
+	SetDefault("Given2", m2)
+	SetDefault("Number2", 52)
+
+	// Verify SetDefault
+	if v := Get("number2"); v != 52 {
+		t.Fatalf("Expected 52 got %q", v)
+	}
+
+	if v := Get("given2.foo"); v != 52 {
+		t.Fatalf("Expected 52 got %q", v)
+	}
+
+	if v := Get("given2.bar.bcd"); v != "A" {
+		t.Fatalf("Expected A got %q", v)
+	}
+
+	if _, ok := m2["Foo"]; !ok {
+		t.Fatal("Input map changed")
+	}
+
+	// Verify Set
+	if v := Get("number1"); v != 42 {
+		t.Fatalf("Expected 42 got %q", v)
+	}
+
+	if v := Get("given1.foo"); v != 32 {
+		t.Fatalf("Expected 32 got %q", v)
+	}
+
+	if v := Get("given1.bar.abc"); v != "A" {
+		t.Fatalf("Expected A got %q", v)
+	}
+
+	if _, ok := m1["Foo"]; !ok {
+		t.Fatal("Input map changed")
+	}
+}
+
+func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	initConfig(typ, config)
 	Set("RfD", true)
 	assert.Equal(t, true, Get("rfd"))
