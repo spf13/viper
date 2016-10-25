@@ -48,7 +48,7 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 	var err error
 
 	if rp.SecretKeyring() != "" {
-		kr, err := os.Open(rp.SecretKeyring())
+		kr, err = os.Open(rp.SecretKeyring())
 		defer kr.Close()
 		if err != nil {
 			return nil, err
