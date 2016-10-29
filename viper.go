@@ -576,6 +576,7 @@ func GetViper() *Viper {
 }
 
 // Get can retrieve any value given the key to use.
+// Get is case-insensitive for a key.
 // Get has the behavior of returning the value associated with the first
 // place from where it is set. Viper will check in the following order:
 // override, flag, env, config file, key/value store, default
@@ -619,6 +620,7 @@ func (v *Viper) Get(key string) interface{} {
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
+// Sub is case-insensitive for a key.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
@@ -956,6 +958,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 }
 
 // IsSet checks to see if the key has been set in any of the data locations.
+// IsSet is case-insensitive for a key.
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
@@ -1037,6 +1040,7 @@ func (v *Viper) InConfig(key string) bool {
 }
 
 // SetDefault sets the default value for this key.
+// SetDefault is case-insensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
@@ -1053,6 +1057,7 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 }
 
 // Set sets the value for the key in the override regiser.
+// Set is case-insensitive for a key.
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) { v.Set(key, value) }
