@@ -592,7 +592,6 @@ func (v *Viper) Get(key string) interface{} {
 
 	valType := val
 	if v.typeByDefValue {
-		// TODO(bep) this branch isn't covered by a single test.
 		path := strings.Split(lcaseKey, v.keyDelim)
 		defVal := v.searchMap(v.defaults, path)
 		if defVal != nil {
@@ -615,8 +614,53 @@ func (v *Viper) Get(key string) interface{} {
 		return cast.ToDuration(val)
 	case []string:
 		return cast.ToStringSlice(val)
+	default:
+		return convert(reflect.ValueOf(val), reflect.TypeOf(valType)).Interface()
 	}
-	return val
+}
+
+func convert(v reflect.Value, typ reflect.Type) reflect.Value {
+	if v.Kind() == reflect.Interface {
+		return convert(v.Elem(), typ)
+	}
+	switch typ.Kind() {
+	case reflect.Ptr:
+		res := reflect.New(typ.Elem())
+		res.Elem().Set(convert(v, typ.Elem()))
+		return res
+	case reflect.Struct:
+		if v.Kind() != reflect.Map {
+			return v
+		}
+		res := reflect.New(typ).Elem()
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			fieldVal := v.MapIndex(reflect.ValueOf(field.Name))
+			if !fieldVal.IsValid() {
+				fieldVal = v.MapIndex(reflect.ValueOf(strings.ToLower(field.Name)))
+				if !fieldVal.IsValid() {
+					continue
+				}
+			}
+			res.Field(i).Set(convert(fieldVal, field.Type))
+		}
+		return res
+	case reflect.Slice, reflect.Array:
+		if v.Kind() != reflect.Slice {
+			return v
+		}
+		res := reflect.Zero(typ)
+		elemType := typ.Elem()
+		for i := 0; i < v.Len(); i++ {
+			res = reflect.Append(res, convert(v.Index(i), elemType))
+		}
+		return res
+	default:
+		if !v.Type().ConvertibleTo(typ) {
+			return v
+		}
+		return v.Convert(typ)
+	}
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.

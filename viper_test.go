@@ -789,6 +789,67 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 }
 
+var yamlTypeExample = []byte(`
+hobbies:
+- skateboarding
+- snowboarding
+languages: go golang python
+job:
+  salary: 100,000 USD
+  medical: full
+clothes:
+- jacket: leather
+  trousers: denim
+  pants:
+    size: large
+- jacket: denim
+  trousers: slacks
+  pants:
+    size: medium
+`)
+
+type Clothing struct {
+	Jacket   string
+	Trousers string
+	Pants    Pants
+}
+
+type Pants struct {
+	Size string
+}
+
+type Job struct {
+	Salary  string
+	Medical string
+}
+
+func TestTypeByDefaultValue(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.SetDefault("hobbies", []string{})
+	v.SetDefault("languages", []string{})
+	v.SetDefault("job", &Job{})
+	v.SetDefault("clothes", []Clothing{})
+	v.SetTypeByDefaultValue(true)
+	err := v.ReadConfig(bytes.NewBuffer(yamlTypeExample))
+	assert.NoError(t, err)
+
+	assert.Equal(t, []string{"skateboarding", "snowboarding"}, v.Get("hobbies"))
+	assert.Equal(t, []string{"go", "golang", "python"}, v.Get("languages"))
+	assert.Equal(t, []Clothing{
+		{
+			Jacket:   "leather",
+			Trousers: "denim",
+			Pants:    Pants{Size: "large"},
+		},
+		{
+			Jacket:   "denim",
+			Trousers: "slacks",
+			Pants:    Pants{Size: "medium"},
+		},
+	}, v.Get("clothes"))
+}
+
 var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
