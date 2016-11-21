@@ -156,7 +156,7 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChangeList []func(fsnotify.Event)
 }
 
 // New returns an initialized Viper instance.
@@ -226,9 +226,15 @@ var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul"}
 
+// OnConfigChange adds a change listener to the list of current listeners
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
+
+// OnConfigChange adds a change listener to the list of current listeners
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
-	v.onConfigChange = run
+	if v.onConfigChangeList == nil {
+		v.onConfigChangeList = make([]func(fsnotify.Event), 0, 1)
+	}
+	v.onConfigChangeList = append(v.onConfigChangeList, run)
 }
 
 func WatchConfig() { v.WatchConfig() }
@@ -262,7 +268,9 @@ func (v *Viper) WatchConfig() {
 							if err != nil {
 								log.Println("error:", err)
 							}
-							v.onConfigChange(event)
+							for _, onConfigChange := range v.onConfigChangeList {
+								onConfigChange(event)
+							}
 						}
 					}
 				case err := <-watcher.Errors:
