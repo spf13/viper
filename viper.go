@@ -173,6 +173,7 @@ func New() *Viper {
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
+	v.onConfigChangeList = make([]func(fsnotify.Event), 0)
 
 	return v
 }
@@ -231,9 +232,6 @@ func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 
 // OnConfigChange adds a change listener to the list of current listeners
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
-	if v.onConfigChangeList == nil {
-		v.onConfigChangeList = make([]func(fsnotify.Event), 0, 1)
-	}
 	v.onConfigChangeList = append(v.onConfigChangeList, run)
 }
 
