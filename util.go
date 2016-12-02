@@ -94,16 +94,33 @@ func insensitiviseMap(m map[string]interface{}) {
 	}
 }
 
+func getEnv(key string) string {
+	if key == "HOME" && runtime.GOOS == "windows" {
+		home := os.Getenv(key)
+
+		if home != "" {
+			return home
+		}
+
+		home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+
+		if home != "" {
+			return home
+		}
+
+		return os.Getenv("USERPROFILE")
+	}
+
+	return os.Getenv(key)
+}
+
 func absPathify(inPath string) string {
 	jww.INFO.Println("Trying to resolve absolute path to", inPath)
 
-	if strings.HasPrefix(inPath, "$HOME") {
-		inPath = userHomeDir() + inPath[5:]
-	}
+	inPath = filepath.FromSlash(inPath)
 
-	if strings.HasPrefix(inPath, "$") {
-		end := strings.Index(inPath, string(os.PathSeparator))
-		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+	if strings.ContainsRune(inPath, '$') {
+		inPath = os.Expand(inPath, getEnv)
 	}
 
 	if filepath.IsAbs(inPath) {
@@ -139,17 +156,6 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
-}
-
-func userHomeDir() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
-	}
-	return os.Getenv("HOME")
 }
 
 func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
