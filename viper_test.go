@@ -771,6 +771,26 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
 
+func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
+
+	_, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	v.AddConfigPath(`whattayoutalkingbout`)
+	v.AddConfigPath(`thispathaintthere`)
+
+	err := v.MergeInConfig()
+	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{"", ""}), reflect.TypeOf(err))
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
+	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
 func TestSub(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
