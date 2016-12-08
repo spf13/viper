@@ -21,12 +21,14 @@ import (
 	"strings"
 	"unicode"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/hashicorp/hcl"
 	"github.com/magiconair/properties"
 	toml "github.com/pelletier/go-toml"
+	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
-	"gopkg.in/yaml.v2"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
@@ -37,6 +39,16 @@ type ConfigParseError struct {
 // Error returns the formatted configuration error.
 func (pe ConfigParseError) Error() string {
 	return fmt.Sprintf("While parsing config: %s", pe.err.Error())
+}
+
+// ConfigMarshalError happens when failing to marshal the configuration.
+type ConfigMarshalError struct {
+	err error
+}
+
+// Error returns the formatted configuration error.
+func (e ConfigMarshalError) Error() string {
+	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
 }
 
 // toCaseInsensitiveValue checks if the value is a  map;
@@ -150,6 +162,39 @@ func userHomeDir() string {
 		return home
 	}
 	return os.Getenv("HOME")
+}
+
+func marshalConfigWriter(out afero.File, c map[string]interface{}, configType string) error {
+	switch configType {
+	case "json":
+		b, err := json.MarshalIndent(v.AllSettings(), "", "    ")
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		_, err = out.WriteString(string(b))
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+
+	// case "toml":
+	// 	w := bufio.NewWriter(out)
+	// 	if err := toml.NewEncoder(w).Encode(v.AllSettings()); err != nil {
+	// 		return ConfigMarshalError{err}
+	// 	}
+	// 	w.Flush()
+
+	case "yaml", "yml":
+		b, err := yaml.Marshal(v.AllSettings())
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		_, err = out.WriteString(string(b))
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+	}
+
+	return nil
 }
 
 func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {

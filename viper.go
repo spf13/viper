@@ -20,9 +20,7 @@
 package viper
 
 import (
-	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -32,8 +30,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
@@ -1044,50 +1040,6 @@ func (v *Viper) InConfig(key string) bool {
 	return exists
 }
 
-// Save configuration to file
-func SaveConfig() error { return v.SaveConfig() }
-func (v *Viper) SaveConfig() error {
-
-	jww.INFO.Println("Attempting to write config into the file.")
-	if !stringInSlice(v.getConfigType(), SupportedExts) {
-		return UnsupportedConfigError(v.getConfigType())
-	}
-
-	f, err := os.Create(v.getConfigFile())
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	switch v.getConfigType() {
-	case "json":
-
-		b, err := json.MarshalIndent(v.AllSettings(), "", "    ")
-		if err != nil {
-			jww.FATAL.Println("Panic while encoding into JSON format.")
-		}
-		f.WriteString(string(b))
-
-	case "toml":
-
-		w := bufio.NewWriter(f)
-		if err := toml.NewEncoder(w).Encode(v.AllSettings()); err != nil {
-			jww.FATAL.Println("Panic while encoding into TOML format.")
-		}
-		w.Flush()
-
-	case "yaml", "yml":
-
-		b, err := yaml.Marshal(v.AllSettings())
-		if err != nil {
-			jww.FATAL.Println("Panic while encoding into YAML format.")
-		}
-		f.WriteString(string(b))
-	}
-
-	return nil
-}
-
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
@@ -1188,6 +1140,31 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 	}
 	mergeMaps(cfg, v.config, nil)
 	return nil
+}
+
+// WriteConfig writes the current configuration to a file.
+func WriteConfig() error { return v.WriteConfig() }
+func (v *Viper) WriteConfig() error {
+
+	jww.INFO.Println("Attempting to write config into the file.")
+	// filename, err := v.getConfigFile()
+	filename := "out.yaml"
+	// if err != nil {
+	// 	return err
+	// }
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
+	}
+	if v.config == nil {
+		v.config = make(map[string]interface{})
+	}
+
+	file, err := v.fs.OpenFile(filename, os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
+	if err != nil {
+		return err
+	}
+
+	return v.marshalWriter(file, v.config)
 }
 
 func keyExists(k string, m map[string]interface{}) string {
@@ -1306,6 +1283,15 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return unmarshallConfigReader(in, c, v.getConfigType())
+}
+
+// Marshal a map into Writer.
+func marshalWriter(out afero.File, c map[string]interface{}) error {
+	return v.marshalWriter(out, c)
+}
+
+func (v *Viper) marshalWriter(out afero.File, c map[string]interface{}) error {
+	return marshalConfigWriter(out, c, v.getConfigType())
 }
 
 func (v *Viper) insensitiviseMaps() {
