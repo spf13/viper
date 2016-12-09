@@ -1141,30 +1141,72 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 	return nil
 }
 
-// WriteConfig writes the current configuration to a file.
-func WriteConfig() error { return v.WriteConfig() }
-func (v *Viper) WriteConfig() error {
-
-	jww.INFO.Println("Attempting to write config into the file.")
-	// filename, err := v.getConfigFile()
-	filename := "out.yaml"
-	// if err != nil {
-	// 	return err
-	// }
-	if !stringInSlice(v.getConfigType(), SupportedExts) {
-		return UnsupportedConfigError(v.getConfigType())
+func writeConfig(filename string, force bool) error { return v.writeConfig(filename, force) }
+func (v *Viper) writeConfig(filename string, force bool) error {
+	jww.INFO.Println("Attempting to write configuration to file.")
+	ext := filepath.Ext(filename)
+	if len(ext) <= 1 {
+		return fmt.Errorf("Filename: %s requires valid extension.", filename)
+	}
+	configType := ext[1:]
+	if !stringInSlice(configType, SupportedExts) {
+		return UnsupportedConfigError(configType)
 	}
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-
-	file, err := v.fs.OpenFile(filename, os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
+	var flags int
+	if force == true {
+		flags = os.O_CREATE | os.O_WRONLY
+	} else {
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			flags = os.O_WRONLY
+		} else {
+			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
+		}
+	}
+	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
-
-	return v.marshalWriter(file, v.config)
+	return v.marshalWriter(f, v.config, configType)
 }
+
+// WriteConfig writes the current configuration to a file.
+func WriteConfig() error { return v.WriteConfig() }
+func (v *Viper) WriteConfig() error {
+	filename, err := v.getConfigFile()
+	if err != nil {
+		return err
+	}
+	return v.writeConfig(filename, true)
+}
+
+// SafeWriteConfig writes current configuration to file only if the file does not exist.
+func SafeWriteConfig() error { return v.SafeWriteConfig() }
+func (v *Viper) SafeWriteConfig() error {
+	filename, err := v.getConfigFile()
+	if err != nil {
+		return err
+	}
+	return v.writeConfig(filename, false)
+}
+
+// WriteConfigAs writes current configuration to a given filename.
+func WriteConfigAs(filename string) error { return v.WriteConfigAs(filename) }
+func (v *Viper) WriteConfigAs(filename string) error {
+	return v.writeConfig(filename, true)
+}
+
+// SafeWriteConfigAs writes current configuration to a given filename is it does not exist.
+func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
+func (v *Viper) SafeWriteConfigAs(filename string) error {
+	return v.writeConfig(filename, false)
+}
+
+// WriteConfigKey writes given key and value to file.
+
+// WriteConfigKeyAs writes given key and value to a given filename.
 
 func keyExists(k string, m map[string]interface{}) string {
 	lk := strings.ToLower(k)
@@ -1285,12 +1327,12 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 
 // Marshal a map into Writer.
-func marshalWriter(out afero.File, c map[string]interface{}) error {
-	return v.marshalWriter(out, c)
+func marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
+	return v.marshalWriter(out, c, configType)
 }
 
-func (v *Viper) marshalWriter(out afero.File, c map[string]interface{}) error {
-	return marshalConfigWriter(out, c, v.getConfigType())
+func (v *Viper) marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
+	return marshalConfigWriter(out, c, configType)
 }
 
 func (v *Viper) insensitiviseMaps() {
