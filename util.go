@@ -21,14 +21,13 @@ import (
 	"strings"
 	"unicode"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/hashicorp/hcl"
 	"github.com/magiconair/properties"
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
+	"gopkg.in/yaml.v2"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
