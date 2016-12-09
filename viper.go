@@ -1233,7 +1233,7 @@ func (v *Viper) WriteConfigAs(filename string) error {
 	return v.writeConfig(filename, true)
 }
 
-// SafeWriteConfigAs writes current configuration to a given filename is it does not exist.
+// SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
