@@ -202,7 +202,7 @@ func marshalConfigWriter(f afero.File, c map[string]interface{}, configType stri
 	return nil
 }
 
-func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
+func unmarshalConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 

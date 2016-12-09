@@ -1351,14 +1351,14 @@ func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
 }
 
-// Unmarshall a Reader into a map.
+// Unmarshal a Reader into a map.
 // Should probably be an unexported function.
 func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return v.unmarshalReader(in, c)
 }
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
-	return unmarshallConfigReader(in, c, v.getConfigType())
+	return unmarshalConfigReader(in, c, v.getConfigType())
 }
 
 // Marshal a map into Writer.
