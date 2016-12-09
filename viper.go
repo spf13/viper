@@ -1239,10 +1239,6 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
-// WriteConfigKey writes given key and value to file.
-
-// WriteConfigKeyAs writes given key and value to a given filename.
-
 func keyExists(k string, m map[string]interface{}) string {
 	lk := strings.ToLower(k)
 	for mk := range m {
@@ -1369,7 +1365,6 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
 	return v.marshalWriter(out, c, configType)
 }
-
 func (v *Viper) marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
 	return marshalConfigWriter(out, c, configType)
 }
