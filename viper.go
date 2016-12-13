@@ -1102,13 +1102,13 @@ func (v *Viper) ReadInConfig() error {
 func MergeInConfig() error { return v.MergeInConfig() }
 func (v *Viper) MergeInConfig() error {
 	jww.INFO.Println("Attempting to merge in config file")
-	if !stringInSlice(v.getConfigType(), SupportedExts) {
-		return UnsupportedConfigError(v.getConfigType())
-	}
-
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err
+	}
+
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
 	}
 
 	file, err := afero.ReadFile(v.fs, filename)
