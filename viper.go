@@ -36,7 +36,6 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
-	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
 	toml "github.com/pelletier/go-toml"
@@ -1338,15 +1337,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		}
 
 	case "hcl":
-		b, err := json.Marshal(c)
-		ast, err := hcl.Parse(string(b))
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-		err = printer.Fprint(f, ast.Node)
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
+		return v.marshalWriterHCL(f)
 
 	case "prop", "props", "properties":
 		if v.properties == nil {
