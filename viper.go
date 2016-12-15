@@ -22,6 +22,7 @@ package viper
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -31,13 +32,29 @@ import (
 	"strings"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/fsnotify/fsnotify"
+	"github.com/hashicorp/hcl"
+	"github.com/hashicorp/hcl/hcl/printer"
+	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
+	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 )
+
+// ConfigMarshalError happens when failing to marshal the configuration.
+type ConfigMarshalError struct {
+	err error
+}
+
+// Error returns the formatted configuration error.
+func (e ConfigMarshalError) Error() string {
+	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
+}
 
 var v *Viper
 
@@ -163,6 +180,10 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
+	// Store read properties on the object so that we can write back in order with comments.
+	// This will only be used if the configuration read is a properties file.
+	properties *properties.Properties
+
 	onConfigChange func(fsnotify.Event)
 }
 
@@ -189,7 +210,7 @@ func New() *Viper {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "hcl"}
+	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl"}
 	SupportedRemoteProviders = []string{"etcd", "consul"}
 }
 
@@ -1176,37 +1197,6 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 	return nil
 }
 
-func writeConfig(filename string, force bool) error { return v.writeConfig(filename, force) }
-func (v *Viper) writeConfig(filename string, force bool) error {
-	jww.INFO.Println("Attempting to write configuration to file.")
-	ext := filepath.Ext(filename)
-	if len(ext) <= 1 {
-		return fmt.Errorf("Filename: %s requires valid extension.", filename)
-	}
-	configType := ext[1:]
-	if !stringInSlice(configType, SupportedExts) {
-		return UnsupportedConfigError(configType)
-	}
-	if v.config == nil {
-		v.config = make(map[string]interface{})
-	}
-	var flags int
-	if force == true {
-		flags = os.O_CREATE | os.O_WRONLY
-	} else {
-		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			flags = os.O_WRONLY
-		} else {
-			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
-		}
-	}
-	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
-	if err != nil {
-		return err
-	}
-	return v.marshalWriter(f, v.config, configType)
-}
-
 // WriteConfig writes the current configuration to a file.
 func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
@@ -1237,6 +1227,162 @@ func (v *Viper) WriteConfigAs(filename string) error {
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
+}
+
+func writeConfig(filename string, force bool) error { return v.writeConfig(filename, force) }
+func (v *Viper) writeConfig(filename string, force bool) error {
+	jww.INFO.Println("Attempting to write configuration to file.")
+	ext := filepath.Ext(filename)
+	if len(ext) <= 1 {
+		return fmt.Errorf("Filename: %s requires valid extension.", filename)
+	}
+	configType := ext[1:]
+	if !stringInSlice(configType, SupportedExts) {
+		return UnsupportedConfigError(configType)
+	}
+	if v.config == nil {
+		v.config = make(map[string]interface{})
+	}
+	var flags int
+	if force == true {
+		flags = os.O_CREATE | os.O_WRONLY
+	} else {
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			flags = os.O_WRONLY
+		} else {
+			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
+		}
+	}
+	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
+	if err != nil {
+		return err
+	}
+	return v.marshalWriter(f, configType)
+}
+
+// Unmarshal a Reader into a map.
+// Should probably be an unexported function.
+func unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	return v.unmarshalReader(in, c)
+}
+func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(in)
+
+	switch strings.ToLower(v.getConfigType()) {
+	case "yaml", "yml":
+		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "json":
+		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "hcl":
+		obj, err := hcl.Parse(string(buf.Bytes()))
+		if err != nil {
+			return ConfigParseError{err}
+		}
+		if err = hcl.DecodeObject(&c, obj); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "toml":
+		tree, err := toml.LoadReader(buf)
+		if err != nil {
+			return ConfigParseError{err}
+		}
+		tmap := tree.ToMap()
+		for k, v := range tmap {
+			c[k] = v
+		}
+
+	case "properties", "props", "prop":
+		v.properties = properties.NewProperties()
+		var err error
+		if v.properties, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
+			return ConfigParseError{err}
+		}
+		for _, key := range v.properties.Keys() {
+			value, _ := v.properties.Get(key)
+			// recursively build nested maps
+			path := strings.Split(key, ".")
+			lastKey := strings.ToLower(path[len(path)-1])
+			deepestMap := deepSearch(c, path[0:len(path)-1])
+			// set innermost value
+			deepestMap[lastKey] = value
+		}
+	}
+
+	insensitiviseMap(c)
+	return nil
+}
+
+// Marshal a map into Writer.
+func marshalWriter(f afero.File, configType string) error {
+	return v.marshalWriter(f, configType)
+}
+func (v *Viper) marshalWriter(f afero.File, configType string) error {
+	c := v.config
+	switch configType {
+	case "json":
+		b, err := json.MarshalIndent(c, "", "  ")
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		_, err = f.WriteString(string(b))
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+
+	case "hcl":
+		b, err := json.Marshal(c)
+		ast, err := hcl.Parse(string(b))
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		err = printer.Fprint(f, ast.Node)
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+
+	case "prop", "props", "properties":
+		if v.properties == nil {
+			v.properties = properties.NewProperties()
+		}
+		p := v.properties
+		for _, key := range v.AllKeys() {
+			_, _, err := p.Set(key, v.GetString(key))
+			if err != nil {
+				return ConfigMarshalError{err}
+			}
+		}
+		_, err := p.WriteComment(f, "#", properties.UTF8)
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+
+	case "toml":
+		t := toml.TreeFromMap(c)
+		s := t.String()
+		_, err := f.WriteString(s)
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+
+	case "yaml", "yml":
+		b, err := yaml.Marshal(c)
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		_, err = f.WriteString(string(b))
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
+	}
+	return nil
 }
 
 func keyExists(k string, m map[string]interface{}) string {
@@ -1349,24 +1495,6 @@ func (v *Viper) WatchRemoteConfig() error {
 
 func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
-}
-
-// Unmarshal a Reader into a map.
-// Should probably be an unexported function.
-func unmarshalReader(in io.Reader, c map[string]interface{}) error {
-	return v.unmarshalReader(in, c)
-}
-
-func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
-	return unmarshalConfigReader(in, c, v.getConfigType())
-}
-
-// Marshal a map into Writer.
-func marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
-	return v.marshalWriter(out, c, configType)
-}
-func (v *Viper) marshalWriter(out afero.File, c map[string]interface{}, configType string) error {
-	return marshalConfigWriter(out, c, configType)
 }
 
 func (v *Viper) insensitiviseMaps() {

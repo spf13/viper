@@ -11,23 +11,15 @@
 package viper
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"unicode"
 
-	"github.com/hashicorp/hcl"
-	"github.com/magiconair/properties"
-	toml "github.com/pelletier/go-toml"
-	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
-	"gopkg.in/yaml.v2"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
@@ -38,16 +30,6 @@ type ConfigParseError struct {
 // Error returns the formatted configuration error.
 func (pe ConfigParseError) Error() string {
 	return fmt.Sprintf("While parsing config: %s", pe.err.Error())
-}
-
-// ConfigMarshalError happens when failing to marshal the configuration.
-type ConfigMarshalError struct {
-	err error
-}
-
-// Error returns the formatted configuration error.
-func (e ConfigMarshalError) Error() string {
-	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
 }
 
 // toCaseInsensitiveValue checks if the value is a  map;
@@ -161,100 +143,6 @@ func userHomeDir() string {
 		return home
 	}
 	return os.Getenv("HOME")
-}
-
-func marshalConfigWriter(f afero.File, c map[string]interface{}, configType string) error {
-	switch configType {
-	case "json":
-		b, err := json.MarshalIndent(v.AllSettings(), "", "    ")
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-		_, err = f.WriteString(string(b))
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-
-	case "hcl":
-		// TODO: How to convert map to hcl???
-
-	case "prop", "props", "properties":
-
-	case "toml":
-		t := toml.TreeFromMap(v.AllSettings())
-		s := t.String()
-		_, err := f.WriteString(s)
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-
-	case "yaml", "yml":
-		b, err := yaml.Marshal(v.AllSettings())
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-		_, err = f.WriteString(string(b))
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-	}
-
-	return nil
-}
-
-func unmarshalConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
-
-	switch strings.ToLower(configType) {
-	case "yaml", "yml":
-		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
-			return ConfigParseError{err}
-		}
-
-	case "json":
-		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
-			return ConfigParseError{err}
-		}
-
-	case "hcl":
-		obj, err := hcl.Parse(string(buf.Bytes()))
-		if err != nil {
-			return ConfigParseError{err}
-		}
-		if err = hcl.DecodeObject(&c, obj); err != nil {
-			return ConfigParseError{err}
-		}
-
-	case "toml":
-		tree, err := toml.LoadReader(buf)
-		if err != nil {
-			return ConfigParseError{err}
-		}
-		tmap := tree.ToMap()
-		for k, v := range tmap {
-			c[k] = v
-		}
-
-	case "properties", "props", "prop":
-		var p *properties.Properties
-		var err error
-		if p, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
-			return ConfigParseError{err}
-		}
-		for _, key := range p.Keys() {
-			value, _ := p.Get(key)
-			// recursively build nested maps
-			path := strings.Split(key, ".")
-			lastKey := strings.ToLower(path[len(path)-1])
-			deepestMap := deepSearch(c, path[0:len(path)-1])
-			// set innermost value
-			deepestMap[lastKey] = value
-		}
-	}
-
-	insensitiviseMap(c)
-	return nil
 }
 
 func safeMul(a, b uint) uint {
