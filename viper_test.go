@@ -848,31 +848,31 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 }
 
-var hclWriteExpected = []byte(`"foos" {
-  "foo" {
-    "key" 1
+var hclWriteExpected = []byte(`"foos" = {
+  "foo" = {
+    "key" = 1
   }
 
-  "foo" {
-    "key" 2
+  "foo" = {
+    "key" = 2
   }
 
-  "foo" {
-    "key" 3
+  "foo" = {
+    "key" = 3
   }
 
-  "foo" {
-    "key" 4
+  "foo" = {
+    "key" = 4
   }
 }
 
-"id" "0001"
+"id" = "0001"
 
-"name" "Cake"
+"name" = "Cake"
 
-"ppu" 0.55
+"ppu" = 0.55
 
-"type" "donut"`)
+"type" = "donut"`)
 
 func TestWriteConfigHCL(t *testing.T) {
 	v := New()
