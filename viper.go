@@ -1325,7 +1325,7 @@ func marshalWriter(f afero.File, configType string) error {
 	return v.marshalWriter(f, configType)
 }
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
-	c := v.config
+	c := v.AllSettings()
 	switch configType {
 	case "json":
 		b, err := json.MarshalIndent(c, "", "  ")
