@@ -1245,7 +1245,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	}
 	var flags int
 	if force == true {
-		flags = os.O_CREATE | os.O_WRONLY
+		flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
 	} else {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			flags = os.O_WRONLY
