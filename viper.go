@@ -880,7 +880,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
-			return strings.TrimSuffix(s, "]")
+			return strings.Split(strings.TrimSuffix(s, "]"), ",")
 		default:
 			return flag.ValueString()
 		}
@@ -947,7 +947,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
-			return strings.TrimSuffix(s, "]")
+			return strings.Split(strings.TrimSuffix(s, "]"), ",")
 		default:
 			return flag.ValueString()
 		}
