@@ -1102,6 +1102,35 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	}
 }
 
+func TestParseNested(t *testing.T) {
+	type duration struct {
+		Delay time.Duration
+	}
+
+	type item struct {
+		Name   string
+		Delay  time.Duration
+		Nested duration
+	}
+
+	config := `[[parent]]
+	delay="100ms"
+	[parent.nested]
+	delay="200ms"
+`
+	initConfig("toml", config)
+
+	var items []item
+	err := v.UnmarshalKey("parent", &items)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+
+	assert.Equal(t, 1, len(items))
+	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
+	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
+}
+
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	initConfig(typ, config)
 	Set("RfD", true)
