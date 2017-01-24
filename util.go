@@ -119,7 +119,7 @@ func absPathify(inPath string) string {
 
 	inPath = filepath.FromSlash(inPath)
 
-	if strings.ContainsRune(inPath, '$') {
+	if strings.IndexRune(inPath, '$') >= 0 {
 		inPath = os.Expand(inPath, getEnv)
 	}
 
