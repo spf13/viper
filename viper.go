@@ -1033,9 +1033,9 @@ func (v *Viper) realKey(key string) string {
 func InConfig(key string) bool { return v.InConfig(key) }
 func (v *Viper) InConfig(key string) bool {
 	// if the requested key is an alias, then return the proper key
-	key = v.realKey(key)
+	key = v.realKey(strings.ToLower(key))
 
-	_, exists := v.config[key]
+	_, exists := v.config[strings.ToLower(key)]
 	return exists
 }
 

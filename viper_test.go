@@ -268,6 +268,7 @@ func TestUnmarshalling(t *testing.T) {
 
 	unmarshalReader(r, v.config)
 	assert.True(t, InConfig("name"))
+	assert.True(t, InConfig("NAME"))
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
