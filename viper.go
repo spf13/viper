@@ -308,7 +308,7 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // (cammel case to snake case for JSON keys perhaps)
 
 // getEnv is a wrapper around os.Getenv which replaces characters in the original
-// key. This allows env vars which have different keys then the config object
+// key. This allows env vars which have different keys than the config object
 // keys
 func (v *Viper) getEnv(key string) string {
 	if v.envKeyReplacer != nil {
