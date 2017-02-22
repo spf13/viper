@@ -40,6 +40,29 @@ func (rc remoteConfigProvider) Watch(rp viper.RemoteProvider) (io.Reader, error)
 
 	return bytes.NewReader(resp), nil
 }
+func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *viper.RemoteResponse, chan bool) {
+	cm, err := getConfigManager(rp)
+	if err != nil {
+		return nil, nil
+	}
+	quit := make(chan bool)
+	respChan := make(chan *viper.RemoteResponse, 0)
+	watchchan := cm.Watch(rp.Path(), quit)
+	// Todo Add quit channel
+	go func(w <-chan *crypt.Response) {
+		for {
+			resp := <-w
+			respChan <- &viper.RemoteResponse{
+				Error: resp.Error,
+				Value: resp.Value,
+			}
+		}
+
+	 }(watchchan)
+	return respChan ,quit
+
+}
+
 
 func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 
