@@ -684,6 +684,12 @@ func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
+// GetIntSlice returns the value associated with the key as a slice of ints.
+func GetIntSlice(key string) []int { return v.GetIntSlice(key) }
+func (v *Viper) GetIntSlice(key string) []int {
+	return cast.ToIntSlice(v.Get(key))
+}
+
 // GetStringMap returns the value associated with the key as a map of interfaces.
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 func (v *Viper) GetStringMap(key string) map[string]interface{} {
