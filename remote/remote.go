@@ -33,23 +33,14 @@ func (rc remoteConfigProvider) Watch(rp viper.RemoteProvider) (io.Reader, error)
 	if err != nil {
 		return nil, err
 	}
-	resp,err := cm.Get(rp.Path())
+	resp := <-cm.Watch(rp.Path(), nil)
+	err = resp.Error
 	if err != nil {
 		return nil, err
 	}
 
-	return bytes.NewReader(resp), nil
+	return bytes.NewReader(resp.Value), nil
 }
-func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *crypt.Response, chan bool) {
-	cm, err := getConfigManager(rp)
-	if err != nil {
-		return nil, nil
-	}
-	quit := make(chan bool)
-	return cm.Watch(rp.Path(), quit) ,quit
-
-}
-
 
 func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 
