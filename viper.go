@@ -36,10 +36,14 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
-	crypt "github.com/xordataexchange/crypt/config"
 )
 
 var v *Viper
+
+type Response struct {
+	Value []byte
+	Error error
+}
 
 func init() {
 	v = New()
@@ -48,7 +52,7 @@ func init() {
 type remoteConfigFactory interface {
 	Get(rp RemoteProvider) (io.Reader, error)
 	Watch(rp RemoteProvider) (io.Reader, error)
-	WatchChannel(rp RemoteProvider)(<-chan *crypt.Response, chan bool)
+	WatchChannel(rp RemoteProvider)(<-chan *Response, chan bool)
 }
 
 // RemoteConfig is optional, see the remote package
@@ -1309,7 +1313,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		//Todo: Add quit channel
-		go func(rc <-chan *crypt.Response) {
+		go func(rc <-chan *Response) {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
