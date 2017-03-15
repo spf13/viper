@@ -40,24 +40,24 @@ func (rc remoteConfigProvider) Watch(rp viper.RemoteProvider) (io.Reader, error)
 
 	return bytes.NewReader(resp), nil
 }
-func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *viper.Response, chan bool) {
+func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *viper.RemoteResponse, chan bool) {
 	cm, err := getConfigManager(rp)
 	if err != nil {
 		return nil, nil
 	}
 	quit := make(chan bool)
 	quitwc := make(chan bool)
-	viperResponsCh := make(chan  *viper.Response)
+	viperResponsCh := make(chan  *viper.RemoteResponse)
 	cryptoResponseCh := cm.Watch(rp.Path(), quit)
 	// need this function to convert the Channel response form crypt.Response to viper.Response
-	go func(cr <-chan *crypt.Response,vr chan<- *viper.Response, quitwc <-chan bool, quit chan<- bool) {
+	go func(cr <-chan *crypt.Response,vr chan<- *viper.RemoteResponse, quitwc <-chan bool, quit chan<- bool) {
 		for {
 			select {
 			case <- quitwc:
 				quit <- true
 				return
 			case resp := <-cr:
-				vr <- &viper.Response{
+				vr <- &viper.RemoteResponse{
 					Error: resp.Error,
 					Value: resp.Value,
 				}

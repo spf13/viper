@@ -40,7 +40,7 @@ import (
 
 var v *Viper
 
-type Response struct {
+type RemoteResponse struct {
 	Value []byte
 	Error error
 }
@@ -52,7 +52,7 @@ func init() {
 type remoteConfigFactory interface {
 	Get(rp RemoteProvider) (io.Reader, error)
 	Watch(rp RemoteProvider) (io.Reader, error)
-	WatchChannel(rp RemoteProvider)(<-chan *Response, chan bool)
+	WatchChannel(rp RemoteProvider)(<-chan *RemoteResponse, chan bool)
 }
 
 // RemoteConfig is optional, see the remote package
@@ -1313,7 +1313,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		//Todo: Add quit channel
-		go func(rc <-chan *Response) {
+		go func(rc <-chan *RemoteResponse) {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
