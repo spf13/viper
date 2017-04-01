@@ -25,6 +25,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
