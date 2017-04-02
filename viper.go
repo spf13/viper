@@ -52,7 +52,7 @@ func init() {
 type remoteConfigFactory interface {
 	Get(rp RemoteProvider) (io.Reader, error)
 	Watch(rp RemoteProvider) (io.Reader, error)
-	WatchChannel(rp RemoteProvider)(<-chan *RemoteResponse, chan bool)
+	WatchChannel(rp RemoteProvider) (<-chan *RemoteResponse, chan bool)
 }
 
 // RemoteConfig is optional, see the remote package
@@ -145,10 +145,11 @@ type Viper struct {
 	remoteProviders []*defaultRemoteProvider
 
 	// Name of file to look for inside the path
-	configName string
-	configFile string
-	configType string
-	envPrefix  string
+	configName  string
+	configFile  string
+	configFiles []string
+	configType  string
+	envPrefix   string
 
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
@@ -288,6 +289,15 @@ func SetConfigFile(in string) { v.SetConfigFile(in) }
 func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
+	}
+}
+
+// SetConfigFiles explicitly defines slice of the path, name and extension of the config files
+// Viper will use these and not check any of the config paths
+func SetConfigFiles(in []string) { v.SetConfigFiles(in) }
+func (v *Viper) SetConfigFiles(in []string) {
+	if len(in) > 0 {
+		v.configFiles = in
 	}
 }
 
@@ -1131,8 +1141,29 @@ func (v *Viper) MergeInConfig() error {
 	return v.MergeConfig(bytes.NewReader(file))
 }
 
-// ReadConfig will read a configuration file, setting existing keys to nil if the
-// key does not exist in the file.
+// ChainMergeConfigfiles repeatedly merge with configFiles
+func ChainMergeConfigFiles() error { return v.ChainMergeConfigFiles() }
+func (v *Viper) ChainMergeConfigFiles() error {
+	jww.INFO.Println("Attempting to chain merge with configFiles")
+
+	for i, filename := range v.configFiles {
+		if i == 0 {
+			v.SetConfigFile(filename)
+			err := v.ReadInConfig()
+			if err != nil {
+				return err
+			}
+		} else {
+			v.SetConfigFile(filename)
+			err := v.MergeInConfig()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
