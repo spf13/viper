@@ -1146,7 +1146,12 @@ func ChainMergeConfigFiles() error { return v.ChainMergeConfigFiles() }
 func (v *Viper) ChainMergeConfigFiles() error {
 	jww.INFO.Println("Attempting to chain merge with configFiles")
 
-	for i, filename := range v.configFiles {
+	configFiles, err := v.getConfigFiles()
+	if err != nil {
+		return err
+	}
+
+	for i, filename := range configFiles {
 		if i == 0 {
 			v.SetConfigFile(filename)
 			err := v.ReadInConfig()
@@ -1537,6 +1542,22 @@ func (v *Viper) getConfigFile() (string, error) {
 
 	v.configFile = cf
 	return v.getConfigFile()
+}
+
+func (v *Viper) getConfigFiles() ([]string, error) {
+	// if explicitly set, then use it
+	// else search config file and return as slice
+	if len(v.configFiles) > 0 {
+		return v.configFiles, nil
+	}
+
+	cf, err := v.findConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
+	v.configFiles = []string{cf}
+	return v.getConfigFiles()
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {

@@ -1152,3 +1152,104 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 		}
 	}
 }
+
+func initConfigsForMerge(t *testing.T) (string, string, func()) {
+
+	var (
+		testDirs   = []string{`a`, `b`, `c`}
+		configName = `config.toml`
+	)
+
+	root, err := ioutil.TempDir("", "")
+
+	cleanup := true
+	defer func() {
+		if cleanup {
+			os.Chdir("..")
+			os.RemoveAll(root)
+		}
+	}()
+
+	assert.Nil(t, err)
+
+	err = os.Chdir(root)
+	assert.Nil(t, err)
+
+	for _, dir := range testDirs {
+		err = os.Mkdir(dir, 0750)
+		assert.Nil(t, err)
+
+		err = ioutil.WriteFile(
+			path.Join(dir, configName),
+			[]byte("key = \"value is "+dir+"\"\n"+dir+" = \""+dir+"\"\n"),
+			0640)
+		assert.Nil(t, err)
+	}
+
+	cleanup = false
+	return root, configName, func() {
+		os.Chdir("..")
+		os.RemoveAll(root)
+	}
+}
+
+func TestChainMergeConfig(t *testing.T) {
+
+	root, config, cleanup := initConfigsForMerge(t)
+	defer cleanup()
+
+	v := New()
+	v.SetDefault(`key`, `default`)
+
+	entries, err := ioutil.ReadDir(root)
+
+	var configfiles []string
+	for i, e := range entries {
+		if e.IsDir() {
+			configfile := path.Join(root, e.Name(), config)
+			configfiles = append(configfiles, configfile)
+
+			v.SetConfigFiles(configfiles[:i+1])
+			err = v.ChainMergeConfigFiles()
+			assert.Nil(t, err)
+			assert.Equal(t, `value is `+e.Name(), v.GetString(`key`))
+			assert.Equal(t, `a`, v.GetString(`a`))
+
+			if i == 0 {
+				assert.Equal(t, ``, v.GetString(`b`))
+			} else {
+				assert.Equal(t, `b`, v.GetString(`b`))
+			}
+
+			if i < 2 {
+				assert.Equal(t, ``, v.GetString(`c`))
+			} else {
+				assert.Equal(t, `c`, v.GetString(`c`))
+			}
+		}
+	}
+}
+
+func TestNotSetConfigFilesChainMerge(t *testing.T) {
+	// If not set, behavior is identical to ReadInConfig
+
+	root, config, cleanup := initDirs(t)
+	defer cleanup()
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	entries, err := ioutil.ReadDir(root)
+	for _, e := range entries {
+		if e.IsDir() {
+			v.AddConfigPath(e.Name())
+		}
+	}
+	assert.Nil(t, err)
+
+	err = v.ChainMergeConfigFiles()
+	assert.Nil(t, err)
+
+	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+}
