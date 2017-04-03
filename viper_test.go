@@ -1193,7 +1193,7 @@ func initConfigsForMerge(t *testing.T) (string, string, func()) {
 	}
 }
 
-func TestChainMergeConfig(t *testing.T) {
+func TestMergeConfigChain(t *testing.T) {
 
 	root, config, cleanup := initConfigsForMerge(t)
 	defer cleanup()
@@ -1209,8 +1209,8 @@ func TestChainMergeConfig(t *testing.T) {
 			configfile := path.Join(root, e.Name(), config)
 			configfiles = append(configfiles, configfile)
 
-			v.SetConfigFiles(configfiles[:i+1])
-			err = v.ChainMergeConfigFiles()
+			v.SetConfigFileChain(configfiles[:i+1])
+			err = v.MergeConfigFileChain()
 			assert.Nil(t, err)
 			assert.Equal(t, `value is `+e.Name(), v.GetString(`key`))
 			assert.Equal(t, `a`, v.GetString(`a`))
@@ -1230,7 +1230,7 @@ func TestChainMergeConfig(t *testing.T) {
 	}
 }
 
-func TestNotSetConfigFilesChainMerge(t *testing.T) {
+func TestNotSetConfigFileChainMerge(t *testing.T) {
 	// If not set, behavior is identical to ReadInConfig
 
 	root, config, cleanup := initDirs(t)
@@ -1248,7 +1248,7 @@ func TestNotSetConfigFilesChainMerge(t *testing.T) {
 	}
 	assert.Nil(t, err)
 
-	err = v.ChainMergeConfigFiles()
+	err = v.MergeConfigFileChain()
 	assert.Nil(t, err)
 
 	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
