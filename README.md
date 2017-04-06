@@ -277,16 +277,16 @@ import (
 
 func main() {
 
-    // using standard library "flag" package
-    flag.Int("flagname", 1234, "help message for flagname")
+	// using standard library "flag" package
+	flag.Int("flagname", 1234, "help message for flagname")
 
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
-    viper.BindPFlags(pflag.CommandLine)
+	viper.BindPFlags(pflag.CommandLine)
 
-    i := viper.GetInt("flagname") // retrieve value from viper
+	i := viper.GetInt("flagname") // retrieve value from viper
 
-    ...
+	...
 }
 ```
 
