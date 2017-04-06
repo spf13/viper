@@ -236,13 +236,26 @@ Like `BindEnv`, the value is not set when the binding method is called, but when
 it is accessed. This means you can bind as early as you want, even in an
 `init()` function.
 
-The `BindPFlag()` method provides this functionality.
+For individual flags, the `BindPFlag()` method provides this functionality.
 
 Example:
 
 ```go
 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
+```
+
+You can also bind an existing set of pflags (pflag.FlagSet):
+
+Example:
+
+```go
+pflag.Int("flagname", 1234, "help message for flagname")
+
+pflag.Parse()
+viper.BindPFlags(pflag.CommandLine)
+
+i := viper.GetInt("flagname") // retrieve values from viper instead of pflag
 ```
 
 The use of [pflag](https://github.com/spf13/pflag/) in Viper does not preclude
@@ -263,8 +276,16 @@ import (
 )
 
 func main() {
+
+    // using standard library "flag" package
+    flag.Int("flagname", 1234, "help message for flagname")
+
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
+    viper.BindPFlags(pflag.CommandLine)
+
+    i := viper.GetInt("flagname") // retrieve value from viper
+
     ...
 }
 ```
