@@ -478,11 +478,17 @@ func TestUnmarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")
 	Set("duration", "1s1ms")
+	Set("sub.duration", "10m")
+
+	type subConfig struct {
+		Duration time.Duration
+	}
 
 	type config struct {
 		Port     int
 		Name     string
 		Duration time.Duration
+		Sub      *subConfig
 	}
 
 	var C config
@@ -492,14 +498,18 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond}, &C)
+	assert.Equal(t, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond, Sub: &subConfig{Duration: time.Minute * 10}}, &C)
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
-	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
+	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond, Sub: &subConfig{Duration: time.Minute * 10}}, &C)
+
+	sub := &subConfig{}
+	assert.NoError(t, UnmarshalKey("sub", sub))
+
 }
 
 func TestBindPFlags(t *testing.T) {
