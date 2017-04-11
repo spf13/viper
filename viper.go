@@ -670,7 +670,7 @@ func GetViper() *Viper {
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
 	}
@@ -977,11 +977,15 @@ func (v *Viper) BindEnv(input ...string) error {
 }
 
 // Given a key, find the value.
-// Viper will check in the following order:
-// flag, env, config file, key/value store, default.
+//
 // Viper will check to see if an alias exists first.
+// Viper will then check in the following order:
+// flag, env, config file, key/value store.
+// Lastly, if no value was found and flagDefault is true, and if the key
+// corresponds to a flag, the flag's default value is returned.
+//
 // Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string) interface{} {
+func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 
 	var (
 		val    interface{}
@@ -1083,29 +1087,31 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		return nil
 	}
 
-	// last chance: if no other value is returned and a flag does exist for the value,
-	// get the flag's value even if the flag's value has not changed
-	if flag, exists := v.pflags[lcaseKey]; exists {
-		switch flag.ValueType() {
-		case "int", "int8", "int16", "int32", "int64":
-			return cast.ToInt(flag.ValueString())
-		case "bool":
-			return cast.ToBool(flag.ValueString())
-		case "stringSlice":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			res, _ := readAsCSV(s)
-			return res
-		case "intSlice":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			res, _ := readAsCSV(s)
-			return cast.ToIntSlice(res)
-		default:
-			return flag.ValueString()
+	if flagDefault {
+		// last chance: if no value is found and a flag does exist for the key,
+		// get the flag's default value even if the flag's value has not been set.
+		if flag, exists := v.pflags[lcaseKey]; exists {
+			switch flag.ValueType() {
+			case "int", "int8", "int16", "int32", "int64":
+				return cast.ToInt(flag.ValueString())
+			case "bool":
+				return cast.ToBool(flag.ValueString())
+			case "stringSlice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return res
+			case "intSlice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return cast.ToIntSlice(res)
+			default:
+				return flag.ValueString()
+			}
 		}
+		// last item, no need to check shadowing
 	}
-	// last item, no need to check shadowing
 
 	return nil
 }
@@ -1124,7 +1130,7 @@ func readAsCSV(val string) ([]string, error) {
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, false)
 	return val != nil
 }
 
