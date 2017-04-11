@@ -1039,12 +1039,47 @@ func TestReadBufConfig(t *testing.T) {
 func TestIsSet(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
+
+	/* config and defaults */
 	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	v.SetDefault("clothing.shoes", "sneakers")
+
+	assert.True(t, v.IsSet("clothing"))
 	assert.True(t, v.IsSet("clothing.jacket"))
 	assert.False(t, v.IsSet("clothing.jackets"))
+	assert.True(t, v.IsSet("clothing.shoes"))
+
+	/* state change */
 	assert.False(t, v.IsSet("helloworld"))
 	v.Set("helloworld", "fubar")
 	assert.True(t, v.IsSet("helloworld"))
+
+	/* env */
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.BindEnv("eyes")
+	v.BindEnv("foo")
+	v.BindEnv("clothing.hat")
+	v.BindEnv("clothing.hats")
+	os.Setenv("FOO", "bar")
+	os.Setenv("CLOTHING_HAT", "bowler")
+
+	assert.True(t, v.IsSet("eyes"))           // in the config file
+	assert.True(t, v.IsSet("foo"))            // in the environment
+	assert.True(t, v.IsSet("clothing.hat"))   // in the environment
+	assert.False(t, v.IsSet("clothing.hats")) // not defined
+
+	/* flags */
+	flagset := pflag.NewFlagSet("testisset", pflag.ContinueOnError)
+	flagset.Bool("foobaz", false, "foobaz")
+	flagset.Bool("barbaz", false, "barbaz")
+	foobaz, barbaz := flagset.Lookup("foobaz"), flagset.Lookup("barbaz")
+	v.BindPFlag("foobaz", foobaz)
+	v.BindPFlag("barbaz", barbaz)
+	barbaz.Value.Set("true")
+	barbaz.Changed = true // hack for pflag usage
+
+	assert.False(t, v.IsSet("foobaz"))
+	assert.True(t, v.IsSet("barbaz"))
 }
 
 func TestDirsSearch(t *testing.T) {
