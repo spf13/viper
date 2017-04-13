@@ -684,6 +684,12 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
+// GetBoolSlice returns the value associated with the key as a slice of booleans.
+func GetBoolSlice(key string) []bool { return v.GetBoolSlice(key) }
+func (v *Viper) GetBoolSlice(key string) []bool {
+	return cast.ToBoolSlice(v.Get(key))
+}
+
 // GetDurationSlice returns the value associated with the key as a slice of durations.
 func GetDurationSlice(key string) []string { return v.GetDurationSlice(key) }
 func (v *Viper) GetDurationSlice(key string) []string {
