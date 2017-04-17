@@ -538,6 +538,44 @@ func TestBindPFlags(t *testing.T) {
 
 }
 
+func TestBindPFlagsStringSlice(t *testing.T) {
+	for _, testValue := range []struct {
+		Expected []string
+		Value    string
+	}{
+		{[]string{}, ""},
+		{[]string{"jeden"}, "jeden"},
+		{[]string{"dwa", "trzy"}, "dwa,trzy"},
+		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""}} {
+
+		for _, changed := range []bool{true, false} {
+			v := New() // create independent Viper object
+			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			flagSet.StringSlice("stringslice", testValue.Expected, "test")
+			flagSet.Visit(func(f *pflag.Flag) {
+				if len(testValue.Value) > 0 {
+					f.Value.Set(testValue.Value)
+					f.Changed = changed
+				}
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestStr struct {
+				StringSlice []string
+			}
+			val := &TestStr{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			assert.Equal(t, testValue.Expected, val.StringSlice)
+		}
+	}
+}
+
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
 	var testValue = newStringValue(testString, &testString)
