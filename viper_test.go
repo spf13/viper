@@ -557,11 +557,9 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 
 			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 			flagSet.StringSlice("stringslice", testValue.Expected, "test")
-			flagSet.Visit(func(f *pflag.Flag) {
-				if len(testValue.Value) > 0 {
-					f.Value.Set(testValue.Value)
-					f.Changed = changed
-				}
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
 			})
 
 			err := v.BindPFlags(flagSet)
