@@ -613,23 +613,25 @@ func TestBindPFlags(t *testing.T) {
 }
 
 func TestBindPFlagsStringSlice(t *testing.T) {
-	defaultVal := []string{"default"}
-
-	for _, testValue := range []struct {
+	tests := []struct {
 		Expected []string
 		Value    string
 	}{
 		{[]string{}, ""},
 		{[]string{"jeden"}, "jeden"},
 		{[]string{"dwa", "trzy"}, "dwa,trzy"},
-		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""}} {
+		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []string{"default"}
+	v.SetDefault("stringslice", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.StringSlice("stringslice", testValue.Expected, "test")
 
 		for _, changed := range []bool{true, false} {
-			v := New() // create independent Viper object
-			v.SetDefault("stringslice", defaultVal)
-
-			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
-			flagSet.StringSlice("stringslice", testValue.Expected, "test")
 			flagSet.VisitAll(func(f *pflag.Flag) {
 				f.Value.Set(testValue.Value)
 				f.Changed = changed
