@@ -614,6 +614,8 @@ func (v *Viper) Get(key string) interface{} {
 		return cast.ToString(val)
 	case int64, int32, int16, int8, int:
 		return cast.ToInt(val)
+	case uint64, uint32, uint16, uint8, uint:
+		return cast.ToUint(val)
 	case float64, float32:
 		return cast.ToFloat64(val)
 	case time.Time:
@@ -897,6 +899,8 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
+		case "uint", "uint8", "uint16", "uint32", "uint64":
+			return cast.ToUint(flag.ValueString())
 		case "bool":
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice", "stringArray", "boolSlice", "ipSlice", "uintSlice", "intSlice":
@@ -966,6 +970,8 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
+		case "uint", "uint8", "uint16", "uint32", "uint64":
+			return cast.ToUint(flag.ValueString())
 		case "bool":
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice", "stringArray", "boolSlice", "ipSlice", "uintSlice", "intSlice":
