@@ -1365,10 +1365,12 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		}
 
 	case "toml":
-		t := toml.TreeFromMap(c)
-		s := t.String()
-		_, err := f.WriteString(s)
+		t, err := toml.TreeFromMap(c)
 		if err != nil {
+			return ConfigMarshalError{err}
+		}
+		s := t.String()
+		if _, err := f.WriteString(s); err != nil {
 			return ConfigMarshalError{err}
 		}
 
@@ -1377,8 +1379,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		if err != nil {
 			return ConfigMarshalError{err}
 		}
-		_, err = f.WriteString(string(b))
-		if err != nil {
+		if _, err = f.WriteString(string(b)); err != nil {
 			return ConfigMarshalError{err}
 		}
 	}
