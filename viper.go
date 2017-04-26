@@ -53,7 +53,7 @@ func init() {
 type remoteConfigFactory interface {
 	Get(rp RemoteProvider) (io.Reader, error)
 	Watch(rp RemoteProvider) (io.Reader, error)
-	WatchChannel(rp RemoteProvider)(<-chan *RemoteResponse, chan bool)
+	WatchChannel(rp RemoteProvider) (<-chan *RemoteResponse, chan bool)
 }
 
 // RemoteConfig is optional, see the remote package
@@ -701,6 +701,12 @@ func (v *Viper) GetStringMap(key string) map[string]interface{} {
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 func (v *Viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
+}
+
+// GetStringMapBool returns the value associated with the key as a map of strings.
+func GetStringMapBool(key string) map[string]bool { return v.GetStringMapBool(key) }
+func (v *Viper) GetStringMapBool(key string) map[string]bool {
+	return cast.ToStringMapBool(v.Get(key))
 }
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
