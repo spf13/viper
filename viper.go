@@ -53,7 +53,7 @@ func init() {
 type remoteConfigFactory interface {
 	Get(rp RemoteProvider) (io.Reader, error)
 	Watch(rp RemoteProvider) (io.Reader, error)
-	WatchChannel(rp RemoteProvider)(<-chan *RemoteResponse, chan bool)
+	WatchChannel(rp RemoteProvider) (<-chan *RemoteResponse, chan bool)
 }
 
 // RemoteConfig is optional, see the remote package
@@ -746,7 +746,7 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	return nil
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
+// defaultDecoderConfig returns default mapsstructure.DecoderConfig with support
 // of time.Duration values
 func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 	return &mapstructure.DecoderConfig{
