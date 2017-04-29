@@ -731,6 +731,27 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 	return nil
 }
 
+// UnmarshalKeyWithMeta performs UnmarshalKey and using an additional
+// parameter, also provides access to the mapstructure.Metadata.
+func UnmarshalKeyWithMeta(key string, rawVal interface{}) (mapstructure.Metadata, error) {
+	return v.UnmarshalKeyWithMeta(key, rawVal)
+}
+func (v *Viper) UnmarshalKeyWithMeta(key string, rawVal interface{}) (mapstructure.Metadata, error) {
+	var meta mapstructure.Metadata
+	config := defaultDecoderConfig(rawVal)
+	config.Metadata = &meta
+
+	err := decode(v.Get(key), config)
+
+	if err != nil {
+		return meta, err
+	}
+
+	v.insensitiviseMaps()
+
+	return meta, nil
+}
+
 // Unmarshal unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
@@ -744,6 +765,27 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	v.insensitiviseMaps()
 
 	return nil
+}
+
+// UnmarshalWithMeta performs Unmarshal and using an additional
+// parameter, also provides access to the mapstructure.Metadata.
+func UnmarshalWithMeta(rawVal interface{}) (mapstructure.Metadata, error) {
+	return v.UnmarshalWithMeta(rawVal)
+}
+func (v *Viper) UnmarshalWithMeta(rawVal interface{}) (mapstructure.Metadata, error) {
+	var meta mapstructure.Metadata
+	config := defaultDecoderConfig(rawVal)
+	config.Metadata = &meta
+
+	err := decode(v.AllSettings(), config)
+
+	if err != nil {
+		return meta, err
+	}
+
+	v.insensitiviseMaps()
+
+	return meta, nil
 }
 
 // defaultDecoderConfig returns default mapsstructure.DecoderConfig with support
