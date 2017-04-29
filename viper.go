@@ -731,8 +731,8 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 	return nil
 }
 
-// UnmarshalKeyWithMeta performs UnmarshalKey and using an additional
-// parameter, also provides access to the mapstructure.Metadata.
+// UnmarshalKeyWithMeta performs UnmarshalKey and provides access to the
+// mapstructure.Metadata in an additional return value.
 func UnmarshalKeyWithMeta(key string, rawVal interface{}) (mapstructure.Metadata, error) {
 	return v.UnmarshalKeyWithMeta(key, rawVal)
 }
@@ -767,8 +767,8 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	return nil
 }
 
-// UnmarshalWithMeta performs Unmarshal and using an additional
-// parameter, also provides access to the mapstructure.Metadata.
+// UnmarshalWithMeta performs Unmarshal and provides access to the
+// mapstructure.Metadata in an additional return value.
 func UnmarshalWithMeta(rawVal interface{}) (mapstructure.Metadata, error) {
 	return v.UnmarshalWithMeta(rawVal)
 }
