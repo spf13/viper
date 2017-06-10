@@ -614,14 +614,22 @@ func (v *Viper) Get(key string) interface{} {
 		return cast.ToString(val)
 	case int64, int32, int16, int8, int:
 		return cast.ToInt(val)
+	case uint64, uint32, uint16, uint8, uint:
+		return cast.ToUint(val)
 	case float64, float32:
 		return cast.ToFloat64(val)
 	case time.Time:
 		return cast.ToTime(val)
 	case time.Duration:
 		return cast.ToDuration(val)
+	case []bool:
+		return cast.ToBoolSlice(val)
 	case []string:
 		return cast.ToStringSlice(val)
+	case []int:
+		return cast.ToIntSlice(val)
+	case []time.Duration:
+		return cast.ToDurationSlice(val)
 	}
 	return val
 }
@@ -891,9 +899,11 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
+		case "uint", "uint8", "uint16", "uint32", "uint64":
+			return cast.ToUint(flag.ValueString())
 		case "bool":
 			return cast.ToBool(flag.ValueString())
-		case "stringSlice":
+		case "stringSlice", "stringArray", "boolSlice", "ipSlice", "uintSlice", "intSlice", "durationSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
@@ -960,9 +970,11 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
+		case "uint", "uint8", "uint16", "uint32", "uint64":
+			return cast.ToUint(flag.ValueString())
 		case "bool":
 			return cast.ToBool(flag.ValueString())
-		case "stringSlice":
+		case "stringSlice", "stringArray", "boolSlice", "ipSlice", "uintSlice", "intSlice", "durationSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
