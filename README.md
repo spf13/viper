@@ -6,7 +6,7 @@ Many Go projects are built using Viper including:
 
 * [Hugo](http://gohugo.io)
 * [EMC RexRay](http://rexray.readthedocs.org/en/stable/)
-* [Imgur's Incus](https://github.com/Imgur/incus)
+* [Imgur’s Incus](https://github.com/Imgur/incus)
 * [Nanobox](https://github.com/nanobox-io/nanobox)/[Nanopack](https://github.com/nanopack)
 * [Docker Notary](https://github.com/docker/Notary)
 * [BloomApi](https://www.bloomapi.com/)
@@ -17,7 +17,7 @@ Many Go projects are built using Viper including:
 
 ## What is Viper?
 
-Viper is a complete configuration solution for go applications including 12 factor apps. It is designed
+Viper is a complete configuration solution for Go applications including 12-Factor apps. It is designed
 to work within an application, and can handle all types of configuration needs
 and formats. It supports:
 
@@ -68,7 +68,7 @@ Viper configuration keys are case insensitive.
 ### Establishing Defaults
 
 A good configuration system will support default values. A default value is not
-required for a key, but it's useful in the event that a key hasn’t been set via
+required for a key, but it’s useful in the event that a key hasn’t been set via
 config file, environment variable, remote configuration or flag.
 
 Examples:
@@ -271,7 +271,7 @@ func main() {
 
 #### Flag interfaces
 
-Viper provides two Go interfaces to bind other flag systems if you don't use `Pflags`.
+Viper provides two Go interfaces to bind other flag systems if you don’t use `Pflags`.
 
 `FlagValue` represents a single flag. This is a very simple example on how to implement this interface:
 
@@ -401,7 +401,7 @@ go func(){
 
 ## Getting Values From Viper
 
-In Viper, there are a few ways to get a value depending on the value's type.
+In Viper, there are a few ways to get a value depending on the value’s type.
 The following functions and methods exist:
 
  * `Get(key string) : interface{}`
@@ -531,7 +531,7 @@ func NewCache(cfg *Viper) *Cache {...}
 ```
 
 which creates a cache based on config information formatted as `subv`.
-Now it's easy to create these 2 caches separately as:
+Now it’s easy to create these 2 caches separately as:
 
 ```go
 cfg1 := viper.Sub("app.cache1")
