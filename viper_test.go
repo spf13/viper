@@ -856,6 +856,10 @@ hello:
     - uk
     - fr
     - de
+    groups:
+    - 1
+    - 2
+    - 3
 `)
 
 var yamlMergeExampleSrc = []byte(`
@@ -865,6 +869,9 @@ hello:
     universe:
     - mw
     - ad
+    ages:
+    - 21
+    - 34
 fu: bar
 `)
 
@@ -889,6 +896,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
 		t.Fatalf("len(world) != 4, = %d", len(world))
+	}
+
+	if groups := v.GetIntSlice("hello.groups"); len(groups) != 3 {
+		t.Fatalf("len(groups) != 3, = %d", len(groups))
 	}
 
 	if fu := v.GetString("fu"); fu != "" {
@@ -919,6 +930,14 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("len(universe) != 2, = %d", len(universe))
 	}
 
+	if groups := v.GetIntSlice("hello.groups"); len(groups) != 3 {
+		t.Fatalf("len(groups) != 3, = %d", len(groups))
+	}
+
+	if ages := v.GetIntSlice("hello.ages"); len(ages) != 2 {
+		t.Fatalf("len(ages) != 2, = %d", len(ages))
+	}
+
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
 	}
@@ -939,6 +958,10 @@ func TestMergeConfigNoMerge(t *testing.T) {
 		t.Fatalf("len(world) != 4, = %d", len(world))
 	}
 
+	if groups := v.GetIntSlice("hello.groups"); len(groups) != 3 {
+		t.Fatalf("len(groups) != 3, = %d", len(groups))
+	}
+
 	if fu := v.GetString("fu"); fu != "" {
 		t.Fatalf("fu != \"\", = %s", fu)
 	}
@@ -957,6 +980,14 @@ func TestMergeConfigNoMerge(t *testing.T) {
 
 	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
 		t.Fatalf("len(universe) != 2, = %d", len(universe))
+	}
+
+	if groups := v.GetIntSlice("hello.groups"); len(groups) != 0 {
+		t.Fatalf("len(groups) != 0, = %d", len(groups))
+	}
+
+	if ages := v.GetIntSlice("hello.ages"); len(ages) != 2 {
+		t.Fatalf("len(groups) != 2, = %d", len(ages))
 	}
 
 	if fu := v.GetString("fu"); fu != "bar" {
