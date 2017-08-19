@@ -1,0 +1,20 @@
+package: github.com/spf13/viper
+import:
+- package: github.com/fsnotify/fsnotify
+- package: github.com/hashicorp/hcl
+- package: github.com/magiconair/properties
+- package: github.com/mitchellh/mapstructure
+- package: github.com/pelletier/go-toml
+- package: github.com/spf13/afero
+- package: github.com/spf13/cast
+- package: github.com/spf13/jwalterweatherman
+- package: github.com/spf13/pflag
+- package: github.com/spf13/viper
+- package: github.com/xordataexchange/crypt
+  subpackages:
+  - config
+- package: gopkg.in/yaml.v2
+testImport:
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
