@@ -287,6 +287,37 @@ func TestUnmarshalExact(t *testing.T) {
 	}
 }
 
+func TestUnmarshalKeyExact(t *testing.T) {
+	type duration struct {
+		Delay time.Duration
+	}
+
+	type item struct {
+		Name   string
+		Delay  time.Duration
+		Nested duration
+	}
+
+	config := `invalid_but_irrelevant=true
+        [[parent]]
+        error=true
+	delay="100ms"
+	[parent.nested]
+	delay="200ms"
+`
+	initConfig("toml", config)
+
+	var items []item
+	err := v.UnmarshalKeyExact("parent", &items)
+	if err == nil {
+		t.Fatal("UnmarshalKeyExact should error when populating a struct from a conf that contains unused fields")
+	}
+
+	assert.Equal(t, 1, len(items))
+	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
+	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
+}
+
 func TestOverrides(t *testing.T) {
 	Set("age", 40)
 	assert.Equal(t, 40, Get("age"))
