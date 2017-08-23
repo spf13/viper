@@ -768,11 +768,29 @@ func decode(input interface{}, config *mapstructure.DecoderConfig) error {
 
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
+func UnmarshalExact(rawVal interface{}) error { return v.UnmarshalExact(rawVal) }
 func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	config := defaultDecoderConfig(rawVal)
 	config.ErrorUnused = true
 
 	err := decode(v.AllSettings(), config)
+
+	if err != nil {
+		return err
+	}
+
+	v.insensitiviseMaps()
+
+	return nil
+}
+// UnmarshalKeyExact takes a single key and unmarshals it into a Struct, erroring if a field
+// is nonexistent in the destination struct.
+func UnmarshalKeyExact(key string, rawVal interface{}) error { return v.UnmarshalKeyExact(key, rawVal) }
+func (v *Viper) UnmarshalKeyExact(key string, rawVal interface{}) error {
+	config := defaultDecoderConfig(rawVal)
+	config.ErrorUnused = true
+
+	err := decode(v.Get(key), config)
 
 	if err != nil {
 		return err
