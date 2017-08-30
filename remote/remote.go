@@ -41,6 +41,7 @@ func (rc remoteConfigProvider) Watch(rp viper.RemoteProvider) (io.Reader, error)
 
 	return bytes.NewReader(resp), nil
 }
+
 func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *viper.RemoteResponse, chan bool) {
 	cm, err := getConfigManager(rp)
 	if err != nil {
@@ -69,11 +70,9 @@ func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *vi
 	}(cryptoResponseCh, viperResponsCh, quitwc, quit)
 
 	return viperResponsCh, quitwc
-
 }
 
 func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
-
 	var cm crypt.ConfigManager
 	var err error
 
@@ -99,7 +98,6 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 		return nil, err
 	}
 	return cm, nil
-
 }
 
 func init() {
