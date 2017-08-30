@@ -69,8 +69,7 @@ func (str UnsupportedConfigError) Error() string {
 }
 
 // UnsupportedRemoteProviderError denotes encountering an unsupported remote
-// provider. Currently only etcd and Consul are
-// supported.
+// provider. Currently only etcd and Consul are supported.
 type UnsupportedRemoteProviderError string
 
 // Error returns the formatted remote provider error.
@@ -283,8 +282,8 @@ func (v *Viper) WatchConfig() {
 	}()
 }
 
-// SetConfigFile explicitly defines the path, name and extension of the config file
-// Viper will use this and not check any of the config paths
+// SetConfigFile explicitly defines the path, name and extension of the config file.
+// Viper will use this and not check any of the config paths.
 func SetConfigFile(in string) { v.SetConfigFile(in) }
 func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
@@ -293,8 +292,8 @@ func (v *Viper) SetConfigFile(in string) {
 }
 
 // SetEnvPrefix defines a prefix that ENVIRONMENT variables will use.
-// E.g. if your prefix is "spf", the env registry
-// will look for env. variables that start with "SPF_"
+// E.g. if your prefix is "spf", the env registry will look for env
+// variables that start with "SPF_".
 func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
 func (v *Viper) SetEnvPrefix(in string) {
 	if in != "" {
@@ -312,11 +311,11 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 
 // TODO: should getEnv logic be moved into find(). Can generalize the use of
 // rewriting keys many things, Ex: Get('someKey') -> some_key
-// (cammel case to snake case for JSON keys perhaps)
+// (camel case to snake case for JSON keys perhaps)
 
 // getEnv is a wrapper around os.Getenv which replaces characters in the original
-// key. This allows env vars which have different keys then the config object
-// keys
+// key. This allows env vars which have different keys than the config object
+// keys.
 func (v *Viper) getEnv(key string) string {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
@@ -324,7 +323,7 @@ func (v *Viper) getEnv(key string) string {
 	return os.Getenv(key)
 }
 
-// ConfigFileUsed returns the file used to populate the config registry
+// ConfigFileUsed returns the file used to populate the config registry.
 func ConfigFileUsed() string            { return v.ConfigFileUsed() }
 func (v *Viper) ConfigFileUsed() string { return v.configFile }
 
@@ -597,32 +596,33 @@ func (v *Viper) Get(key string) interface{} {
 		return nil
 	}
 
-	valType := val
 	if v.typeByDefValue {
 		// TODO(bep) this branch isn't covered by a single test.
+		valType := val
 		path := strings.Split(lcaseKey, v.keyDelim)
 		defVal := v.searchMap(v.defaults, path)
 		if defVal != nil {
 			valType = defVal
 		}
+
+		switch valType.(type) {
+		case bool:
+			return cast.ToBool(val)
+		case string:
+			return cast.ToString(val)
+		case int64, int32, int16, int8, int:
+			return cast.ToInt(val)
+		case float64, float32:
+			return cast.ToFloat64(val)
+		case time.Time:
+			return cast.ToTime(val)
+		case time.Duration:
+			return cast.ToDuration(val)
+		case []string:
+			return cast.ToStringSlice(val)
+		}
 	}
 
-	switch valType.(type) {
-	case bool:
-		return cast.ToBool(val)
-	case string:
-		return cast.ToString(val)
-	case int64, int32, int16, int8, int:
-		return cast.ToInt(val)
-	case float64, float32:
-		return cast.ToFloat64(val)
-	case time.Time:
-		return cast.ToTime(val)
-	case time.Duration:
-		return cast.ToDuration(val)
-	case []string:
-		return cast.ToStringSlice(val)
-	}
 	return val
 }
 
@@ -856,7 +856,7 @@ func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
 }
 
 // BindFlagValue binds a specific key to a FlagValue.
-// Example(where serverCmd is a Cobra instance):
+// Example (where serverCmd is a Cobra instance):
 //
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 //	 Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
@@ -1329,7 +1329,7 @@ func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
 }
 
-// Unmarshall a Reader into a map.
+// Unmarshal a Reader into a map.
 // Should probably be an unexported function.
 func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return v.unmarshalReader(in, c)
@@ -1588,7 +1588,6 @@ func (v *Viper) searchInPath(in string) (filename string) {
 // Search all configPaths for any config file.
 // Returns the first path that exists (and is a config file).
 func (v *Viper) findConfigFile() (string, error) {
-
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
 	for _, cp := range v.configPaths {
