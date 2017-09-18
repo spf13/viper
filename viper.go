@@ -254,16 +254,35 @@ func (v *Viper) WatchConfig() {
 		}
 
 		configFile := filepath.Clean(filename)
-		configDir, _ := filepath.Split(configFile)
+		configDir := filepath.Dir(configFile)
+		realconfigFile, _ := filepath.EvalSymlinks(configFile)
+		realconfigDir := filepath.Dir(realconfigFile)
 
 		done := make(chan bool)
 		go func() {
 			for {
 				select {
 				case event := <-watcher.Events:
-					// we only care about the config file
-					if filepath.Clean(event.Name) == configFile {
+					if filepath.Clean(event.Name) == configFile { // we care about the config file
 						if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
+							err := v.ReadInConfig()
+							if err != nil {
+								log.Println("error:", err)
+							}
+							v.onConfigChange(event)
+						}
+					} else if filepath.Clean(event.Name) == realconfigDir { // we also care about the REMOVE event on the realconfigDir
+						// within a kubernetes pod, the file changes are registered as
+						// "/some/configDir/..9989_18_09_07_40_15.009361056": CREATE
+						// "/some/configDir/..9989_18_09_07_40_15.009361056": CHMOD
+						// "/some/configDir/..data_tmp": RENAME
+						// "/some/configDir/..data": CREATE
+						// "/some/configDir/..9989_18_09_07_38_48.160272044": REMOVE
+						if event.Op&fsnotify.Remove == fsnotify.Remove {
+							//re-eval symlink
+							realconfigFile, _ = filepath.EvalSymlinks(configFile)
+							realconfigDir = filepath.Dir(realconfigFile)
+
 							err := v.ReadInConfig()
 							if err != nil {
 								log.Println("error:", err)
