@@ -753,7 +753,7 @@ func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 		Metadata:         nil,
 		Result:           output,
 		WeaklyTypedInput: true,
-		DecodeHook:       mapstructure.ComposeDecodeHookFunc(
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
 			mapstructure.StringToSliceHookFunc(","),
 		),
