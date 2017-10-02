@@ -597,7 +597,6 @@ func (v *Viper) Get(key string) interface{} {
 	}
 
 	if v.typeByDefValue {
-		// TODO(bep) this branch isn't covered by a single test.
 		valType := val
 		path := strings.Split(lcaseKey, v.keyDelim)
 		defVal := v.searchMap(v.defaults, path)
