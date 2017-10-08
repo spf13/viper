@@ -799,9 +799,15 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
 //	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 //	 Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 //
+// NOTE: Be consistent with either Cobra's Flags() or PersistentFlags(),
+//       do not mix them.
 func BindPFlag(key string, flag *pflag.Flag) error { return v.BindPFlag(key, flag) }
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
-	return v.BindFlagValue(key, pflagValue{flag})
+	var flagVal FlagValue
+	if flag != nil {
+		flagVal = pflagValue{flag}
+	}
+	return v.BindFlagValue(key, flagVal)
 }
 
 // BindFlagValues binds a full FlagValue set to the configuration, using each flag's long

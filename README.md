@@ -246,6 +246,11 @@ serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
 viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 ```
 
+The above example would also work with
+[Cobra's Persistent Flags](https://github.com/spf13/cobra#persistent-flags),
+but careful not to mix and match Cobra `Flags` and `PersistentFlags` when
+binding with Viper.
+
 You can also bind an existing set of pflags (pflag.FlagSet):
 
 Example:

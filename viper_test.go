@@ -597,6 +597,15 @@ func TestBindPFlag(t *testing.T) {
 
 }
 
+func TestBindPFlagToNil(t *testing.T) {
+	v := New()
+	// nil arg often comes as an accident from calling something like:
+	//     `myCobraCmd.Flags().Lookup("missingFlag")`
+	err := v.BindPFlag("host", nil)
+	assert.Equal(t, nil, v.Get("host")) // `Get` here used to panic
+	assert.EqualError(t, err, `flag for "host" is nil`)
+}
+
 func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "brown", Get("eyes"))
 
