@@ -1181,6 +1181,11 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
 
+	SetKeyDelimiter("::")
+	assert.Equal(t, 2, cast.ToInt(Get("ef::gh")))
+	assert.Equal(t, 3, cast.ToInt(Get("ef::ijk")))
+	assert.Equal(t, 4, cast.ToInt(Get("ef::lm::no")))
+	assert.Equal(t, 5, cast.ToInt(Get("ef::lm::p::q")))
 }
 
 func BenchmarkGetBool(b *testing.B) {

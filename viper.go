@@ -1560,6 +1560,13 @@ func (v *Viper) findConfigFile() (string, error) {
 	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 }
 
+func SetKeyDelimiter(in string) { v.SetKeyDelimiter(in) }
+func (v *Viper) SetKeyDelimiter(in string) {
+	if in != "" {
+		v.keyDelim = in
+	}
+}
+
 // Debug prints all configuration registries for debugging
 // purposes.
 func Debug() { v.Debug() }
