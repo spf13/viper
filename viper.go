@@ -1087,6 +1087,12 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 	deepestMap[lastKey] = value
 }
 
+// GetDefaults gets the all defaults values
+func GetDefaults() map[string]interface{} { return v.GetDefaults() }
+func (v *Viper) GetDefaults() map[string]interface{} {
+	return v.defaults
+}
+
 // Set sets the value for the key in the override regiser.
 // Set is case-insensitive for a key.
 // Will be used instead of values obtained via
