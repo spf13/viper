@@ -1,0 +1,47 @@
+[[constraint]]
+  name = "github.com/fsnotify/fsnotify"
+  version = "1.4.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"
+
+[[constraint]]
+  name = "github.com/magiconair/properties"
+  version = "1.7.3"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+
+[[constraint]]
+  name = "github.com/pelletier/go-toml"
+  version = "1.0.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/afero"
+
+[[constraint]]
+  name = "github.com/spf13/cast"
+  version = "1.1.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/jwalterweatherman"
+
+[[constraint]]
+  name = "github.com/spf13/pflag"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.1.4"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/xordataexchange/crypt"
+
+[[constraint]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
