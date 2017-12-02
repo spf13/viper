@@ -418,7 +418,7 @@ func TestAutoEnvWithPrefix(t *testing.T) {
 	assert.Equal(t, "13", Get("bar"))
 }
 
-func TestSetEnvReplacer(t *testing.T) {
+func TestSetEnvKeyReplacer(t *testing.T) {
 	Reset()
 
 	AutomaticEnv()
