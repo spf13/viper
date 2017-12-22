@@ -337,11 +337,11 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // getEnv is a wrapper around os.Getenv which replaces characters in the original
 // key. This allows env vars which have different keys than the config object
 // keys.
-func (v *Viper) getEnv(key string) string {
+func (v *Viper) getEnv(key string) (string, bool) {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
-	return os.Getenv(key)
+	return os.LookupEnv(key)
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
@@ -568,10 +568,9 @@ func (v *Viper) isPathShadowedInFlatMap(path []string, mi interface{}) string {
 //       "foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 	var parentKey string
-	var val string
 	for i := 1; i < len(path); i++ {
 		parentKey = strings.Join(path[0:i], v.keyDelim)
-		if val = v.getEnv(v.mergeWithEnvPrefix(parentKey)); val != "" {
+		if _, ok := v.getEnv(v.mergeWithEnvPrefix(parentKey)); ok {
 			return parentKey
 		}
 	}
@@ -934,7 +933,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	if v.automaticEnvApplied {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
-		if val = v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); val != "" {
+		if val, ok := v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); ok {
 			return val
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
@@ -943,7 +942,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 	envkey, exists := v.env[lcaseKey]
 	if exists {
-		if val = v.getEnv(envkey); val != "" {
+		if val, ok := v.getEnv(envkey); ok {
 			return val
 		}
 	}
