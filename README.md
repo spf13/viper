@@ -167,7 +167,7 @@ viper.Set("LogFile", LogFile)
 Aliases permit a single value to be referenced by multiple keys
 
 ```go
-viper.RegisterAlias("loud", "Verbose")
+viper.RegisterAlias("loud", "verbose")
 
 viper.Set("verbose", true) // same result as next line
 viper.Set("loud", true)   // same result as prior line
