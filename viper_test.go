@@ -409,6 +409,20 @@ func TestAutoEnv(t *testing.T) {
 	assert.Equal(t, "13", Get("foo_bar"))
 }
 
+func TestAutoEnvOverride(t *testing.T) {
+	Reset()
+
+	BindEnv("path", "SPECIAL_PATH")
+	AutomaticEnv()
+	os.Setenv("SPECIAL_PATH", "/home/me/special")
+	os.Setenv("PATH", "/usr/local/bin:/usr/bin")
+
+	assert.Equal(t, "/home/me/special", Get("path"))
+
+	os.Unsetenv("SPECIAL_PATH")
+	assert.Nil(t, Get("path"))
+}
+
 func TestAutoEnvWithPrefix(t *testing.T) {
 	Reset()
 

@@ -931,20 +931,19 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 
 	// Env override next
-	if v.automaticEnvApplied {
-		// even if it hasn't been registered, if automaticEnv is used,
-		// check any Get request
+	// Check for an explicit environment key mapping first, before applying AutomaticEnv
+	envkey, exists := v.env[lcaseKey]
+	if exists {
+		if val = v.getEnv(envkey); val != "" {
+			return val
+		}
+	} else if v.automaticEnvApplied {
+		// If it hasn't been registered, check any Get request
 		if val = v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); val != "" {
 			return val
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
 			return nil
-		}
-	}
-	envkey, exists := v.env[lcaseKey]
-	if exists {
-		if val = v.getEnv(envkey); val != "" {
-			return val
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
