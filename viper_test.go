@@ -1076,6 +1076,10 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("len(world) != 4, = %d", len(world))
 	}
 
+	if world := v.GetStringMapStruct("hello.world"); len(world) != 4 {
+		t.Fatalf("len(world) != 4, = %d, %#v", len(world), world)
+	}
+
 	if fu := v.GetString("fu"); fu != "" {
 		t.Fatalf("fu != \"\", = %s", fu)
 	}
