@@ -381,6 +381,20 @@ func TestEnv(t *testing.T) {
 
 }
 
+func TestEmptyEnv(t *testing.T) {
+	initJSON()
+
+	BindEnv("type") // Empty environment variable
+	BindEnv("name") // Bound, but not set environment variable
+
+	os.Clearenv()
+
+	os.Setenv("TYPE", "")
+
+	assert.Equal(t, "", Get("type"))
+	assert.Equal(t, "Cake", Get("name"))
+}
+
 func TestEnvPrefix(t *testing.T) {
 	initJSON()
 
