@@ -204,6 +204,13 @@ func New() *Viper {
 	return v
 }
 
+func newFrom(from *Viper) *Viper {
+	v := *new(Viper)
+	v = *from // shallow clone
+
+	return &v
+}
+
 // Intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
@@ -647,11 +654,19 @@ func (v *Viper) Get(key string) interface{} {
 	return val
 }
 
+func (v *Viper) prefixOfSub(key string) string {
+	if v.envPrefix == "" {
+		return key
+	} else {
+		return v.envPrefix + "." + key
+	}
+}
+
 // Sub returns new Viper instance representing a sub tree of this instance.
 // Sub is case-insensitive for a key.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
-	subv := New()
+	subv := newFrom(v)
 	data := v.Get(key)
 	if data == nil {
 		return nil
@@ -659,6 +674,7 @@ func (v *Viper) Sub(key string) *Viper {
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
 		subv.config = cast.ToStringMap(data)
+		subv.envPrefix = v.prefixOfSub(key)
 		return subv
 	}
 	return nil
@@ -882,7 +898,6 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string) interface{} {
-
 	var (
 		val    interface{}
 		exists bool

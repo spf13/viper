@@ -848,6 +848,22 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 }
 
+func TestSubEnv(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	assert.Equal(t, "leather", v.GetString("clothing.jacket"))
+	subv := v.Sub("clothing")
+	assert.Equal(t, "leather", subv.GetString("jacket"))
+
+	os.Setenv("CLOTHING_JACKET", "13")
+	assert.Equal(t, "13", v.GetString("clothing.jacket"))
+	assert.Equal(t, "13", subv.GetString("jacket"))
+}
+
 var hclWriteExpected = []byte(`"foos" = {
   "foo" = {
     "key" = 1
