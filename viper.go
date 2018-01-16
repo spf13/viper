@@ -1675,6 +1675,10 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	return m
 }
 
+// ConfigPaths returns all config paths that Viper searches for config files in.
+func ConfigPaths() []string { return v.configPaths }
+func (v *Viper) ConfigPaths() []string { return v.configPaths }
+
 // SetFs sets the filesystem to use to read configuration.
 func SetFs(fs afero.Fs) { v.SetFs(fs) }
 func (v *Viper) SetFs(fs afero.Fs) {
