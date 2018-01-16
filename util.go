@@ -94,16 +94,16 @@ func insensitiviseMap(m map[string]interface{}) {
 	}
 }
 
-func absPathify(inPath string) string {
+func absPathify(inPath string, envStore EnvStore) string {
 	jww.INFO.Println("Trying to resolve absolute path to", inPath)
 
 	if strings.HasPrefix(inPath, "$HOME") {
-		inPath = userHomeDir() + inPath[5:]
+		inPath = userHomeDir(envStore) + inPath[5:]
 	}
 
 	if strings.HasPrefix(inPath, "$") {
 		end := strings.Index(inPath, string(os.PathSeparator))
-		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+		inPath = envStore.Get(inPath[1:end]) + inPath[end:]
 	}
 
 	if filepath.IsAbs(inPath) {
@@ -141,15 +141,15 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-func userHomeDir() string {
+func userHomeDir(store EnvStore) string {
 	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		home := store.Get("HOMEDRIVE") + store.Get("HOMEPATH")
 		if home == "" {
-			home = os.Getenv("USERPROFILE")
+			home = store.Get("USERPROFILE")
 		}
 		return home
 	}
-	return os.Getenv("HOME")
+	return store.Get("HOME")
 }
 
 func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {

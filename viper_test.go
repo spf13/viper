@@ -360,6 +360,50 @@ func TestRemotePrecedence(t *testing.T) {
 	Set("newkey", "remote")
 }
 
+type mapEnv struct {
+	m map[string]string
+}
+
+func (e *mapEnv) Get(key string) string {
+	if val, ok := e.m[key]; ok {
+		return val
+	} else {
+		return ""
+	}
+}
+
+func (e *mapEnv) Set(key, value string) {
+	e.m[key] = value
+}
+
+func newMapEnv() *mapEnv {
+	mapEnv := new(mapEnv)
+	mapEnv.m = make(map[string]string)
+	return mapEnv
+}
+
+func TestMockEnv(t *testing.T) {
+	e := newMapEnv()
+
+	initJSON()
+	v.SetEnvStore(e)
+
+	BindEnv("id")
+	BindEnv("f", "FOOD")
+
+	e.Set("ID", "13")
+	e.Set("FOOD", "apple")
+	e.Set("NAME", "crunk")
+
+	assert.Equal(t, "13", Get("id"))
+	assert.Equal(t, "apple", Get("f"))
+	assert.Equal(t, "Cake", Get("name"))
+
+	AutomaticEnv()
+
+	assert.Equal(t, "crunk", Get("name"))
+}
+
 func TestEnv(t *testing.T) {
 	initJSON()
 

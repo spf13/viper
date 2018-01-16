@@ -96,6 +96,16 @@ func (fnfe ConfigFileNotFoundError) Error() string {
 	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
 }
 
+type EnvStore interface {
+	Get(key string) string
+}
+
+type RealEnvStore struct {}
+
+func (e *RealEnvStore) Get(key string) string {
+	return os.Getenv(key)
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -163,10 +173,11 @@ type Viper struct {
 	typeByDefValue bool
 
 	onConfigChange func(fsnotify.Event)
+
+	envStore       EnvStore
 }
 
-// New returns an initialized Viper instance.
-func New() *Viper {
+func baseNew() *Viper {
 	v := new(Viper)
 	v.keyDelim = "."
 	v.configName = "config"
@@ -179,7 +190,24 @@ func New() *Viper {
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
+	v.envStore = new(RealEnvStore)
 
+	return v
+}
+
+// New returns an initialized Viper instance.
+func New() *Viper {
+	v := baseNew()
+	v.fs = afero.NewOsFs()
+	v.envStore = new(RealEnvStore)
+
+	return v
+}
+
+func newFrom(from *Viper) *Viper {
+	v := baseNew()
+	v.fs = from.fs
+	v.envStore = from.envStore
 	return v
 }
 
@@ -313,14 +341,14 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // rewriting keys many things, Ex: Get('someKey') -> some_key
 // (camel case to snake case for JSON keys perhaps)
 
-// getEnv is a wrapper around os.Getenv which replaces characters in the original
+// getEnv is a wrapper around EnvStore.Get which replaces characters in the original
 // key. This allows env vars which have different keys than the config object
 // keys.
 func (v *Viper) getEnv(key string) string {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
-	return os.Getenv(key)
+	return v.envStore.Get(key)
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
@@ -332,7 +360,7 @@ func (v *Viper) ConfigFileUsed() string { return v.configFile }
 func AddConfigPath(in string) { v.AddConfigPath(in) }
 func (v *Viper) AddConfigPath(in string) {
 	if in != "" {
-		absin := absPathify(in)
+		absin := absPathify(in, v.envStore)
 		jww.INFO.Println("adding", absin, "to paths to search")
 		if !stringInSlice(absin, v.configPaths) {
 			v.configPaths = append(v.configPaths, absin)
@@ -630,7 +658,7 @@ func (v *Viper) Get(key string) interface{} {
 // Sub is case-insensitive for a key.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
-	subv := New()
+	subv := newFrom(v)
 	data := v.Get(key)
 	if data == nil {
 		return nil
@@ -1478,6 +1506,11 @@ func (v *Viper) AllSettings() map[string]interface{} {
 func SetFs(fs afero.Fs) { v.SetFs(fs) }
 func (v *Viper) SetFs(fs afero.Fs) {
 	v.fs = fs
+}
+
+func SetEnvStore(store EnvStore) { v.SetEnvStore(store) }
+func (v *Viper) SetEnvStore(store EnvStore) {
+	v.envStore = store
 }
 
 // SetConfigName sets name for the config file.
