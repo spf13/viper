@@ -100,7 +100,7 @@ type EnvStore interface {
 	Get(key string) string
 }
 
-type RealEnvStore struct {}
+type RealEnvStore struct{}
 
 func (e *RealEnvStore) Get(key string) string {
 	return os.Getenv(key)
@@ -174,7 +174,7 @@ type Viper struct {
 
 	onConfigChange func(fsnotify.Event)
 
-	envStore       EnvStore
+	envStore EnvStore
 }
 
 func baseNew() *Viper {
