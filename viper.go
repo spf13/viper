@@ -774,6 +774,7 @@ func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 		Metadata:         nil,
 		Result:           output,
 		WeaklyTypedInput: true,
+		TagName:          "viper",
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
 			mapstructure.StringToSliceHookFunc(","),
