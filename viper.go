@@ -1364,15 +1364,9 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-	var flags int
-	if force == true {
-		flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-	} else {
-		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			flags = os.O_WRONLY
-		} else {
-			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
-		}
+	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+	if !force {
+		flags |= os.O_EXCL
 	}
 	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
 	if err != nil {
