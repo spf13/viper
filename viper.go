@@ -767,8 +767,8 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 	return nil
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
-// of time.Duration values & string slices
+// defaultDecoderConfig returns default mapsstructure.DecoderConfig with support
+// of time.Duration and time.Time (RFC 3339) values and string slices
 func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 	return &mapstructure.DecoderConfig{
 		Metadata:         nil,
@@ -776,6 +776,7 @@ func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 		WeaklyTypedInput: true,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToTimeHookFunc(time.RFC3339),
 			mapstructure.StringToSliceHookFunc(","),
 		),
 	}
