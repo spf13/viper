@@ -1734,13 +1734,12 @@ func (v *Viper) getConfigFile() (string, error) {
 	return v.getConfigFile()
 }
 
-func GetConfigFilePath() (string, error) {
+func GetConfigFilePath() {
 	// Returns the path where Viper actually found the logfile it uses.
 	//
 	// Useful when you want to write the configPath to logfiles, stdout, etc.
 	// Comes in handy during debugging or when running in production environments.
-	cf, err := v.getConfigFile()
-	return cf, err
+	return v.getConfigFile()
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
