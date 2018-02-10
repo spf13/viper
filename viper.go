@@ -1738,7 +1738,7 @@ func (v *Viper) getConfigFile() (string, error) {
 //
 // Useful when you want to write the configPath to logfiles, stdout, etc.
 // Comes in handy during debugging or when running in production environments.
-func GetConfigFilePath() {
+func GetConfigFilePath() (string, error) {
 	return v.getConfigFile()
 }
 
