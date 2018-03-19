@@ -244,7 +244,7 @@ func (s *stringValue) String() string {
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
-	filename, err := v.getConfigFile()
+	filename, err := v.GetConfigFile()
 	assert.Equal(t, "/tmp/config.yaml", filename)
 	assert.NoError(t, err)
 }
@@ -1177,7 +1177,7 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 func TestSetConfigNameClearsFileCache(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
 	SetConfigName("default")
-	f, err := v.getConfigFile()
+	f, err := v.GetConfigFile()
 	if err == nil {
 		t.Fatalf("config file cache should have been cleared")
 	}

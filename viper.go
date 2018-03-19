@@ -268,7 +268,7 @@ func (v *Viper) WatchConfig() {
 		defer watcher.Close()
 
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
-		filename, err := v.getConfigFile()
+		filename, err := v.GetConfigFile()
 		if err != nil {
 			log.Println("error:", err)
 			return
@@ -1131,7 +1131,7 @@ func (v *Viper) Set(key string, value interface{}) {
 func ReadInConfig() error { return v.ReadInConfig() }
 func (v *Viper) ReadInConfig() error {
 	jww.INFO.Println("Attempting to read in config file")
-	filename, err := v.getConfigFile()
+	filename, err := v.GetConfigFile()
 	if err != nil {
 		return err
 	}
@@ -1161,7 +1161,7 @@ func (v *Viper) ReadInConfig() error {
 func MergeInConfig() error { return v.MergeInConfig() }
 func (v *Viper) MergeInConfig() error {
 	jww.INFO.Println("Attempting to merge in config file")
-	filename, err := v.getConfigFile()
+	filename, err := v.GetConfigFile()
 	if err != nil {
 		return err
 	}
@@ -1203,7 +1203,7 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 // WriteConfig writes the current configuration to a file.
 func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
-	filename, err := v.getConfigFile()
+	filename, err := v.GetConfigFile()
 	if err != nil {
 		return err
 	}
@@ -1213,7 +1213,7 @@ func (v *Viper) WriteConfig() error {
 // SafeWriteConfig writes current configuration to file only if the file does not exist.
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
-	filename, err := v.getConfigFile()
+	filename, err := v.GetConfigFile()
 	if err != nil {
 		return err
 	}
@@ -1705,7 +1705,7 @@ func (v *Viper) getConfigType() string {
 		return v.configType
 	}
 
-	cf, err := v.getConfigFile()
+	cf, err := v.GetConfigFile()
 	if err != nil {
 		return ""
 	}
@@ -1719,19 +1719,15 @@ func (v *Viper) getConfigType() string {
 	return ""
 }
 
-func (v *Viper) getConfigFile() (string, error) {
-	// if explicitly set, then use it
-	if v.configFile != "" {
-		return v.configFile, nil
+func (v *Viper) GetConfigFile() (string, error) {
+	if v.configFile == "" {
+		cf, err := v.findConfigFile()
+		if err != nil {
+			return "", err
+		}
+		v.configFile = cf
 	}
-
-	cf, err := v.findConfigFile()
-	if err != nil {
-		return "", err
-	}
-
-	v.configFile = cf
-	return v.getConfigFile()
+	return v.configFile, nil
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
