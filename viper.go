@@ -658,6 +658,8 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToDuration(val)
 		case []string:
 			return cast.ToStringSlice(val)
+		case []int:
+			return cast.ToIntSlice(val)
 		}
 	}
 
@@ -703,6 +705,12 @@ func (v *Viper) GetInt(key string) int {
 func GetInt32(key string) int32 { return v.GetInt32(key) }
 func (v *Viper) GetInt32(key string) int32 {
 	return cast.ToInt32(v.Get(key))
+}
+
+// GetIntSlice returns the value associated with the key as an integer slice.
+func GetIntSlice(key string) []int { return v.GetIntSlice(key) }
+func (v *Viper) GetIntSlice(key string) []int {
+	return cast.ToIntSlice(v.Get(key))
 }
 
 // GetInt64 returns the value associated with the key as an integer.
