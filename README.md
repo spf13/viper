@@ -191,7 +191,7 @@ _When working with ENV variables, it’s important to recognize that Viper
 treats ENV variables as case sensitive._
 
 Viper provides a mechanism to try to ensure that ENV variables are unique. By
-using `SetEnvPrefix`, you can tell Viper to use add a prefix while reading from
+using `SetEnvPrefix`, you can tell Viper to add a prefix while reading from
 the environment variables. Both `BindEnv` and `AutomaticEnv` will use this
 prefix.
 
