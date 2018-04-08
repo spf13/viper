@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -512,6 +513,56 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 	return nil
 }
 
+func (v *Viper) searchMapWithArrayPrefix(source map[string]interface{}, path []string) interface{} {
+	if len(path) == 0 {
+		return source
+	}
+
+	next, ok := source[path[0]]
+	if ok {
+		// Immediate Key Value
+		if len(path) == 1 {
+			return next
+		}
+
+		// Value from Nested key
+		switch next.(type) {
+		case map[interface{}]interface{}:
+			return v.searchMapWithArrayPrefix(cast.ToStringMap(next), path[1:])
+		case map[string]interface{}:
+			// Type assertion is safe here since it is only reached
+			// if the type of `next` is the same as the type being asserted
+			return v.searchMapWithArrayPrefix(next.(map[string]interface{}), path[1:])
+		case []interface{}:
+			v1 := cast.ToSlice(next)
+			for k2, v2 := range v1 {
+				if reflect.TypeOf(v2).Kind() == reflect.Map {
+					if _, err := strconv.ParseInt(path[1], 10, 64); err == nil {
+						if strconv.Itoa(k2) == path[1] {
+							return v.searchMapWithArrayPrefix(cast.ToStringMap(v2), path[1:])
+						}
+					} else {
+						return v.searchMapWithArrayPrefix(cast.ToStringMap(v2), path[1:])
+					}
+				} else {
+					if _, err := strconv.ParseInt(path[1], 10, 64); err == nil {
+						if strconv.Itoa(k2) == path[1] {
+							return v2
+						}
+					}
+				}
+			}
+		default:
+			return nil
+		}
+	} else {
+		if _, err := strconv.ParseInt(path[0], 10, 64); err == nil {
+			return v.searchMapWithArrayPrefix(source, path[1:])
+		}
+	}
+	return nil
+}
+
 // isPathShadowedInDeepMap makes sure the given path is not shadowed somewhere
 // on its path in the map.
 // e.g., if "foo.bar" has a value in the given map, it “shadows”
@@ -882,7 +933,6 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string) interface{} {
-
 	var (
 		val    interface{}
 		exists bool
@@ -956,6 +1006,11 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	if val != nil {
 		return val
 	}
+	val = v.searchMapWithArrayPrefix(v.config, path)
+	if val != nil {
+		return val
+	}
+
 	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
 		return nil
 	}
