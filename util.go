@@ -52,7 +52,7 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 	nm := make(map[string]interface{})
 
 	for key, val := range m {
-		lkey := strings.ToLower(key)
+		lkey := key
 		switch v := val.(type) {
 		case map[interface{}]interface{}:
 			nm[lkey] = copyAndInsensitiviseMap(cast.ToStringMap(v))
@@ -64,28 +64,6 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 	}
 
 	return nm
-}
-
-func insensitiviseMap(m map[string]interface{}) {
-	for key, val := range m {
-		switch val.(type) {
-		case map[interface{}]interface{}:
-			// nested map: cast and recursively insensitivise
-			val = cast.ToStringMap(val)
-			insensitiviseMap(val.(map[string]interface{}))
-		case map[string]interface{}:
-			// nested map: recursively insensitivise
-			insensitiviseMap(val.(map[string]interface{}))
-		}
-
-		lower := strings.ToLower(key)
-		if key != lower {
-			// remove old key (not lower-cased)
-			delete(m, key)
-		}
-		// update map
-		m[lower] = val
-	}
 }
 
 func absPathify(inPath string) string {
