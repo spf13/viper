@@ -811,6 +811,9 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 // name as the config key.
 func BindPFlags(flags *pflag.FlagSet) error { return v.BindPFlags(flags) }
 func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
+	if flags == nil {
+		return fmt.Errorf("FlagSet cannot be nil")
+	}
 	return v.BindFlagValues(pflagValueSet{flags})
 }
 
@@ -822,6 +825,9 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
 //
 func BindPFlag(key string, flag *pflag.Flag) error { return v.BindPFlag(key, flag) }
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
+	if flag == nil {
+		return fmt.Errorf("flag for %q is nil", key)
+	}
 	return v.BindFlagValue(key, pflagValue{flag})
 }
 
