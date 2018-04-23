@@ -612,7 +612,7 @@ func GetViper() *Viper {
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
 	}
@@ -885,9 +885,12 @@ func (v *Viper) BindEnv(input ...string) error {
 // Given a key, find the value.
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.
-// Viper will check to see if an alias exists first.
-// Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string) interface{} {
+// Viper will then check in the following order:
+// flag, env, config file, key/value store.
+// Lastly, if no value was found and flagDefault is true, and if the key
+// corresponds to a flag, the flag's default value is returned.
+//
+func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 
 	var (
 		val    interface{}
@@ -1003,6 +1006,18 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 	// last item, no need to check shadowing
 
+	// it could also be a key prefix, search for that prefix to get the values from
+	// pflags that match it
+	sub := make(map[string]interface{})
+	for key, val := range v.pflags {
+		if flagDefault && strings.HasPrefix(key, lcaseKey) {
+			sub[strings.TrimPrefix(key, lcaseKey+".")] = val.ValueString()
+		}
+	}
+	if len(sub) != 0 {
+		return sub
+	}
+
 	return nil
 }
 
@@ -1020,7 +1035,7 @@ func readAsCSV(val string) ([]string, error) {
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, false)
 	return val != nil
 }
 
