@@ -1089,6 +1089,9 @@ func BindPFlags(flags *pflag.FlagSet) error { return v.BindPFlags(flags) }
 // BindPFlags binds a full flag set to the configuration, using each flag's long
 // name as the config key.
 func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
+	if flags == nil {
+		return fmt.Errorf("FlagSet cannot be nil")
+	}
 	return v.BindFlagValues(pflagValueSet{flags})
 }
 

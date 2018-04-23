@@ -1292,6 +1292,14 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 	}
 }
 
+func TestBindPFlagsNil(t *testing.T) {
+	v := New()
+	err := v.BindPFlags(nil)
+	if err == nil {
+		t.Fatalf("expected error when passing nil to BindPFlags")
+	}
+}
+
 func TestBindPFlag(t *testing.T) {
 	v := New()
 	testString := "testing"
@@ -1404,6 +1412,14 @@ func TestBindPFlagStringToInt(t *testing.T) {
 				assert.Equal(t, defaultVal, val.StringToInt)
 			}
 		}
+	}
+}
+
+func TestBindPFlagNil(t *testing.T) {
+	v := New()
+	err := v.BindPFlag("any", nil)
+	if err == nil {
+		t.Fatalf("expected error when passing nil to BindPFlag")
 	}
 }
 
