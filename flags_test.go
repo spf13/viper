@@ -45,7 +45,7 @@ func TestBindFlagValueSet(t *testing.T) {
 
 func TestBindFlagValue(t *testing.T) {
 	testString := "testing"
-	testValue := newStringValue(testString, &testString)
+	testValue := newStringValue(testString)
 
 	flag := &pflag.Flag{
 		Name:    "testflag",

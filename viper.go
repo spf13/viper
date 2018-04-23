@@ -1372,6 +1372,26 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		// last item, no need to check shadowing
 	}
 
+	// it could also be a key prefix (e.g. flat pflag keys like "a.b.c"), so
+	// build the sub-tree from every key under that prefix.
+	// ponytail: AllKeys() merges every source on each miss; index key prefixes if misses get hot.
+	sub := make(map[string]any)
+	for _, key := range v.AllKeys() {
+		// IsSet (flagDefault == false) must not count unchanged flag defaults
+		if strings.HasPrefix(key, lcaseKey+v.keyDelim) && (flagDefault || v.IsSet(key)) {
+			value := v.Get(key)
+			keypath := strings.Split(lcaseKey, v.keyDelim)
+			path := strings.Split(key, v.keyDelim)[len(keypath)-1:]
+			lastKey := strings.ToLower(path[len(path)-1])
+			deepestMap := deepSearch(sub, path[1:len(path)-1])
+			// set innermost value
+			deepestMap[lastKey] = value
+		}
+	}
+	if len(sub) != 0 {
+		return sub
+	}
+
 	return nil
 }
 
