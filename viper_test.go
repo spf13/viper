@@ -282,9 +282,8 @@ func initDirs(t *testing.T) (string, string, func()) {
 // stubs for PFlag Values
 type stringValue string
 
-func newStringValue(val string, p *string) *stringValue {
-	*p = val
-	return (*stringValue)(p)
+func newStringValue(val string) *stringValue {
+	return (*stringValue)(&val)
 }
 
 func (s *stringValue) Set(val string) error {
@@ -960,7 +959,7 @@ func TestBindPFlagsNil(t *testing.T) {
 
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
-	var testValue = newStringValue(testString, &testString)
+	var testValue = newStringValue(testString)
 
 	flag := &pflag.Flag{
 		Name:    "testflag",
@@ -1042,7 +1041,7 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "blue", Get("eyes"))
 
 	var testString = "green"
-	var testValue = newStringValue(testString, &testString)
+	var testValue = newStringValue(testString)
 
 	flag := &pflag.Flag{
 		Name:    "eyeballs",
@@ -1302,6 +1301,31 @@ func TestSub(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
 	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+
+	subv = v.Sub("clothing.pants")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("missing.key")
+	assert.Equal(t, (*Viper)(nil), subv)
+}
+
+func TestSubPflags(t *testing.T) {
+	v := New()
+
+	// same as yamlExample, without hobbies
+	v.BindPFlag("name", &pflag.Flag{Value: newStringValue("steve"), Changed: true})
+	v.BindPFlag("clothing.jacket", &pflag.Flag{Value: newStringValue("leather"), Changed: true})
+	v.BindPFlag("clothing.trousers", &pflag.Flag{Value: newStringValue("denim"), Changed: true})
+	v.BindPFlag("clothing.pants.size", &pflag.Flag{Value: newStringValue("large"), Changed: true})
+	v.BindPFlag("age", &pflag.Flag{Value: newStringValue("35"), Changed: true})
+	v.BindPFlag("eyes", &pflag.Flag{Value: newStringValue("brown"), Changed: true})
+	v.BindPFlag("beard", &pflag.Flag{Value: newStringValue("yes"), Changed: true})
 
 	subv := v.Sub("clothing")
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
