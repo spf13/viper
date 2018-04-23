@@ -1327,7 +1327,49 @@ func TestSubPflags(t *testing.T) {
 	v.BindPFlag("eyes", &pflag.Flag{Value: newStringValue("brown"), Changed: true})
 	v.BindPFlag("beard", &pflag.Flag{Value: newStringValue("yes"), Changed: true})
 
+	type pants struct {
+		Size string
+	}
+
+	type clothing struct {
+		Jacket   string
+		Trousers string
+		Pants    pants
+	}
+
+	type cfg struct {
+		Name     string
+		Clothing clothing
+		Age      int
+		Eyes     string
+		Beard    bool
+	}
+
+	var c cfg
+	v.Unmarshal(&c)
+	assert.Equal(t, v.Get("name"), c.Name)
+	assert.Equal(t, v.Get("clothing.jacket"), c.Clothing.Jacket)
+	assert.Equal(t, v.Get("clothing.trousers"), c.Clothing.Trousers)
+	assert.Equal(t, v.Get("clothing.pants.size"), c.Clothing.Pants.Size)
+	assert.Equal(t, v.GetInt("age"), c.Age)
+	assert.Equal(t, v.Get("eyes"), c.Eyes)
+	assert.Equal(t, v.GetBool("beard"), c.Beard)
+
+	var cloth clothing
+	v.UnmarshalKey("clothing", &cloth)
+	assert.Equal(t, c.Clothing, cloth)
+
+	var p pants
+	v.UnmarshalKey("clothing.pants", &p)
+	assert.Equal(t, c.Clothing.Pants, p)
+
+	var size string
+	v.UnmarshalKey("clothing.pants.size", &size)
+	assert.Equal(t, c.Clothing.Pants.Size, size)
+
 	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.jacket"), subv.Get("jacket"))
+	assert.Equal(t, v.Get("clothing.trousers"), subv.Get("trousers"))
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
 
 	subv = v.Sub("clothing.pants")
