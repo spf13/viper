@@ -373,10 +373,31 @@ how to use Consul.
 
 ### Remote Key/Value Store Example - Unencrypted
 
+#### etcd
 ```go
 viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
 viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop"
 err := viper.ReadRemoteConfig()
+```
+
+#### Consul
+You need to set a key to Consul key/value storage with JSON value containing your desired config.  
+For example, create a Consul key/value store key `MY_CONSUL_KEY` with value:
+
+```json
+{
+    "port": 8080,
+    "hostname": "myhostname.com"
+}
+```
+
+```go
+viper.AddRemoteProvider("consul", "localhost:8500", "MY_CONSUL_KEY")
+viper.SetConfigType("json") // Need to explicitly set this to json
+err := viper.ReadRemoteConfig()
+
+fmt.Println(viper.Get("port")) // 8080
+fmt.Println(viper.Get("hostname")) // myhostname.com
 ```
 
 ### Remote Key/Value Store Example - Encrypted
