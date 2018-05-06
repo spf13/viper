@@ -1068,6 +1068,10 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("lagrenum != 765432101234567, = %d", pop)
 	}
 
+	if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
+		t.Fatalf("pop != 37890, = %d", pop)
+	}
+
 	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
 		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
 	}
@@ -1090,6 +1094,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if pop := v.GetInt("hello.lagrenum"); pop != 7654321001234567 {
 		t.Fatalf("lagrenum != 7654321001234567, = %d", pop)
+	}
+
+	if pop := v.GetInt32("hello.pop"); pop != int32(45000) {
+		t.Fatalf("pop != 45000, = %d", pop)
 	}
 
 	if pop := v.GetInt64("hello.lagrenum"); pop != int64(7654321001234567) {
