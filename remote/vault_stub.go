@@ -7,9 +7,9 @@ package remote
 // vault, we can make vault work this way.
 
 import (
-  "io"
-  crypt "github.com/xordataexchange/crypt/config"
-  vault "github.com/spf13/viper/vault"
+	vault "github.com/spf13/viper/vault"
+	crypt "github.com/xordataexchange/crypt/config"
+	"io"
 )
 
 func NewStandardVaultConfigManager(machines []string) (crypt.ConfigManager, error) {

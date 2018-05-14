@@ -82,22 +82,22 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 		if err != nil {
 			return nil, err
 		}
-		switch(rp.Provider()) {
-		  case "etcd":
-				cm, err = crypt.NewEtcdConfigManager([]string{rp.Endpoint()}, kr)
-			case "consul":
-				cm, err = crypt.NewConsulConfigManager([]string{rp.Endpoint()}, kr)
-			case "vault":
-				cm, err = NewVaultConfigManager([]string{rp.Endpoint()}, kr)
+		switch rp.Provider() {
+		case "etcd":
+			cm, err = crypt.NewEtcdConfigManager([]string{rp.Endpoint()}, kr)
+		case "consul":
+			cm, err = crypt.NewConsulConfigManager([]string{rp.Endpoint()}, kr)
+		case "vault":
+			cm, err = NewVaultConfigManager([]string{rp.Endpoint()}, kr)
 		}
 	} else {
-		switch(rp.Provider()) {
-			case "etcd":
-				cm, err = crypt.NewStandardEtcdConfigManager([]string{rp.Endpoint()})
-			case "consul":
-				cm, err = crypt.NewStandardConsulConfigManager([]string{rp.Endpoint()})
-			case "vault":
-				cm, err = NewStandardVaultConfigManager([]string{rp.Endpoint()})
+		switch rp.Provider() {
+		case "etcd":
+			cm, err = crypt.NewStandardEtcdConfigManager([]string{rp.Endpoint()})
+		case "consul":
+			cm, err = crypt.NewStandardConsulConfigManager([]string{rp.Endpoint()})
+		case "vault":
+			cm, err = NewStandardVaultConfigManager([]string{rp.Endpoint()})
 		}
 	}
 	if err != nil {
