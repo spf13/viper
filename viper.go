@@ -210,7 +210,7 @@ func New() *Viper {
 func Reset() {
 	v = New()
 	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl"}
-	SupportedRemoteProviders = []string{"etcd", "consul"}
+	SupportedRemoteProviders = []string{"etcd", "consul", "vault"}
 }
 
 type defaultRemoteProvider struct {
@@ -251,7 +251,7 @@ type RemoteProvider interface {
 var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl"}
 
 // SupportedRemoteProviders are universally supported remote providers.
-var SupportedRemoteProviders = []string{"etcd", "consul"}
+var SupportedRemoteProviders = []string{"etcd", "consul", "vault"}
 
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
@@ -363,12 +363,17 @@ func (v *Viper) AddConfigPath(in string) {
 
 // AddRemoteProvider adds a remote configuration source.
 // Remote Providers are searched in the order they are added.
-// provider is a string value, "etcd" or "consul" are currently supported.
+// provider is a string value, "etcd", "vault", or "consul" are currently supported.
 // endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
 // "myapp"
+//
+// "vault" allows access to Hashicorp's Vault. Two environment variables
+// must be set to allow Vault to work, VAULT_ROLE_ID and VAULT_SECRET_ID.
+//
+
 func AddRemoteProvider(provider, endpoint, path string) error {
 	return v.AddRemoteProvider(provider, endpoint, path)
 }
@@ -1528,7 +1533,7 @@ func (v *Viper) getKeyValueConfig() error {
 		v.kvstore = val
 		return nil
 	}
-	return RemoteConfigError("No Files Found")
+	return RemoteConfigError("No Files Found or remote error")
 }
 
 func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
@@ -1536,6 +1541,7 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
+
 	err = v.unmarshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
@@ -1554,7 +1560,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 		}(respc)
 		return nil
 	}
-	return RemoteConfigError("No Files Found")
+	return RemoteConfigError("No Files Found or remote error")
 }
 
 // Retrieve the first found remote configuration.
@@ -1567,7 +1573,7 @@ func (v *Viper) watchKeyValueConfig() error {
 		v.kvstore = val
 		return nil
 	}
-	return RemoteConfigError("No Files Found")
+	return RemoteConfigError("No Files Found or remote error")
 }
 
 func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
