@@ -67,7 +67,7 @@ func (c *Client) acquireToken(role string, secret string) (string, error) {
 	return token, err
 }
 
-// this can be called before operations to ensure token is currentfg
+// this can be called before operations to ensure token is current
 func (c *Client) renewToken() (string, error) {
 	if c.secret_expires {
 		if (c.secret_ttl.Seconds()+c.secret_acq_at > float64(time.Now().Unix())) && c.secret_ttl != 0 {
