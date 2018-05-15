@@ -62,8 +62,6 @@ func (c *Client) acquireToken(role string, secret string) (string, error) {
 	}
 
 	c.secret_acq_at = float64(time.Now().Unix())
-
-	fmt.Println("Got token %s with expiry %d and acquired at %v", token, c.secret_ttl, c.secret_acq_at)
 	return token, err
 }
 
