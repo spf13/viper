@@ -162,10 +162,11 @@ type Viper struct {
 	remoteProviders []*defaultRemoteProvider
 
 	// Name of file to look for inside the path
-	configName string
-	configFile string
-	configType string
-	envPrefix  string
+	configName      string
+	configFile      string
+	configFileChain []string
+	configType      string
+	envPrefix       string
 
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
@@ -309,6 +310,15 @@ func SetConfigFile(in string) { v.SetConfigFile(in) }
 func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
+	}
+}
+
+// SetConfigFileChain explicitly defines slice of the path, name and extension of the config files
+// Viper will use these and not check any of the config paths
+func SetConfigChain(in []string) { v.SetConfigFileChain(in) }
+func (v *Viper) SetConfigFileChain(in []string) {
+	if len(in) > 0 {
+		v.configFileChain = in
 	}
 }
 
@@ -1184,8 +1194,34 @@ func (v *Viper) MergeInConfig() error {
 	return v.MergeConfig(bytes.NewReader(file))
 }
 
-// ReadConfig will read a configuration file, setting existing keys to nil if the
-// key does not exist in the file.
+// MergeConfigFileChain repeatedly merge with configFileChain
+func MergeConfigFileChain() error { return v.MergeConfigFileChain() }
+func (v *Viper) MergeConfigFileChain() error {
+	jww.INFO.Println("Attempting to chain merge with configFileChain")
+
+	configFileChain, err := v.getConfigFileChain()
+	if err != nil {
+		return err
+	}
+
+	for i, filename := range configFileChain {
+		if i == 0 {
+			v.SetConfigFile(filename)
+			err := v.ReadInConfig()
+			if err != nil {
+				return err
+			}
+		} else {
+			v.SetConfigFile(filename)
+			err := v.MergeInConfig()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
@@ -1734,6 +1770,22 @@ func (v *Viper) getConfigFile() (string, error) {
 		v.configFile = cf
 	}
 	return v.configFile, nil
+}
+
+func (v *Viper) getConfigFileChain() ([]string, error) {
+	// if explicitly set, then use it
+	// else search config file and return as slice
+	if len(v.configFileChain) > 0 {
+		return v.configFileChain, nil
+	}
+
+	cf, err := v.findConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
+	v.configFileChain = []string{cf}
+	return v.getConfigFileChain()
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
