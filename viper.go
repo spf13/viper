@@ -1211,7 +1211,10 @@ func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
 	filename, err := v.getConfigFile()
 	if err != nil {
-		return err
+		filename, err = v.getDefaultConfigFile()
+		if err != nil {
+			return err
+		}
 	}
 	return v.writeConfig(filename, true)
 }
@@ -1221,9 +1224,24 @@ func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
 	filename, err := v.getConfigFile()
 	if err != nil {
-		return err
+		filename, err = v.getDefaultConfigFile()
+		if err != nil {
+			return err
+		}
 	}
 	return v.writeConfig(filename, false)
+}
+
+func (v *Viper) getDefaultConfigFile() (string, error) {
+	if v.configName == "" {
+		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+	}
+
+	if len(v.configPaths) == 0 {
+		return v.configName + "." + SupportedExts[0], nil
+	} else {
+		return filepath.Join(v.configPaths[0], v.configName+"."+SupportedExts[0]), nil
+	}
 }
 
 // WriteConfigAs writes current configuration to a given filename.
