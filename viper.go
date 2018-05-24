@@ -261,8 +261,8 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 
 func WatchConfig() { v.WatchConfig() }
 func (v *Viper) WatchConfig() {
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	initWG := sync.WaitGroup{}
+	initWG.Add(1)
 	go func() {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
@@ -272,7 +272,7 @@ func (v *Viper) WatchConfig() {
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
-			log.Println("error:", err)
+			log.Printf("error: %v\n", err)
 			return
 		}
 
@@ -280,12 +280,16 @@ func (v *Viper) WatchConfig() {
 		configDir, _ := filepath.Split(configFile)
 		realConfigFile, _ := filepath.EvalSymlinks(filename)
 
-		done := make(chan bool)
+		eventsWG := sync.WaitGroup{}
+		eventsWG.Add(1)
 		go func() {
-		loop:
 			for {
 				select {
-				case event := <-watcher.Events:
+				case event, ok := <-watcher.Events:
+					if !ok { // 'Events' channel is closed
+						eventsWG.Done()
+						return
+					}
 					currentConfigFile, _ := filepath.EvalSymlinks(filename)
 					// we only care about the config file with the following cases:
 					// 1 - if the config file was modified or created
@@ -296,28 +300,31 @@ func (v *Viper) WatchConfig() {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
 						if err != nil {
-							log.Println("error reading file:", err.Error())
+							log.Printf("error reading file: %v\n", err)
 						}
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
 						}
 					} else if filepath.Clean(event.Name) == configFile &&
 						event.Op&fsnotify.Remove == fsnotify.Remove {
-						done <- true
-						break loop
+						eventsWG.Done()
+						return
 					}
 
-				case err := <-watcher.Errors:
-					log.Printf("watcher error: %v\n", err)
+				case err, ok := <-watcher.Errors:
+					if ok { // 'Errors' channel is not closed
+						log.Printf("watcher error: %v\n", err)
+					}
+					eventsWG.Done()
+					return
 				}
 			}
 		}()
 		watcher.Add(configDir)
-		wg.Done() // done initalizing the watch in this go routine, so the parent routine can move on...
-		<-done    // block until the watched file is removed...
+		initWG.Done()   // done initalizing the watch in this go routine, so the parent routine can move on...
+		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
-	// make sure that the go routine above fully started before returning
-	wg.Wait()
+	initWG.Wait() // make sure that the go routine above fully ended before returning
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.

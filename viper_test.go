@@ -1419,9 +1419,11 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func
 }
 
 func TestWatchFile(t *testing.T) {
+
 	t.Run("file content changed", func(t *testing.T) {
 		// given a `config.yaml` file being watched
 		v, configFile, cleanup := newViperWithConfigFile(t)
+		fmt.Printf("test config file: %s\n", configFile)
 		defer cleanup()
 		wg := sync.WaitGroup{}
 		v.WatchConfig()
@@ -1466,7 +1468,6 @@ func TestWatchFile(t *testing.T) {
 		// then
 		require.Nil(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
-
 	})
 
 }
