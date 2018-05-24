@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -1030,6 +1031,22 @@ func TestWriteConfigYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, yamlWriteExpected, read)
+}
+
+func TestGetDefaultConfigFile(t *testing.T) {
+	v := New()
+	home, err := filepath.Abs("/homedir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.AddConfigPath(home)
+	v.SetConfigName("c")
+	filename, err := v.getDefaultConfigFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ext := "json"
+	assert.Equal(t, filename, filepath.Join("/homedir", "c"+"."+ext))
 }
 
 var yamlMergeExampleTgt = []byte(`
