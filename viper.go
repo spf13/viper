@@ -648,7 +648,9 @@ func (v *Viper) Get(key string) interface{} {
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
-// Sub is case-insensitive for a key.
+// Sub is case-insensitive for a key. The Viper object that is returned however
+// is not a fully functional `Viper`. It will not include any values set with 
+// BindEnv and Unmarshal is not supported.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
