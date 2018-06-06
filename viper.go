@@ -664,6 +664,7 @@ func (v *Viper) Sub(key string) *Viper {
 	return nil
 }
 
+//Sub list returns new Viper instance List representing a sub tree of this instance.
 func SubList(key string) []*Viper { return v.SubList(key) }
 func (v *Viper) SubList(key string) []*Viper {
 	data := v.Get(key)
