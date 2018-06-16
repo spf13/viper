@@ -1152,7 +1152,7 @@ func (v *Viper) ReadInConfig() error {
 		fileExt := filepath.Ext(filename)
 
 		if stringInSlice(fileExt, SupportedExts) {
-			log.Println("warning:", "Looks like you have included the file extention in the file name." +
+			log.Println("warning:", "Looks like you have included the file extention in the file name."+
 				"Consider using SetConfigType method instead.")
 		}
 
