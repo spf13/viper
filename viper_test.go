@@ -375,10 +375,17 @@ func TestEnv(t *testing.T) {
 	assert.Equal(t, "apple", Get("f"))
 	assert.Equal(t, "Cake", Get("name"))
 
+	os.Setenv("FOOD", "")
+
+	assert.Equal(t, "", Get("f"))
+
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
 
+	os.Setenv("NAME", "")
+
+	assert.Equal(t, "", Get("name"))
 }
 
 func TestEnvPrefix(t *testing.T) {
@@ -396,9 +403,17 @@ func TestEnvPrefix(t *testing.T) {
 	assert.Equal(t, "apple", Get("f"))
 	assert.Equal(t, "Cake", Get("name"))
 
+	os.Setenv("FOO_ID", "")
+
+	assert.Equal(t, "", Get("id"))
+
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
+
+	os.Setenv("FOO_NAME", "")
+
+	assert.Equal(t, "", Get("name"))
 }
 
 func TestAutoEnv(t *testing.T) {
