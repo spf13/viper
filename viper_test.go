@@ -1036,6 +1036,7 @@ var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
     lagrenum: 765432101234567
+    num2pow63: 9223372036854775808
     world:
     - us
     - uk
@@ -1074,6 +1075,18 @@ func TestMergeConfig(t *testing.T) {
 
 	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
 		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
+	}
+
+	if pop := v.GetUint("hello.pop"); pop != 37890 {
+		t.Fatalf("uint pop != 37890, = %d", pop)
+	}
+
+	if pop := v.GetUint32("hello.pop"); pop != 37890 {
+		t.Fatalf("uint32 pop != 37890, = %d", pop)
+	}
+
+	if pop := v.GetUint64("hello.num2pow63"); pop != 9223372036854775808 {
+		t.Fatalf("uint64 num2pow63 != 9223372036854775808, = %d", pop)
 	}
 
 	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
