@@ -1409,6 +1409,7 @@ func (v *Viper) Set(key string, value interface{}) {
 // Unset deletes a key from Viper.
 // Unset is case-insensitive for a key.
 func Unset(key string) { v.Unset(key) }
+
 func (v *Viper) Unset(key string) {
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
