@@ -11,22 +11,16 @@
 package viper
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"unicode"
 
-	"github.com/hashicorp/hcl"
-	"github.com/magiconair/properties"
-	toml "github.com/pelletier/go-toml"
+	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
-	"gopkg.in/yaml.v2"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
@@ -138,8 +132,8 @@ func absPathify(inPath string) string {
 }
 
 // Check if File / Directory Exists
-func exists(path string) (bool, error) {
-	_, err := v.fs.Stat(path)
+func exists(fs afero.Fs, path string) (bool, error) {
+	_, err := fs.Stat(path)
 	if err == nil {
 		return true, nil
 	}
@@ -211,6 +205,17 @@ func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType s
 
 	insensitiviseMap(c)
 	return nil
+}
+
+func userHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
 }
 
 func safeMul(a, b uint) uint {
