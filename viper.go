@@ -1329,11 +1329,13 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return nil
 }
 
-// Marshal a map into Writer.
-func marshalWriter(f afero.File, configType string) error {
+// MarshalWriter will marshal a map into Writer for the default config
+func MarshalWriter(f afero.File, configType string) error {
 	return v.marshalWriter(f, configType)
 }
-func (v *Viper) marshalWriter(f afero.File, configType string) error {
+
+// MarshalWriter will marshal a map into Writer.
+func (v *Viper) MarshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
 	case "json":
