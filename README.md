@@ -437,6 +437,7 @@ The following functions and methods exist:
  * `GetTime(key string) : time.Time`
  * `GetDuration(key string) : time.Duration`
  * `IsSet(key string) : bool`
+ * `AllSettings() : map[string]interface{}`
 
 One important thing to recognize is that each Get function will return a zero
 value if it’s not found. To check if a given key exists, the `IsSet()` method
@@ -587,6 +588,27 @@ var C config
 err := Unmarshal(&C)
 if err != nil {
 	t.Fatalf("unable to decode into struct, %v", err)
+}
+```
+
+### Marshalling to string
+
+You may need to marhsal all the settings held in viper into a string rather than write them to a file. 
+You can use your favorite format's marshaller with the config returned by `AllSettings()`.
+
+```go
+import (
+    yaml "gopkg.in/yaml.v2"
+    // ...
+) 
+
+func yamlStringSettings() string {
+    c := viper.AllSettings()
+	bs, err := yaml.Marshal(c)
+	if err != nil {
+        t.Fatalf("unable to marshal config to YAML: %v", err)
+    }
+	return string(bs)
 }
 ```
 
