@@ -1266,7 +1266,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if err != nil {
 		return err
 	}
-	return v.marshalWriter(f, configType)
+	return v.MarshalWriter(f, configType)
 }
 
 // Unmarshal a Reader into a map.
@@ -1331,7 +1331,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 
 // MarshalWriter will marshal a map into Writer for the default config
 func MarshalWriter(f afero.File, configType string) error {
-	return v.marshalWriter(f, configType)
+	return v.MarshalWriter(f, configType)
 }
 
 // MarshalWriter will marshal a map into Writer.
