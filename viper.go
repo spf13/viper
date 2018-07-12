@@ -1707,7 +1707,7 @@ func (v *Viper) SetConfigType(in string) {
 }
 
 // GetConfigFile gets the the configuration file path
-func GetConfigFile() (string, error) { return v.getConfigFile() }
+func GetConfigFile() (string, error) { return v.GetConfigFile() }
 func (v *Viper) GetConfigFile() (string, error) {
 	return v.getConfigFile()
 }
