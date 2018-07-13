@@ -1426,12 +1426,12 @@ func TestWatchFile(t *testing.T) {
 		fmt.Printf("test config file: %s\n", configFile)
 		defer cleanup()
 		wg := sync.WaitGroup{}
+		wg.Add(1)
 		v.WatchConfig()
 		v.OnConfigChange(func(in fsnotify.Event) {
 			t.Logf("config file changed")
 			wg.Done()
 		})
-		wg.Add(1)
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
 		err := ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
 		wg.Wait()

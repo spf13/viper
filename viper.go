@@ -260,6 +260,7 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 }
 
 func WatchConfig() { v.WatchConfig() }
+
 func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
@@ -294,8 +295,9 @@ func (v *Viper) WatchConfig() {
 					// we only care about the config file with the following cases:
 					// 1 - if the config file was modified or created
 					// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
+					const writeOrCreateMask = fsnotify.Write | fsnotify.Create
 					if (filepath.Clean(event.Name) == configFile &&
-						(event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create)) ||
+						event.Op&writeOrCreateMask != 0) ||
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
@@ -306,7 +308,7 @@ func (v *Viper) WatchConfig() {
 							v.onConfigChange(event)
 						}
 					} else if filepath.Clean(event.Name) == configFile &&
-						event.Op&fsnotify.Remove == fsnotify.Remove {
+						event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
 						eventsWG.Done()
 						return
 					}
@@ -324,6 +326,7 @@ func (v *Viper) WatchConfig() {
 		initWG.Done()   // done initalizing the watch in this go routine, so the parent routine can move on...
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
+	fmt.Println(" init WG done")
 	initWG.Wait() // make sure that the go routine above fully ended before returning
 }
 
