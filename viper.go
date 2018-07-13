@@ -1245,7 +1245,14 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if len(ext) <= 1 {
 		return fmt.Errorf("Filename: %s requires valid extension.", filename)
 	}
-	configType := ext[1:]
+
+	var configType string
+	if v.configType == "" {
+		configType = ext[1:]
+	} else {
+		configType = v.configType
+	}
+
 	if !stringInSlice(configType, SupportedExts) {
 		return UnsupportedConfigError(configType)
 	}
