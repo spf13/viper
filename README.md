@@ -80,6 +80,14 @@ viper.SetDefault("LayoutDir", "layouts")
 viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
 ```
 
+Optionally you can get all Defaults values for config.
+
+example:
+
+```go
+viper.GetDefaults()
+```
+
 ### Reading Config Files
 
 Viper requires minimal configuration so it knows where to look for config files.
