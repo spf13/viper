@@ -184,6 +184,7 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+	watchChannel   chan bool
 }
 
 // New returns an initialized Viper instance.
@@ -277,7 +278,8 @@ func (v *Viper) WatchConfig() {
 		configFile := filepath.Clean(filename)
 		configDir, _ := filepath.Split(configFile)
 
-		done := make(chan bool)
+		v.watchChannel = make(chan bool)
+
 		go func() {
 			for {
 				select {
@@ -293,14 +295,24 @@ func (v *Viper) WatchConfig() {
 						}
 					}
 				case err := <-watcher.Errors:
-					log.Println("error:", err)
+					if err != nil {
+						log.Println("error:", err)
+					}
 				}
 			}
 		}()
 
 		watcher.Add(configDir)
-		<-done
+		<-v.watchChannel
+		watcher.Close()
 	}()
+}
+
+func CancelWatchConfig() {
+	v.CancelWatchConfig()
+}
+func (v *Viper) CancelWatchConfig() {
+	v.watchChannel <- true
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
