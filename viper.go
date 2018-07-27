@@ -30,21 +30,22 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
-	toml "github.com/pelletier/go-toml"
+	"github.com/nwingert/fsnotify"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
-)
+	)
 
 // ConfigMarshalError happens when failing to marshal the configuration.
 type ConfigMarshalError struct {
@@ -184,6 +185,11 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+
+	wChan   chan bool
+	watched bool
+
+	sync.Mutex
 }
 
 // New returns an initialized Viper instance.
@@ -277,6 +283,12 @@ func (v *Viper) WatchConfig() {
 		configFile := filepath.Clean(filename)
 		configDir, _ := filepath.Split(configFile)
 
+		wChan := make(chan bool)
+		
+		v.Lock()
+		v.watched = true
+		v.Unlock()
+
 		done := make(chan bool)
 		go func() {
 			for {
@@ -296,6 +308,8 @@ func (v *Viper) WatchConfig() {
 					}
 				case err := <-watcher.Errors:
 					log.Println("error:", err)
+				case <-wChan:
+					done <- true
 				}
 			}
 		}()
@@ -305,12 +319,24 @@ func (v *Viper) WatchConfig() {
 	}()
 }
 
+func UnwatchConfig() { v.UnwatchConfig() }
+func (v *Viper) UnwatchConfig() {
+	v.Lock()
+	defer v.Unlock()
+	v.watched = false
+}
+
 // SetConfigFile explicitly defines the path, name and extension of the config file.
 // Viper will use this and not check any of the config paths.
 func SetConfigFile(in string) { v.SetConfigFile(in) }
 func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
 		v.configFile = in
+		if v.watched {
+			// We need to recreate watcher in order to utilize hung goroutines
+			v.UnwatchConfig()
+			v.WatchConfig()
+		}
 	}
 }
 
@@ -890,6 +916,8 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string) interface{} {
+	v.Lock()
+	defer v.Unlock()
 
 	var (
 		val    interface{}
@@ -1160,8 +1188,9 @@ func (v *Viper) ReadInConfig() error {
 	if err != nil {
 		return err
 	}
-
+	v.Lock()
 	v.config = config
+	v.Unlock()
 	return nil
 }
 
@@ -1585,6 +1614,9 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 // Nested keys are returned with a v.keyDelim (= ".") separator
 func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
+	v.Lock()
+	defer v.Unlock()
+	
 	m := map[string]bool{}
 	// add all paths, by order of descending priority to ensure correct shadowing
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
@@ -1594,7 +1626,6 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, v.config, "")
 	m = v.flattenAndMergeMap(m, v.kvstore, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
-
 	// convert set of paths to list
 	a := []string{}
 	for x := range m {
@@ -1637,6 +1668,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
+	
 	return shadow
 }
 
@@ -1669,6 +1701,11 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range v.AllKeys() {
 		value := v.Get(k)
+		// ensure that marshalling to json will be supported
+		switch v := value.(type) {
+		case map[interface{}]interface{}:
+			value = castToMapStringInterface(v)
+		}
 		if value == nil {
 			// should not happen, since AllKeys() returns only keys holding a value,
 			// check just in case anything changes
