@@ -1266,7 +1266,13 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if err != nil {
 		return err
 	}
-	return v.marshalWriter(f, configType)
+	defer f.Close()
+
+	if err := v.marshalWriter(f, configType); err != nil {
+		return err
+	}
+
+	return f.Sync()
 }
 
 // Unmarshal a Reader into a map.
