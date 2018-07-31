@@ -7,6 +7,7 @@ package viper
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
@@ -766,6 +768,107 @@ func TestIsSet(t *testing.T) {
 	assert.False(t, v.IsSet("helloworld"))
 	v.Set("helloworld", "fubar")
 	assert.True(t, v.IsSet("helloworld"))
+}
+
+func TestWatchConfig(t *testing.T) {
+	before := []byte("key = \"value is before\"\n")
+	changed := []byte("key = \"value is changed\"\n")
+	after := []byte("key = \"value is after\"\n")
+
+	// This message is used for true asserts just making sure the file changes are happening as expected.
+	errMsg := "Test threw an unexpected error (test error)"
+
+	// Context is used for timeout handling within test.
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
+
+	// Get a reference to a temporary file that we'll use for the test.  Note we can't set a file extension using this API.
+	tmpfile, err := ioutil.TempFile("", "watch-test")
+	assert.Nil(t, err, errMsg)
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	t.Log("Writing initial value to test config file: ", tmpfile.Name())
+	_, err = tmpfile.Write(before)
+	assert.Nil(t, err, errMsg)
+
+	err = tmpfile.Close()
+	assert.Nil(t, err, errMsg)
+
+	// This block just confirms that we properly wrote the desired contents to the file.
+	data, err := ioutil.ReadFile(tmpfile.Name())
+	assert.Nil(t, err, errMsg)
+	assert.Equal(t, data, before, "Contents of test file are unexpected (test error)")
+
+	// Set up a viper to test backing it with the tmp config file
+	v := New()
+	v.SetDefault(`key`, `value is default`)
+	v.SetConfigFile(tmpfile.Name())
+	v.SetConfigType("toml")
+
+	t.Log("Initial read of config")
+	err = v.ReadInConfig()
+	assert.Nil(t, err, errMsg)
+
+	assert.Equal(t, `value is before`, v.GetString(`key`), "viper did not see the correct initial value for the config file.")
+
+	// Set up a context with deadline so we won't wait forever if we don't see a change.
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Turn on watch config.
+	v.WatchConfig()
+	v.OnConfigChange(func(e fsnotify.Event) {
+		t.Log("OnConfigChange executed.")
+		// If we get the signal of a change, we can immediately cancel the context.
+		cancel()
+	})
+
+	// XXX: I'm not sure why, but if we don't sleep, the watcher won't see a change that happens immediately after WatchConfig() is called.
+	time.Sleep(1 * time.Second)
+	t.Log("Writing changed value to ", tmpfile.Name())
+
+	// Not sure if the TRUNC is necessary, but basically re-open the file so we can change it.
+	tmpfile, err = os.OpenFile(tmpfile.Name(), os.O_TRUNC|os.O_RDWR, 0644)
+	assert.Nil(t, err, errMsg)
+
+	_, err = tmpfile.Write(changed)
+	assert.Nil(t, err, errMsg)
+
+	err = tmpfile.Close()
+	assert.Nil(t, err, errMsg)
+
+	data, err = ioutil.ReadFile(tmpfile.Name())
+	assert.Nil(t, err, errMsg)
+	assert.Equal(t, data, changed, "Contents of test file are unexpected (test error)")
+
+	// Wait here for either a timeout or signal that we saw a change.
+	<-ctx.Done()
+	assert.NotEqual(t, context.DeadlineExceeded, ctx.Err(), "Timed out waiting for change notification.")
+
+	assert.Equal(t, `value is changed`, v.GetString(`key`), "viper did not see the correct changed value for the config file after WatchConfig().")
+
+	// Canceling turns off the fsevent Watcher so even if we end up starting a new viper instance (or calling viper.Reset()) we won't pick up spurious change events.
+	v.CancelWatchConfig()
+	// XXX: I'm not sure why, but if we don't sleep, the watcher might not fully close down before the next event happens. Doesn't affect this test, but can cause an error on the next one.
+	time.Sleep(1 * time.Second)
+
+	// Now we make one more change to the file to verify the viper config doesn't pick up the change.
+	tmpfile, err = os.OpenFile(tmpfile.Name(), os.O_TRUNC|os.O_RDWR, 0644)
+	assert.Nil(t, err, errMsg)
+
+	_, err = tmpfile.Write(after)
+	assert.Nil(t, err, errMsg)
+
+	err = tmpfile.Close()
+	assert.Nil(t, err, errMsg)
+
+	data, err = ioutil.ReadFile(tmpfile.Name())
+	assert.Nil(t, err, errMsg)
+	assert.Equal(t, data, after, "Contents of test file are unexpected (test error)")
+
+	assert.NotEqual(t, `value is after`, v.GetString(`key`), "viper saw the after value in the file even after StopWatchConfig().")
 }
 
 func TestDirsSearch(t *testing.T) {
