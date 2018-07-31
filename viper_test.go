@@ -814,7 +814,7 @@ func TestWatchConfig(t *testing.T) {
 	assert.Equal(t, `value is before`, v.GetString(`key`), "viper did not see the correct initial value for the config file.")
 
 	// Set up a context with deadline so we won't wait forever if we don't see a change.
-	ctx, cancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Turn on watch config.
@@ -826,7 +826,7 @@ func TestWatchConfig(t *testing.T) {
 	})
 
 	// XXX: I'm not sure why, but if we don't sleep, the watcher won't see a change that happens immediately after WatchConfig() is called.
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 	t.Log("Writing changed value to ", tmpfile.Name())
 
 	// Not sure if the TRUNC is necessary, but basically re-open the file so we can change it.
@@ -852,7 +852,7 @@ func TestWatchConfig(t *testing.T) {
 	// Canceling turns off the fsevent Watcher so even if we end up starting a new viper instance (or calling viper.Reset()) we won't pick up spurious change events.
 	v.CancelWatchConfig()
 	// XXX: I'm not sure why, but if we don't sleep, the watcher might not fully close down before the next event happens. Doesn't affect this test, but can cause an error on the next one.
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	// Now we make one more change to the file to verify the viper config doesn't pick up the change.
 	tmpfile, err = os.OpenFile(tmpfile.Name(), os.O_TRUNC|os.O_RDWR, 0644)
