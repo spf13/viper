@@ -1047,6 +1047,26 @@ p_ppu = 0.55
 p_batters.batter.type = Regular
 `)
 
+func TestSafeWriteConfigProperties(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("properties")
+	err := v.ReadConfig(bytes.NewBuffer(propertiesExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.SafeWriteConfigAs("c.properties"); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c.properties")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, propertiesWriteExpected, read)
+}
+
 func TestWriteConfigProperties(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
