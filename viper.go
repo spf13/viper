@@ -1310,7 +1310,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 		flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
 	} else {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			flags = os.O_WRONLY
+			flags = os.O_CREATE | os.O_WRONLY
 		} else {
 			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
 		}
