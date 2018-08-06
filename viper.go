@@ -319,7 +319,7 @@ func (v *Viper) WatchConfig() {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
 						if err != nil {
-							log.Printf("error reading file: %v\n", err)
+							log.Printf("error reading config file: %v\n", err)
 						}
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
@@ -343,7 +343,6 @@ func (v *Viper) WatchConfig() {
 		initWG.Done()   // done initalizing the watch in this go routine, so the parent routine can move on...
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
-	fmt.Println(" init WG done")
 	initWG.Wait() // make sure that the go routine above fully ended before returning
 }
 

@@ -1469,17 +1469,19 @@ func TestWatchFile(t *testing.T) {
 	t.Run("file content changed", func(t *testing.T) {
 		// given a `config.yaml` file being watched
 		v, configFile, cleanup := newViperWithConfigFile(t)
-		fmt.Printf("test config file: %s\n", configFile)
 		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+		t.Logf("test config file: %s\n", configFile)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		v.WatchConfig()
 		v.OnConfigChange(func(in fsnotify.Event) {
 			t.Logf("config file changed")
 			wg.Done()
 		})
+		v.WatchConfig()
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
-		err := ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
 		wg.Wait()
 		// then the config value should have changed
 		require.Nil(t, err)
