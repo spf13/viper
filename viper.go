@@ -114,6 +114,23 @@ func (fnfe ConfigFileNotFoundError) Error() string {
 	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
 }
 
+// A DecoderConfigOption can be passed to viper.Unmarshal to configure
+// mapstructure.DecoderConfig options
+type DecoderConfigOption func(*mapstructure.DecoderConfig)
+
+// DecodeHook returns a DecoderConfigOption which overrides the default
+// DecoderConfig.DecodeHook value, the default is:
+//
+//  mapstructure.ComposeDecodeHookFunc(
+//		mapstructure.StringToTimeDurationHookFunc(),
+//		mapstructure.StringToSliceHookFunc(","),
+//	)
+func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
+	return func(c *mapstructure.DecoderConfig) {
+		c.DecodeHook = hook
+	}
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -709,6 +726,12 @@ func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
+// GetInt32 returns the value associated with the key as an integer.
+func GetInt32(key string) int32 { return v.GetInt32(key) }
+func (v *Viper) GetInt32(key string) int32 {
+	return cast.ToInt32(v.Get(key))
+}
+
 // GetInt64 returns the value associated with the key as an integer.
 func GetInt64(key string) int64 { return v.GetInt64(key) }
 func (v *Viper) GetInt64(key string) int64 {
@@ -766,9 +789,11 @@ func (v *Viper) GetSizeInBytes(key string) uint {
 }
 
 // UnmarshalKey takes a single key and unmarshals it into a Struct.
-func UnmarshalKey(key string, rawVal interface{}) error { return v.UnmarshalKey(key, rawVal) }
-func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
-	err := decode(v.Get(key), defaultDecoderConfig(rawVal))
+func UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConfigOption) error {
+	return v.UnmarshalKey(key, rawVal, opts...)
+}
+func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConfigOption) error {
+	err := decode(v.Get(key), defaultDecoderConfig(rawVal, opts...))
 
 	if err != nil {
 		return err
@@ -781,9 +806,11 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 
 // Unmarshal unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
-func Unmarshal(rawVal interface{}) error { return v.Unmarshal(rawVal) }
-func (v *Viper) Unmarshal(rawVal interface{}) error {
-	err := decode(v.AllSettings(), defaultDecoderConfig(rawVal))
+func Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error {
+	return v.Unmarshal(rawVal, opts...)
+}
+func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error {
+	err := decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
 
 	if err != nil {
 		return err
@@ -796,8 +823,8 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 
 // defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
 // of time.Duration values & string slices
-func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
-	return &mapstructure.DecoderConfig{
+func defaultDecoderConfig(output interface{}, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
+	c := &mapstructure.DecoderConfig{
 		Metadata:         nil,
 		Result:           output,
 		WeaklyTypedInput: true,
@@ -806,6 +833,10 @@ func defaultDecoderConfig(output interface{}) *mapstructure.DecoderConfig {
 			mapstructure.StringToSliceHookFunc(","),
 		),
 	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 // A wrapper around mapstructure.Decode that mimics the WeakDecode functionality
@@ -1747,18 +1778,14 @@ func (v *Viper) getConfigType() string {
 }
 
 func (v *Viper) getConfigFile() (string, error) {
-	// if explicitly set, then use it
-	if v.configFile != "" {
-		return v.configFile, nil
+	if v.configFile == "" {
+		cf, err := v.findConfigFile()
+		if err != nil {
+			return "", err
+		}
+		v.configFile = cf
 	}
-
-	cf, err := v.findConfigFile()
-	if err != nil {
-		return "", err
-	}
-
-	v.configFile = cf
-	return v.getConfigFile()
+	return v.configFile, nil
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {

@@ -7,6 +7,7 @@ package viper
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,6 +23,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
@@ -506,6 +508,42 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
+}
+
+func TestUnmarshalWithDecoderOptions(t *testing.T) {
+	Set("credentials", "{\"foo\":\"bar\"}")
+
+	opt := DecodeHook(mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		// Custom Decode Hook Function
+		func(rf reflect.Kind, rt reflect.Kind, data interface{}) (interface{}, error) {
+			if rf != reflect.String || rt != reflect.Map {
+				return data, nil
+			}
+			m := map[string]string{}
+			raw := data.(string)
+			if raw == "" {
+				return m, nil
+			}
+			return m, json.Unmarshal([]byte(raw), &m)
+		},
+	))
+
+	type config struct {
+		Credentials map[string]string
+	}
+
+	var C config
+
+	err := Unmarshal(&C, opt)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+
+	assert.Equal(t, &config{
+		Credentials: map[string]string{"foo": "bar"},
+	}, &C)
 }
 
 func TestBindPFlags(t *testing.T) {
@@ -1073,6 +1111,10 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("lagrenum != 765432101234567, = %d", pop)
 	}
 
+	if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
+		t.Fatalf("pop != 37890, = %d", pop)
+	}
+
 	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
 		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
 	}
@@ -1095,6 +1137,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if pop := v.GetInt("hello.lagrenum"); pop != 7654321001234567 {
 		t.Fatalf("lagrenum != 7654321001234567, = %d", pop)
+	}
+
+	if pop := v.GetInt32("hello.pop"); pop != int32(45000) {
+		t.Fatalf("pop != 45000, = %d", pop)
 	}
 
 	if pop := v.GetInt64("hello.lagrenum"); pop != int64(7654321001234567) {
