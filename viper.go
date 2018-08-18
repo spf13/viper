@@ -29,6 +29,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -480,6 +482,8 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 	return nil
 }
 
+var prefixIndexRE = regexp.MustCompile(`^([^\[]+)(?:\[(\d+)\])?$`)
+
 // searchMapWithPathPrefixes recursively searches for a value for path in source map.
 //
 // While searchMap() considers each path element as a single map key, this
@@ -500,6 +504,12 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
 
+		prefixIndex := prefixIndexRE.ReplaceAllString(prefixKey, "$2")
+		if prefixIndex != "" {
+			// remove the index from the key
+			prefixKey = prefixIndexRE.ReplaceAllString(prefixKey, "$1")
+		}
+
 		next, ok := source[prefixKey]
 		if ok {
 			// Fast path
@@ -509,13 +519,27 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 
 			// Nested case
 			var val interface{}
-			switch next.(type) {
+			switch n := next.(type) {
 			case map[interface{}]interface{}:
 				val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
 			case map[string]interface{}:
 				// Type assertion is safe here since it is only reached
 				// if the type of `next` is the same as the type being asserted
-				val = v.searchMapWithPathPrefixes(next.(map[string]interface{}), path[i:])
+				val = v.searchMapWithPathPrefixes(n, path[i:])
+			case []interface{}:
+				if prefixIndex != "" {
+					index, err := strconv.Atoi(prefixIndex)
+					if err == nil {
+						item := n[index]
+
+						switch nextItem := item.(type) {
+						case map[interface{}]interface{}:
+							val = v.searchMapWithPathPrefixes(cast.ToStringMap(nextItem), path[i:])
+						case map[string]interface{}:
+							val = v.searchMapWithPathPrefixes(nextItem, path[i:])
+						}
+					}
+				}
 			default:
 				// got a value but nested key expected, do nothing and look for next prefix
 			}
