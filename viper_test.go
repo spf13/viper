@@ -1400,6 +1400,39 @@ func TestParseNested(t *testing.T) {
 	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
 }
 
+func TestGetMapSliceItemWithIndex(t *testing.T) {
+	type duration struct {
+		Delay time.Duration
+	}
+
+	type item struct {
+		Name   string
+		Delay  time.Duration
+		Nested duration
+	}
+
+	config := `[[parent]]
+	delay="100ms"
+	[parent.nested]
+	delay="200ms"
+	
+	[[parent]]
+	delay="200ms"
+	[parent.nested]
+	delay="400ms"
+`
+	initConfig("toml", config)
+
+	firstNestedDelay := v.GetDuration("parent[0].delay")
+
+	assert.Equal(t, 100*time.Millisecond, firstNestedDelay)
+
+	secondNestedDelay := v.GetDuration("parent[1].nested.delay")
+
+	assert.Equal(t, 400*time.Millisecond, secondNestedDelay)
+
+}
+
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	initConfig(typ, config)
 	Set("RfD", true)
