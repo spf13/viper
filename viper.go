@@ -1782,3 +1782,26 @@ func (v *Viper) Debug() {
 	fmt.Printf("Config:\n%#v\n", v.config)
 	fmt.Printf("Defaults:\n%#v\n", v.defaults)
 }
+
+func SubSlice(key string) (out []*Viper) { return v.SubSlice(key) }
+func (v *Viper) SubSlice(key string) (out []*Viper) {
+	data := v.Get(key)
+
+	if data == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(data).Kind() != reflect.Slice {
+		return nil
+	}
+
+	for _, elem := range data.([]interface{}) {
+		subv := New()
+		if reflect.TypeOf(elem).Kind() == reflect.Map {
+			subv.config = cast.ToStringMap(elem)
+			out = append(out, subv)
+		}
+	}
+
+	return
+}
