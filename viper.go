@@ -648,8 +648,10 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToBool(val)
 		case string:
 			return cast.ToString(val)
-		case int64, int32, int16, int8, int:
+		case int32, int16, int8, int:
 			return cast.ToInt(val)
+		case int64:
+			return cast.ToInt64(val)
 		case float64, float32:
 			return cast.ToFloat64(val)
 		case time.Time:
