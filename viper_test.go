@@ -1415,6 +1415,10 @@ func TestGetMapSliceItemWithIndex(t *testing.T) {
 	delay="100ms"
 	[parent.nested]
 	delay="200ms"
+	[[parent.children]]
+	delay="300ms"
+	[parent.children.nested]
+	delay="500ms"
 	
 	[[parent]]
 	delay="200ms"
@@ -1431,6 +1435,13 @@ func TestGetMapSliceItemWithIndex(t *testing.T) {
 
 	assert.Equal(t, 400*time.Millisecond, secondNestedDelay)
 
+	crhildrenDelay := v.GetDuration("parent[0].children[0].delay")
+
+	assert.Equal(t, 300*time.Millisecond, crhildrenDelay)
+
+	deepNestedDelay := v.GetDuration("parent[0].children[0].nested.delay")
+
+	assert.Equal(t, 500*time.Millisecond, deepNestedDelay)
 }
 
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
