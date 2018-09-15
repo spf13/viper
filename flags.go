@@ -14,6 +14,7 @@ type FlagValue interface {
 	HasChanged() bool
 	Name() string
 	ValueString() string
+	ValueStringArray() []string
 	ValueType() string
 }
 
@@ -49,6 +50,11 @@ func (p pflagValue) Name() string {
 // ValueString returns the value of the flag as a string.
 func (p pflagValue) ValueString() string {
 	return p.flag.Value.String()
+}
+
+// ValueStringArray returns the value of the flag as []string.
+func (p pflagValue) ValueStringArray() []string {
+	return p.flag.Value.StringArray()
 }
 
 // ValueType returns the type of the flag as a string.
