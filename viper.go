@@ -664,6 +664,25 @@ func (v *Viper) Sub(key string) *Viper {
 	return nil
 }
 
+//Sub list returns new Viper instance List representing a sub tree of this instance.
+func SubList(key string) []*Viper { return v.SubList(key) }
+func (v *Viper) SubList(key string) []*Viper {
+	data := v.Get(key)
+	if data == nil {
+		return nil
+	}
+	var vList []*Viper
+	if reflect.TypeOf(data).Kind() == reflect.Slice {
+		for _, item := range data.([]interface{}) {
+			subv := New()
+			subv.config = cast.ToStringMap(item)
+			vList = append(vList, subv)
+		}
+		return vList
+	}
+	return nil
+}
+
 // GetString returns the value associated with the key as a string.
 func GetString(key string) string { return v.GetString(key) }
 func (v *Viper) GetString(key string) string {
