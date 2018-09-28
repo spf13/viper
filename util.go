@@ -88,16 +88,33 @@ func insensitiviseMap(m map[string]interface{}) {
 	}
 }
 
+func getEnv(key string) string {
+	if key == "HOME" && runtime.GOOS == "windows" {
+		home := os.Getenv(key)
+
+		if home != "" {
+			return home
+		}
+
+		home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+
+		if home != "" {
+			return home
+		}
+
+		return os.Getenv("USERPROFILE")
+	}
+
+	return os.Getenv(key)
+}
+
 func absPathify(inPath string) string {
 	jww.INFO.Println("Trying to resolve absolute path to", inPath)
 
-	if strings.HasPrefix(inPath, "$HOME") {
-		inPath = userHomeDir() + inPath[5:]
-	}
+	inPath = filepath.FromSlash(inPath)
 
-	if strings.HasPrefix(inPath, "$") {
-		end := strings.Index(inPath, string(os.PathSeparator))
-		inPath = os.Getenv(inPath[1:end]) + inPath[end:]
+	if strings.IndexRune(inPath, '$') >= 0 {
+		inPath = os.Expand(inPath, getEnv)
 	}
 
 	if filepath.IsAbs(inPath) {
@@ -133,6 +150,61 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func unmarshallConfigReader(in io.Reader, c map[string]interface{}, configType string) error {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(in)
+
+	switch strings.ToLower(configType) {
+	case "yaml", "yml":
+		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "json":
+		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "hcl":
+		obj, err := hcl.Parse(string(buf.Bytes()))
+		if err != nil {
+			return ConfigParseError{err}
+		}
+		if err = hcl.DecodeObject(&c, obj); err != nil {
+			return ConfigParseError{err}
+		}
+
+	case "toml":
+		tree, err := toml.LoadReader(buf)
+		if err != nil {
+			return ConfigParseError{err}
+		}
+		tmap := tree.ToMap()
+		for k, v := range tmap {
+			c[k] = v
+		}
+
+	case "properties", "props", "prop":
+		var p *properties.Properties
+		var err error
+		if p, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
+			return ConfigParseError{err}
+		}
+		for _, key := range p.Keys() {
+			value, _ := p.Get(key)
+			// recursively build nested maps
+			path := strings.Split(key, ".")
+			lastKey := strings.ToLower(path[len(path)-1])
+			deepestMap := deepSearch(c, path[0:len(path)-1])
+			// set innermost value
+			deepestMap[lastKey] = value
+		}
+	}
+
+	insensitiviseMap(c)
+	return nil
 }
 
 func userHomeDir() string {

@@ -12,8 +12,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	path "path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -186,9 +187,15 @@ func initHcl() {
 func initDirs(t *testing.T) (string, string, func()) {
 
 	var (
-		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+		testDirs []string
 		config   = `improbable`
 	)
+
+	if runtime.GOOS == "windows" {
+		testDirs = []string{`a a`, `b`, `D_`}
+	} else {
+		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+	}
 
 	root, err := ioutil.TempDir("", "")
 
