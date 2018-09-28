@@ -674,8 +674,10 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToBool(val)
 		case string:
 			return cast.ToString(val)
-		case int64, int32, int16, int8, int:
+		case int32, int16, int8, int:
 			return cast.ToInt(val)
+		case int64:
+			return cast.ToInt64(val)
 		case float64, float32:
 			return cast.ToFloat64(val)
 		case time.Time:
@@ -1165,7 +1167,7 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 	deepestMap[lastKey] = value
 }
 
-// Set sets the value for the key in the override regiser.
+// Set sets the value for the key in the override register.
 // Set is case-insensitive for a key.
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
