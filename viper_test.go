@@ -1454,7 +1454,7 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func
 	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
 	configFile := path.Join(watchDir, "config.yaml")
 	os.Symlink(path.Join(watchDir, "data", "config.yaml"), configFile)
-	fmt.Printf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
+	t.Logf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
 	// init Viper
 	v := New()
 	v.SetConfigFile(configFile)
