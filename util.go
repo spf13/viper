@@ -20,7 +20,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
-	jww "github.com/spf13/jWalterWeatherman"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
