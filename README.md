@@ -624,11 +624,11 @@ import (
 ) 
 
 func yamlStringSettings() string {
-    c := viper.AllSettings()
+	c := viper.AllSettings()
 	bs, err := yaml.Marshal(c)
 	if err != nil {
-        t.Fatalf("unable to marshal config to YAML: %v", err)
-    }
+		t.Fatalf("unable to marshal config to YAML: %v", err)
+	}
 	return string(bs)
 }
 ```
