@@ -453,6 +453,17 @@ func TestAllKeys(t *testing.T) {
 	assert.Equal(t, all, AllSettings())
 }
 
+func TestRequireKeys(t *testing.T) {
+	initJSON()
+	presentKeys := []string{"id", "type", "name", "ppu", "batters"}
+	for _, key := range presentKeys {
+		_, err := Require(key)
+		assert.NoError(t, err)
+	}
+	_, err := Require("nope")
+	assert.EqualError(t, err, "key nope is not set")
+}
+
 func TestAllKeysWithEnv(t *testing.T) {
 	v := New()
 
@@ -642,6 +653,7 @@ func TestBindPFlag(t *testing.T) {
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
+	initConfigs()
 	assert.Equal(t, "brown", Get("eyes"))
 
 	BindEnv("eYEs", "TURTLE_EYES")
