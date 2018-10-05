@@ -186,7 +186,7 @@ type Viper struct {
 	envPrefix  string
 
 	automaticEnvApplied bool
-	envKeyReplacer      *strings.Replacer
+	envKeyReplacer      replacer
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -1084,11 +1084,16 @@ func (v *Viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
 }
 
-// SetEnvKeyReplacer sets the strings.Replacer on the viper object
+// replacer is the interface that a replacement algorithm needs to implement.
+type replacer interface {
+	Replace(s string) string
+}
+
+// SetEnvKeyReplacer sets the replacer on the viper object
 // Useful for mapping an environmental variable to a key that does
 // not match it.
-func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
-func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
+func SetEnvKeyReplacer(r replacer) { v.SetEnvKeyReplacer(r) }
+func (v *Viper) SetEnvKeyReplacer(r replacer) {
 	v.envKeyReplacer = r
 }
 
