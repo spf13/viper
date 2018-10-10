@@ -1510,6 +1510,44 @@ func TestWatchFile(t *testing.T) {
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 
+	t.Run("file content changed after cancel", func(t *testing.T) {
+		// given a `config.yaml` file being watched
+		v, configFile, cleanup := newViperWithConfigFile(t)
+		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+		t.Logf("test config file: %s\n", configFile)
+
+		// first run through with watching enabled
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		v.OnConfigChange(func(in fsnotify.Event) {
+			t.Logf("WatchConfig saw first config change")
+			wg.Done()
+		})
+		v.WatchConfig()
+		// when overwriting the file and waiting for the custom change notification handler to be triggered
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
+		wg.Wait()
+		// then the config value should have changed
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+
+		// cancel and wait for the canceling to finish.
+		waitForCancel := v.CancelWatchConfig()
+		v.OnConfigChange(func(in fsnotify.Event) {
+			t.Error("CancelWatchConfig did not prevent second change from being seen.")
+		})
+		waitForCancel()
+
+		err = ioutil.WriteFile(configFile, []byte("foo: quz\n"), 0640)
+		// We need to sleep a bit here because there isn't any signal of use for this invisible write.
+		time.Sleep(30 * time.Millisecond)
+
+		// the config value should still be the same.
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"), "CancelWatchConfig did not prevent second change from being seen.")
+	})
 }
 
 func BenchmarkGetBool(b *testing.B) {

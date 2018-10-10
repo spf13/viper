@@ -123,6 +123,9 @@ viper.OnConfigChange(func(e fsnotify.Event) {
 })
 ```
 
+If you wish to stop watching the configPaths, simply call viper.CancelWatchConfig().
+Note: This might be necessary if your tests involve trying out various config files.
+
 ### Reading Config from io.Reader
 
 Viper predefines many configuration sources such as files, environment
