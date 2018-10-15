@@ -34,7 +34,6 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
@@ -156,10 +155,6 @@ type Viper struct {
 	env            map[string]string
 	aliases        map[string]string
 	typeByDefValue bool
-
-	// Store read properties on the object so that we can write back in order with comments.
-	// This will only be used if the configuration read is a properties file.
-	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
 }
