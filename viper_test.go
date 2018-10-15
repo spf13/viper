@@ -12,57 +12,24 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-var yamlExample = []byte(`Hacker: true
-name: steve
-hobbies:
-- skateboarding
-- snowboarding
-- go
-clothing:
-  jacket: leather
-  trousers: denim
-  pants:
-    size: large
-age: 35
-eyes : brown
-beard: true
-`)
-
-var yamlExampleWithExtras = []byte(`Existing: true
-Bogus: true
-`)
 
 type testUnmarshalExtra struct {
 	Existing bool
 }
-
-var tomlExample = []byte(`
-title = "TOML Example"
-
-[owner]
-organization = "MongoDB"
-Bio = "MongoDB Chief Developer Advocate & Hacker at Large"
-dob = 1979-05-27T07:32:00Z # First class dates? Why not?`)
 
 var jsonExample = []byte(`{
 "id": "0001",
@@ -79,66 +46,13 @@ var jsonExample = []byte(`{
     }
 }`)
 
-var hclExample = []byte(`
-id = "0001"
-type = "donut"
-name = "Cake"
-ppu = 0.55
-foos {
-	foo {
-		key = 1
-	}
-	foo {
-		key = 2
-	}
-	foo {
-		key = 3
-	}
-	foo {
-		key = 4
-	}
-}`)
-
-var propertiesExample = []byte(`
-p_id: 0001
-p_type: donut
-p_name: Cake
-p_ppu: 0.55
-p_batters.batter.type: Regular
-`)
-
-var remoteExample = []byte(`{
-"id":"0002",
-"type":"cronut",
-"newkey":"remote"
-}`)
-
 func initConfigs() {
 	Reset()
 	var r io.Reader
-	SetConfigType("yaml")
-	r = bytes.NewReader(yamlExample)
-	unmarshalReader(r, v.config)
 
 	SetConfigType("json")
 	r = bytes.NewReader(jsonExample)
 	unmarshalReader(r, v.config)
-
-	SetConfigType("hcl")
-	r = bytes.NewReader(hclExample)
-	unmarshalReader(r, v.config)
-
-	SetConfigType("properties")
-	r = bytes.NewReader(propertiesExample)
-	unmarshalReader(r, v.config)
-
-	SetConfigType("toml")
-	r = bytes.NewReader(tomlExample)
-	unmarshalReader(r, v.config)
-
-	SetConfigType("json")
-	remote := bytes.NewReader(remoteExample)
-	unmarshalReader(remote, v.kvstore)
 }
 
 func initConfig(typ, config string) {
@@ -151,38 +65,10 @@ func initConfig(typ, config string) {
 	}
 }
 
-func initYAML() {
-	initConfig("yaml", string(yamlExample))
-}
-
 func initJSON() {
 	Reset()
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
-
-	unmarshalReader(r, v.config)
-}
-
-func initProperties() {
-	Reset()
-	SetConfigType("properties")
-	r := bytes.NewReader(propertiesExample)
-
-	unmarshalReader(r, v.config)
-}
-
-func initTOML() {
-	Reset()
-	SetConfigType("toml")
-	r := bytes.NewReader(tomlExample)
-
-	unmarshalReader(r, v.config)
-}
-
-func initHcl() {
-	Reset()
-	SetConfigType("hcl")
-	r := bytes.NewReader(hclExample)
 
 	unmarshalReader(r, v.config)
 }
@@ -249,52 +135,6 @@ func (s *stringValue) String() string {
 	return fmt.Sprintf("%s", *s)
 }
 
-func TestBasics(t *testing.T) {
-	SetConfigFile("/tmp/config.yaml")
-	filename, err := v.getConfigFile()
-	assert.Equal(t, "/tmp/config.yaml", filename)
-	assert.NoError(t, err)
-}
-
-func TestDefault(t *testing.T) {
-	SetDefault("age", 45)
-	assert.Equal(t, 45, Get("age"))
-
-	SetDefault("clothing.jacket", "slacks")
-	assert.Equal(t, "slacks", Get("clothing.jacket"))
-
-	SetConfigType("yaml")
-	err := ReadConfig(bytes.NewBuffer(yamlExample))
-
-	assert.NoError(t, err)
-	assert.Equal(t, "leather", Get("clothing.jacket"))
-}
-
-func TestUnmarshaling(t *testing.T) {
-	SetConfigType("yaml")
-	r := bytes.NewReader(yamlExample)
-
-	unmarshalReader(r, v.config)
-	assert.True(t, InConfig("name"))
-	assert.False(t, InConfig("state"))
-	assert.Equal(t, "steve", Get("name"))
-	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, Get("clothing"))
-	assert.Equal(t, 35, Get("age"))
-}
-
-func TestUnmarshalExact(t *testing.T) {
-	vip := New()
-	target := &testUnmarshalExtra{}
-	vip.SetConfigType("yaml")
-	r := bytes.NewReader(yamlExampleWithExtras)
-	vip.ReadConfig(r)
-	err := vip.UnmarshalExact(target)
-	if err == nil {
-		t.Fatal("UnmarshalExact should error when populating a struct from a conf that contains unused fields")
-	}
-}
-
 func TestOverrides(t *testing.T) {
 	Set("age", 40)
 	assert.Equal(t, 40, Get("age"))
@@ -322,50 +162,9 @@ func TestAliasInConfigFile(t *testing.T) {
 	assert.Equal(t, false, Get("beard"))
 }
 
-func TestYML(t *testing.T) {
-	initYAML()
-	assert.Equal(t, "steve", Get("name"))
-}
-
 func TestJSON(t *testing.T) {
 	initJSON()
 	assert.Equal(t, "0001", Get("id"))
-}
-
-func TestProperties(t *testing.T) {
-	initProperties()
-	assert.Equal(t, "0001", Get("p_id"))
-}
-
-func TestTOML(t *testing.T) {
-	initTOML()
-	assert.Equal(t, "TOML Example", Get("title"))
-}
-
-func TestHCL(t *testing.T) {
-	initHcl()
-	assert.Equal(t, "0001", Get("id"))
-	assert.Equal(t, 0.55, Get("ppu"))
-	assert.Equal(t, "donut", Get("type"))
-	assert.Equal(t, "Cake", Get("name"))
-	Set("id", "0002")
-	assert.Equal(t, "0002", Get("id"))
-	assert.NotEqual(t, "cronut", Get("type"))
-}
-
-func TestRemotePrecedence(t *testing.T) {
-	initJSON()
-
-	remote := bytes.NewReader(remoteExample)
-	assert.Equal(t, "0001", Get("id"))
-	unmarshalReader(remote, v.kvstore)
-	assert.Equal(t, "0001", Get("id"))
-	assert.NotEqual(t, "cronut", Get("type"))
-	assert.Equal(t, "remote", Get("newkey"))
-	Set("newkey", "newvalue")
-	assert.NotEqual(t, "remote", Get("newkey"))
-	assert.Equal(t, "newvalue", Get("newkey"))
-	Set("newkey", "remote")
 }
 
 func TestEnv(t *testing.T) {
@@ -786,31 +585,6 @@ func TestFindsNestedKeys(t *testing.T) {
 
 }
 
-func TestReadBufConfig(t *testing.T) {
-	v := New()
-	v.SetConfigType("yaml")
-	v.ReadConfig(bytes.NewBuffer(yamlExample))
-	t.Log(v.AllKeys())
-
-	assert.True(t, v.InConfig("name"))
-	assert.False(t, v.InConfig("state"))
-	assert.Equal(t, "steve", v.Get("name"))
-	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, v.Get("clothing"))
-	assert.Equal(t, 35, v.Get("age"))
-}
-
-func TestIsSet(t *testing.T) {
-	v := New()
-	v.SetConfigType("yaml")
-	v.ReadConfig(bytes.NewBuffer(yamlExample))
-	assert.True(t, v.IsSet("clothing.jacket"))
-	assert.False(t, v.IsSet("clothing.jackets"))
-	assert.False(t, v.IsSet("helloworld"))
-	v.Set("helloworld", "fubar")
-	assert.True(t, v.IsSet("helloworld"))
-}
-
 func TestDirsSearch(t *testing.T) {
 
 	root, config, cleanup := initDirs(t)
@@ -873,70 +647,6 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
 
-func TestSub(t *testing.T) {
-	v := New()
-	v.SetConfigType("yaml")
-	v.ReadConfig(bytes.NewBuffer(yamlExample))
-
-	subv := v.Sub("clothing")
-	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
-
-	subv = v.Sub("clothing.pants")
-	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
-
-	subv = v.Sub("clothing.pants.size")
-	assert.Equal(t, (*Viper)(nil), subv)
-
-	subv = v.Sub("missing.key")
-	assert.Equal(t, (*Viper)(nil), subv)
-}
-
-var hclWriteExpected = []byte(`"foos" = {
-  "foo" = {
-    "key" = 1
-  }
-
-  "foo" = {
-    "key" = 2
-  }
-
-  "foo" = {
-    "key" = 3
-  }
-
-  "foo" = {
-    "key" = 4
-  }
-}
-
-"id" = "0001"
-
-"name" = "Cake"
-
-"ppu" = 0.55
-
-"type" = "donut"`)
-
-func TestWriteConfigHCL(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("hcl")
-	err := v.ReadConfig(bytes.NewBuffer(hclExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.hcl"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.hcl")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, hclWriteExpected, read)
-}
-
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
@@ -987,211 +697,6 @@ p_ppu = 0.55
 p_batters.batter.type = Regular
 `)
 
-func TestWriteConfigProperties(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("properties")
-	err := v.ReadConfig(bytes.NewBuffer(propertiesExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.properties"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.properties")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, propertiesWriteExpected, read)
-}
-
-func TestWriteConfigTOML(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	v := New()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("toml")
-	err := v.ReadConfig(bytes.NewBuffer(tomlExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.toml"); err != nil {
-		t.Fatal(err)
-	}
-
-	// The TOML String method does not order the contents.
-	// Therefore, we must read the generated file and compare the data.
-	v2 := New()
-	v2.SetFs(fs)
-	v2.SetConfigName("c")
-	v2.SetConfigType("toml")
-	v2.SetConfigFile("c.toml")
-	err = v2.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
-	assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
-	assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
-	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
-}
-
-var yamlWriteExpected = []byte(`age: 35
-beard: true
-clothing:
-  jacket: leather
-  pants:
-    size: large
-  trousers: denim
-eyes: brown
-hacker: true
-hobbies:
-- skateboarding
-- snowboarding
-- go
-name: steve
-`)
-
-func TestWriteConfigYAML(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("yaml")
-	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.yaml"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, yamlWriteExpected, read)
-}
-
-var yamlMergeExampleTgt = []byte(`
-hello:
-    pop: 37890
-    lagrenum: 765432101234567
-    world:
-    - us
-    - uk
-    - fr
-    - de
-`)
-
-var yamlMergeExampleSrc = []byte(`
-hello:
-    pop: 45000
-    lagrenum: 7654321001234567
-    universe:
-    - mw
-    - ad
-fu: bar
-`)
-
-func TestMergeConfig(t *testing.T) {
-	v := New()
-	v.SetConfigType("yml")
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 37890 {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
-
-	if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
-
-	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
-		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
-
-	if fu := v.GetString("fu"); fu != "" {
-		t.Fatalf("fu != \"\", = %s", fu)
-	}
-
-	if err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 45000 {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if pop := v.GetInt32("hello.pop"); pop != int32(45000) {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if pop := v.GetInt64("hello.lagrenum"); pop != int64(7654321001234567) {
-		t.Fatalf("int64 lagrenum != 7654321001234567, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
-
-	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
-		t.Fatalf("len(universe) != 2, = %d", len(universe))
-	}
-
-	if fu := v.GetString("fu"); fu != "bar" {
-		t.Fatalf("fu != \"bar\", = %s", fu)
-	}
-}
-
-func TestMergeConfigNoMerge(t *testing.T) {
-	v := New()
-	v.SetConfigType("yml")
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 37890 {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
-
-	if fu := v.GetString("fu"); fu != "" {
-		t.Fatalf("fu != \"\", = %s", fu)
-	}
-
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 45000 {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 0 {
-		t.Fatalf("len(world) != 0, = %d", len(world))
-	}
-
-	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
-		t.Fatalf("len(universe) != 2, = %d", len(universe))
-	}
-
-	if fu := v.GetString("fu"); fu != "bar" {
-		t.Fatalf("fu != \"bar\", = %s", fu)
-	}
-}
-
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)
@@ -1215,16 +720,6 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 	}
 
 	assert.Equal(t, &config{ID: 1, FirstName: "Steve", Surname: "Owen"}, &C)
-}
-
-func TestSetConfigNameClearsFileCache(t *testing.T) {
-	SetConfigFile("/tmp/config.yaml")
-	SetConfigName("default")
-	f, err := v.getConfigFile()
-	if err == nil {
-		t.Fatalf("config file cache should have been cleared")
-	}
-	assert.Empty(t, f)
 }
 
 func TestShadowedNestedValue(t *testing.T) {
@@ -1262,51 +757,6 @@ func TestDotParameter(t *testing.T) {
 	actual := Get("batters.batter")
 	expected := []interface{}{map[string]interface{}{"type": "Small"}}
 	assert.Equal(t, expected, actual)
-}
-
-func TestCaseInsensitive(t *testing.T) {
-	for _, config := range []struct {
-		typ     string
-		content string
-	}{
-		{"yaml", `
-aBcD: 1
-eF:
-  gH: 2
-  iJk: 3
-  Lm:
-    nO: 4
-    P:
-      Q: 5
-      R: 6
-`},
-		{"json", `{
-  "aBcD": 1,
-  "eF": {
-    "iJk": 3,
-    "Lm": {
-      "P": {
-        "Q": 5,
-        "R": 6
-      },
-      "nO": 4
-    },
-    "gH": 2
-  }
-}`},
-		{"toml", `aBcD = 1
-[eF]
-gH = 2
-iJk = 3
-[eF.Lm]
-nO = 4
-[eF.Lm.P]
-Q = 5
-R = 6
-`},
-	} {
-		doTestCaseInsensitive(t, config.typ, config.content)
-	}
 }
 
 func TestCaseInsensitiveSet(t *testing.T) {
@@ -1368,35 +818,6 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	}
 }
 
-func TestParseNested(t *testing.T) {
-	type duration struct {
-		Delay time.Duration
-	}
-
-	type item struct {
-		Name   string
-		Delay  time.Duration
-		Nested duration
-	}
-
-	config := `[[parent]]
-	delay="100ms"
-	[parent.nested]
-	delay="200ms"
-`
-	initConfig("toml", config)
-
-	var items []item
-	err := v.UnmarshalKey("parent", &items)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
-
-	assert.Equal(t, 1, len(items))
-	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
-	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
-}
-
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	initConfig(typ, config)
 	Set("RfD", true)
@@ -1408,107 +829,6 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
-
-}
-
-func newViperWithConfigFile(t *testing.T) (*Viper, string, func()) {
-	watchDir, err := ioutil.TempDir("", "")
-	require.Nil(t, err)
-	configFile := path.Join(watchDir, "config.yaml")
-	err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0640)
-	require.Nil(t, err)
-	cleanup := func() {
-		os.RemoveAll(watchDir)
-	}
-	v := New()
-	v.SetConfigFile(configFile)
-	err = v.ReadInConfig()
-	require.Nil(t, err)
-	require.Equal(t, "bar", v.Get("foo"))
-	return v, configFile, cleanup
-}
-
-func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func()) {
-	watchDir, err := ioutil.TempDir("", "")
-	require.Nil(t, err)
-	dataDir1 := path.Join(watchDir, "data1")
-	err = os.Mkdir(dataDir1, 0777)
-	require.Nil(t, err)
-	realConfigFile := path.Join(dataDir1, "config.yaml")
-	t.Logf("Real config file location: %s\n", realConfigFile)
-	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0640)
-	require.Nil(t, err)
-	cleanup := func() {
-		os.RemoveAll(watchDir)
-	}
-	// now, symlink the tm `data1` dir to `data` in the baseDir
-	os.Symlink(dataDir1, path.Join(watchDir, "data"))
-	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
-	configFile := path.Join(watchDir, "config.yaml")
-	os.Symlink(path.Join(watchDir, "data", "config.yaml"), configFile)
-	t.Logf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
-	// init Viper
-	v := New()
-	v.SetConfigFile(configFile)
-	err = v.ReadInConfig()
-	require.Nil(t, err)
-	require.Equal(t, "bar", v.Get("foo"))
-	return v, watchDir, configFile, cleanup
-}
-
-func TestWatchFile(t *testing.T) {
-
-	t.Run("file content changed", func(t *testing.T) {
-		// given a `config.yaml` file being watched
-		v, configFile, cleanup := newViperWithConfigFile(t)
-		defer cleanup()
-		_, err := os.Stat(configFile)
-		require.NoError(t, err)
-		t.Logf("test config file: %s\n", configFile)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		v.OnConfigChange(func(in fsnotify.Event) {
-			t.Logf("config file changed")
-			wg.Done()
-		})
-		v.WatchConfig()
-		// when overwriting the file and waiting for the custom change notification handler to be triggered
-		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
-		wg.Wait()
-		// then the config value should have changed
-		require.Nil(t, err)
-		assert.Equal(t, "baz", v.Get("foo"))
-	})
-
-	t.Run("link to real file changed (à la Kubernetes)", func(t *testing.T) {
-		// skip if not executed on Linux
-		if runtime.GOOS != "linux" {
-			t.Skipf("Skipping test as symlink replacements don't work on non-linux environment...")
-		}
-		v, watchDir, _, _ := newViperWithSymlinkedConfigFile(t)
-		// defer cleanup()
-		wg := sync.WaitGroup{}
-		v.WatchConfig()
-		v.OnConfigChange(func(in fsnotify.Event) {
-			t.Logf("config file changed")
-			wg.Done()
-		})
-		wg.Add(1)
-		// when link to another `config.yaml` file
-		dataDir2 := path.Join(watchDir, "data2")
-		err := os.Mkdir(dataDir2, 0777)
-		require.Nil(t, err)
-		configFile2 := path.Join(dataDir2, "config.yaml")
-		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0640)
-		require.Nil(t, err)
-		// change the symlink using the `ln -sfn` command
-		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
-		require.Nil(t, err)
-		wg.Wait()
-		// then
-		require.Nil(t, err)
-		assert.Equal(t, "baz", v.Get("foo"))
-	})
 
 }
 
