@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 	"unicode"
+	"regexp"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
@@ -218,4 +219,20 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 		m = m3
 	}
 	return m
+}
+// We look up a environmental variable if it looks like '${HOME}'
+func lookupEnvByValue(s string) string {
+	match, err := regexp.MatchString("\\${[A-Za-z_-]+}", s)
+	if (err != nil) {
+		fmt.Println(match, err)
+	}
+	if (match) {	
+		re := regexp.MustCompile("(\\$|{|}|)")
+		clean := re.ReplaceAllString(s, "")
+		env := os.Getenv(clean)
+		if ( env != "" ) {
+			return  env
+		}
+	}
+	return s
 }

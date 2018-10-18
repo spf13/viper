@@ -715,6 +715,12 @@ func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
+// GetStringEnv returns the value of the environmental variable associated with the key as a string.
+func GetStringEnv(key string) string { return lookupEnvByValue(v.GetString(key)) }
+func (v *Viper) GetStringEnv(key string) string {
+	return lookupEnvByValue(cast.ToString(v.Get(key)))
+}
+
 // GetBool returns the value associated with the key as a boolean.
 func GetBool(key string) bool { return v.GetBool(key) }
 func (v *Viper) GetBool(key string) bool {
