@@ -1329,7 +1329,9 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
+	if _, err := buf.ReadFrom(in); err != nil {
+		return ConfigParseError{err}
+	}
 
 	switch strings.ToLower(v.getConfigType()) {
 	case "yaml", "yml":
