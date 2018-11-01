@@ -606,11 +606,13 @@ type config struct {
 
 var C config
 
-err := Unmarshal(&C)
+err := viper.Unmarshal(&C)
 if err != nil {
 	t.Fatalf("unable to decode into struct, %v", err)
 }
 ```
+
+`mapstructure` is the only supported tag.
 
 ### Marshalling to string
 
