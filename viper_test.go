@@ -256,6 +256,14 @@ func TestBasics(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDefaultMap(t *testing.T) {
+	var d map[string]interface{}
+	d = map[string]interface{}{"height": 45,"clothing.hat": "slacks"}
+	SetDefaults(d)
+	assert.Equal(t, 45, Get("height"))
+	assert.Equal(t, "slacks", Get("clothing.hat"))
+}
+
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))

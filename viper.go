@@ -1153,6 +1153,12 @@ func (v *Viper) InConfig(key string) bool {
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
+func SetDefaults(defaults map[string]interface{}) {
+	// Permits storing defaults in a horrible horrible way.
+	for key, val := range defaults {
+		v.SetDefault(key, val)
+	}
+}
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
