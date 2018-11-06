@@ -391,6 +391,22 @@ func TestEmptyEnv(t *testing.T) {
 
 	os.Setenv("TYPE", "")
 
+	assert.Equal(t, "donut", Get("type"))
+	assert.Equal(t, "Cake", Get("name"))
+}
+
+func TestEmptyEnv_Allowed(t *testing.T) {
+	initJSON()
+
+	AllowEmptyEnv(true)
+
+	BindEnv("type") // Empty environment variable
+	BindEnv("name") // Bound, but not set environment variable
+
+	os.Clearenv()
+
+	os.Setenv("TYPE", "")
+
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
 }

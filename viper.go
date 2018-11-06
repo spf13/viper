@@ -169,6 +169,7 @@ type Viper struct {
 
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
+	allowEmptyEnv       bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -330,6 +331,14 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 	return strings.ToUpper(in)
 }
 
+// AllowEmptyEnv tells Viper to consider set,
+// but empty environment variables as valid values instead of falling back.
+// For backward compatibility reasons this is false by default.
+func AllowEmptyEnv(allowEmptyEnv bool) { v.AllowEmptyEnv(allowEmptyEnv) }
+func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
+	v.allowEmptyEnv = allowEmptyEnv
+}
+
 // TODO: should getEnv logic be moved into find(). Can generalize the use of
 // rewriting keys many things, Ex: Get('someKey') -> some_key
 // (camel case to snake case for JSON keys perhaps)
@@ -341,7 +350,10 @@ func (v *Viper) getEnv(key string) (string, bool) {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
-	return os.LookupEnv(key)
+
+	val, ok := os.LookupEnv(key)
+
+	return val, ok && (v.allowEmptyEnv || val != "")
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
