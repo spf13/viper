@@ -51,6 +51,7 @@ beard: true
 var yamlExampleWithEnv = []byte(`
 home: '${HOME_STUFF}'
 undefined: '${UNDEFINED}'
+theclown: ${HOME_STUFF}
 `)
 
 var yamlExampleWithExtras = []byte(`Existing: true
@@ -451,6 +452,8 @@ func TestGetStringEnv(t *testing.T) {
 	v.ReadConfig(bytes.NewBuffer(yamlExampleWithEnv))
 	value := v.GetStringEnv("home")
 	// defined env variables are interpolated
+	assert.Equal(t, ".", value)
+	value = v.GetStringEnv("theclown")
 	assert.Equal(t, ".", value)
 	// undefined env variables are untouched
 	undefined_value := v.GetStringEnv("undefined")

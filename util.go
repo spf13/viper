@@ -222,14 +222,12 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 }
 // We look up a environmental variable if it looks like '${HOME}'
 func lookupEnvByValue(s string) string {
-	match, err := regexp.MatchString("\\${[A-Za-z_-]+}", s)
+	match, err := regexp.MatchString("(\\$[A-Za-z_-]+|\\${[A-Za-z_-]+})", s)
 	if (err != nil) {
 		fmt.Println(match, err)
 	}
 	if (match) {	
-		re := regexp.MustCompile("(\\$|{|}|)")
-		clean := re.ReplaceAllString(s, "")
-		env := os.Getenv(clean)
+		env := os.ExpandEnv(s)
 		if ( env != "" ) {
 			return  env
 		}
