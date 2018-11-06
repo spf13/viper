@@ -851,8 +851,8 @@ func decode(input interface{}, config *mapstructure.DecoderConfig) error {
 
 // UnmarshalExact unmarshals the config into a Struct, erroring if a field is nonexistent
 // in the destination struct.
-func (v *Viper) UnmarshalExact(rawVal interface{}) error {
-	config := defaultDecoderConfig(rawVal)
+func (v *Viper) UnmarshalExact(rawVal interface{}, opts ...DecoderConfigOption) error {
+	config := defaultDecoderConfig(rawVal, opts...)
 	config.ErrorUnused = true
 
 	err := decode(v.AllSettings(), config)
