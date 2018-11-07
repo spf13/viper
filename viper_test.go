@@ -500,6 +500,39 @@ func TestAllKeysWithEnv(t *testing.T) {
 	assert.Equal(t, expectedKeys, keys)
 }
 
+func TestAllSettingsWithDelimiterInKeys(t *testing.T) {
+	exampleYaml := `Hacker: true
+name: steve
+hobbies:
+- skate.boarding
+- snowboarding
+clothing.summer:
+  jacket: leather
+  pants:
+    size: large
+clothing.winter:
+  jacket: wool
+  pants:
+    size: medium
+`
+	v := New()
+	v.SetConfigType("yaml")
+	r := strings.NewReader(exampleYaml)
+
+	if err := v.unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	expectedAll := map[string]interface{}{"hacker": true, "name": "steve", "hobbies": []interface{}{"skate.boarding", "snowboarding"}, "clothing.summer": map[string]interface{}{"jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "clothing.winter": map[string]interface{}{"jacket": "wool", "pants": map[string]interface{}{"size": "medium"}}}
+	expectedKeys := sort.StringSlice{"hacker", "name", "hobbies", "clothing.summer.jacket", "clothing.summer.pants.size", "clothing.winter.jacket", "clothing.winter.pants.size"}
+	expectedKeys.Sort()
+	keys := sort.StringSlice(v.AllKeys())
+	keys.Sort()
+
+	assert.Equal(t, expectedKeys, keys)
+	assert.Equal(t, expectedAll, v.AllSettings())
+}
+
 func TestAliasesOfAliases(t *testing.T) {
 	Set("Title", "Checking Case")
 	RegisterAlias("Foo", "Bar")
