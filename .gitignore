@@ -27,3 +27,4 @@ _testmain.go
 
 # exclude dependencies in the `/vendor` folder
 vendor
+.idea/
