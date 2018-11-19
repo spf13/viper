@@ -103,14 +103,13 @@ if err != nil { // Handle errors reading the config file
 }
 ```
 
-Alternatively (or in addition), the path to a specific config file,
-rather than to a directory containing config files, can be provided.
+Alternatively (or in addition), the path to a specific config file can be provided (instead of a directory).
 
 ```go
 viper.SetConfigFile("$HOME/customconfig.toml") // explicitly add a specific config file
 err := viper.ReadInConfig() // read the config file
 if err != nil { // Handle errors reading the config file
-	panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	panic(fmt.Errorf("Fatal error while loading config file: %s \n", err))
 }
 ```
 
