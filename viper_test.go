@@ -391,15 +391,19 @@ func TestEnv(t *testing.T) {
 func TestEmptyEnv(t *testing.T) {
 	initJSON()
 
+	os.Unsetenv("TYPE")
+	os.Unsetenv("NAME")
+
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
-
-	os.Clearenv()
 
 	os.Setenv("TYPE", "")
 
 	assert.Equal(t, "donut", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
+
+	os.Unsetenv("TYPE")
+	os.Unsetenv("NAME")
 }
 
 func TestEmptyEnv_Allowed(t *testing.T) {
@@ -407,15 +411,19 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 
 	AllowEmptyEnv(true)
 
+	os.Unsetenv("TYPE")
+	os.Unsetenv("NAME")
+
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
-
-	os.Clearenv()
 
 	os.Setenv("TYPE", "")
 
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
+
+	os.Unsetenv("TYPE")
+	os.Unsetenv("NAME")
 }
 
 func TestEnvPrefix(t *testing.T) {
@@ -1560,7 +1568,7 @@ func TestWatchFile(t *testing.T) {
 		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
 		wg.Wait()
 		// then the config value should have changed
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 
@@ -1581,16 +1589,16 @@ func TestWatchFile(t *testing.T) {
 		// when link to another `config.yaml` file
 		dataDir2 := path.Join(watchDir, "data2")
 		err := os.Mkdir(dataDir2, 0777)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		configFile2 := path.Join(dataDir2, "config.yaml")
 		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0640)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
-		require.Nil(t, err)
+		require.NoError(t, err)
 		wg.Wait()
 		// then
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 
