@@ -650,7 +650,7 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
 			}
 			if changed {
-				assert.Equal(t, testValue.Expected, val.StringSlice)
+				assert.EqualValues(t, testValue.Expected, val.StringSlice)
 			} else {
 				assert.Equal(t, defaultVal, val.StringSlice)
 			}
