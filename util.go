@@ -114,10 +114,10 @@ func absPathify(inPath string) string {
 	return ""
 }
 
-// Check if File / Directory Exists
-func exists(fs afero.Fs, path string) (bool, error) {
-	_, err := fs.Stat(path)
-	if err == nil {
+// isRegular returns true if path exists and is a regular file.
+func isRegular(fs afero.Fs, path string) (bool, error) {
+	info, err := fs.Stat(path)
+	if err == nil && info.Mode().IsRegular() {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
