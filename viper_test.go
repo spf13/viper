@@ -1079,6 +1079,11 @@ hello:
     - uk
     - fr
     - de
+list:
+- one
+list2:
+- name: name1
+  value: value1
 `)
 
 var yamlMergeExampleSrc = []byte(`
@@ -1088,6 +1093,14 @@ hello:
     universe:
     - mw
     - ad
+list:
+- two
+- three
+list2:
+- name: name2
+  value: value2
+- name: name3
+  value: value3
 fu: bar
 `)
 
@@ -1118,6 +1131,18 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("fu != \"\", = %s", fu)
 	}
 
+	if list := v.GetStringSlice("list"); len(list) != 1 {
+		t.Fatalf("len(list) != 1, = %d", len(list))
+	}
+
+	list2 := []interface{}{}
+	if err := v.UnmarshalKey("list2", &list2); err != nil {
+		t.Fatal(err)
+	}
+	if len(list2) != 1 {
+		t.Fatalf("len(list2) != 1, = %d", len(list2))
+	}
+
 	if err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
 		t.Fatal(err)
 	}
@@ -1144,6 +1169,18 @@ func TestMergeConfig(t *testing.T) {
 
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
+	}
+
+	if list := v.GetStringSlice("list"); len(list) != 3 {
+		t.Fatalf("len(list) != 3, = %d", len(list))
+	}
+
+	list2 = []interface{}{}
+	if err := v.UnmarshalKey("list2", &list2); err != nil {
+		t.Fatal(err)
+	}
+	if len(list2) != 3 {
+		t.Fatalf("len(list2) != 3, = %d", len(list2))
 	}
 }
 

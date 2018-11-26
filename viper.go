@@ -1510,6 +1510,12 @@ func mergeMaps(
 		case map[string]interface{}:
 			jww.TRACE.Printf("merging maps")
 			mergeMaps(sv.(map[string]interface{}), ttv, nil)
+		case []interface{}:
+			jww.TRACE.Printf("merging slices")
+			tgt[tk] = append(tgt[tk].([]interface{}), sv.([]interface{})...)
+			if itgt != nil {
+				itgt[tk] = append(itgt[tk].([]interface{}), sv.([]interface{})...)
+			}
 		default:
 			jww.TRACE.Printf("setting value")
 			tgt[tk] = sv
