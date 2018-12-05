@@ -1230,6 +1230,41 @@ func TestMergeConfigNoMerge(t *testing.T) {
 	}
 }
 
+func TestMergeConfigMap(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	assert := func(i int) {
+		large := v.GetInt("hello.lagrenum")
+		pop := v.GetInt("hello.pop")
+		if large != 765432101234567 {
+			t.Fatal("Got large num:", large)
+		}
+
+		if pop != i {
+			t.Fatal("Got pop:", pop)
+		}
+	}
+
+	assert(37890)
+
+	update := map[string]interface{}{
+		"hello": map[string]interface{}{
+			"pop": 1234,
+		},
+	}
+
+	if err := v.MergeConfigMap(update); err != nil {
+		t.Fatal(err)
+	}
+
+	assert(1234)
+
+}
+
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)
