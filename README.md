@@ -17,7 +17,7 @@ Many Go projects are built using Viper including:
 
 ## Install
 ```console
-go get -v github.com/spf13/viper
+go get -u github.com/spf13/viper
 ```
 
 ## What is Viper?
