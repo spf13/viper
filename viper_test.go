@@ -1252,13 +1252,20 @@ func TestMergeConfigMap(t *testing.T) {
 	assert(37890)
 
 	update := map[string]interface{}{
-		"hello": map[string]interface{}{
-			"pop": 1234,
+		"Hello": map[string]interface{}{
+			"Pop": 1234,
+		},
+		"World": map[interface{}]interface{}{
+			"Rock": 345,
 		},
 	}
 
 	if err := v.MergeConfigMap(update); err != nil {
 		t.Fatal(err)
+	}
+
+	if rock := v.GetInt("world.rock"); rock != 345 {
+		t.Fatal("Got rock:", rock)
 	}
 
 	assert(1234)

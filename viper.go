@@ -1267,11 +1267,13 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 }
 
 // MergeConfigMap merges the configuration from the map given with an existing config.
+// Note that the map given may be modified.
 func MergeConfigMap(cfg map[string]interface{}) error { return v.MergeConfigMap(cfg) }
 func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
+	insensitiviseMap(cfg)
 	mergeMaps(cfg, v.config, nil)
 	return nil
 }
