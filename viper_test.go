@@ -323,6 +323,7 @@ func TestAliasInConfigFile(t *testing.T) {
 }
 
 func TestUnSetAliases(t *testing.T) {
+	Set("age", 40)
 	RegisterAlias("years", "age")
 	assert.Equal(t, 40, Get("years"))
 	UnregisterAlias("years")
