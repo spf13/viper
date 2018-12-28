@@ -322,6 +322,13 @@ func TestAliasInConfigFile(t *testing.T) {
 	assert.Equal(t, false, Get("beard"))
 }
 
+func TestUnSetAliases(t *testing.T) {
+	RegisterAlias("years", "age")
+	assert.Equal(t, 40, Get("years"))
+	UnregisterAlias("years")
+	assert.Equal(t, nil, Get("years"))
+}
+
 func TestYML(t *testing.T) {
 	initYAML()
 	assert.Equal(t, "steve", Get("name"))
