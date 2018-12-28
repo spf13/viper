@@ -1143,12 +1143,28 @@ func (v *Viper) registerAlias(alias string, key string) {
 }
 
 func (v *Viper) realKey(key string) string {
-	newkey, exists := v.aliases[key]
+	newKey, exists := v.aliases[key]
 	if exists {
-		jww.DEBUG.Println("Alias", key, "to", newkey)
-		return v.realKey(newkey)
+		jww.DEBUG.Println("Alias", key, "to", newKey)
+		return v.realKey(newKey)
 	}
 	return key
+}
+
+// Remove the alias.
+// This enables one to remove a alias and then override the alias
+func UnregisterAlias(alias string) { v.UnregisterAlias(alias) }
+func (v *Viper) UnregisterAlias(alias string) {
+	v.unregisterAlias(alias)
+}
+
+func (v *Viper) unregisterAlias(alias string) {
+	alias = strings.ToLower(alias)
+	if _, exists := v.aliases[alias]; exists {
+		delete(v.aliases, alias)
+	} else {
+		jww.DEBUG.Println("Alias already unregister alias", alias)
+	}
 }
 
 // InConfig checks to see if the given key (or an alias) is in the config file.
@@ -1715,7 +1731,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
-	for k, _ := range m {
+	for k := range m {
 		path := strings.Split(k, v.keyDelim)
 		// scan intermediate paths
 		var parentKey string
