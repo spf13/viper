@@ -292,6 +292,7 @@ func (v *Viper) WatchConfig() {
 		filename, err := v.getConfigFile()
 		if err != nil {
 			log.Printf("error: %v\n", err)
+			initWG.Done()
 			return
 		}
 
