@@ -131,6 +131,12 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	}
 }
 
+// StringReplacer applies a set of replacements to a string.
+type StringReplacer interface {
+	// Replace returns a copy of s with all replacements performed.
+	Replace(s string) string
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -186,7 +192,7 @@ type Viper struct {
 	envPrefix  string
 
 	automaticEnvApplied bool
-	envKeyReplacer      *strings.Replacer
+	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
 
 	config         map[string]interface{}
@@ -1095,11 +1101,11 @@ func (v *Viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
 }
 
-// SetEnvKeyReplacer sets the strings.Replacer on the viper object
+// SetEnvKeyReplacer sets the StringReplacer on the viper object
 // Useful for mapping an environmental variable to a key that does
 // not match it.
-func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
-func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
+func SetEnvKeyReplacer(r StringReplacer) { v.SetEnvKeyReplacer(r) }
+func (v *Viper) SetEnvKeyReplacer(r StringReplacer) {
 	v.envKeyReplacer = r
 }
 
