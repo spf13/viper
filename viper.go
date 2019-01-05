@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,7 +32,6 @@ import (
 	"reflect"
 	"strings"
 	"time"
-	"errors"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -1536,15 +1536,15 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 }
 
 // Retrieve the First Found remote configuration
-func (v *Viper)GetRemoteConf() (io.Reader, error) {
-        for _, rp := range v.remoteProviders {
-               reader, err := RemoteConfig.Get(rp)
-               if err != nil {
-                       continue
-               }
-               return reader, nil
-       }
-        return nil, errors.New("Did not find Remote config")
+func (v *Viper) GetRemoteConf() (io.Reader, error) {
+	for _, rp := range v.remoteProviders {
+		reader, err := RemoteConfig.Get(rp)
+		if err != nil {
+			continue
+		}
+		return reader, nil
+	}
+	return nil, errors.New("Did not find Remote config")
 }
 
 // Retrieve the first found remote configuration.
@@ -1716,7 +1716,7 @@ func (v *Viper) SetConfigType(in string) {
 
 // GetConfigType gets the type of configuration file used by current viper object
 func (v *Viper) GetConfigType() string {
-        return v.getConfigType()
+	return v.getConfigType()
 }
 
 func (v *Viper) getConfigType() string {
@@ -1738,16 +1738,16 @@ func (v *Viper) getConfigType() string {
 	return ""
 }
 
-// GetAppConfigFile gets the filename of local configuration file used 
+// GetAppConfigFile gets the filename of local configuration file used
 func (v *Viper) GetAppConfigFile() (string, error) {
-        if v.configFile == "" {
-                cf, err := v.findConfigFile()
-                if err != nil {
-                        return "", err
-                }
-                v.configFile = cf
-        }
-        return v.configFile, nil
+	if v.configFile == "" {
+		cf, err := v.findConfigFile()
+		if err != nil {
+			return "", err
+		}
+		v.configFile = cf
+	}
+	return v.configFile, nil
 }
 
 func (v *Viper) getConfigFile() (string, error) {
