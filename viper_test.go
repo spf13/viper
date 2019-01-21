@@ -1272,6 +1272,66 @@ func TestMergeConfigMap(t *testing.T) {
 
 }
 
+func TestMergeMapsSliceWithoutStategy(t *testing.T) {
+	srcSlc := []string{"one", "two", "three"}
+	tgtSlc := []string{"four", "five", "six"}
+	src := map[string]interface{}{
+		"testKey": srcSlc,
+	}
+	tgt := map[string]interface{}{
+		"testKey": tgtSlc,
+	}
+
+	mergeMaps(src, tgt, nil, []MergeStrategy{})
+	val, ok := tgt["testKey"]
+	if !ok {
+		t.Fatal("unable to get key in merged target for map")
+	}
+	if val, ok := val.([]string); !ok {
+		t.Fatal("unexpected type in merged target for test key")
+	} else if !reflect.DeepEqual(val, srcSlc) {
+		t.Fatalf("unexpected key value, wanted %s got %s", srcSlc, val)
+	}
+}
+
+func TestMergeMapsSliceWithStategy(t *testing.T) {
+	tests := []struct {
+		srcSlc []interface{}
+		tgtSlc []interface{}
+		result []interface{}
+	}{
+		{
+			srcSlc: []interface{}{"one", "two", "three"},
+			tgtSlc: []interface{}{"four", "five", "six"},
+			result: []interface{}{"four", "five", "six", "one", "two", "three"},
+		},
+		{
+			srcSlc: []interface{}{1, 2, 3},
+			tgtSlc: []interface{}{4, 5, 6},
+			result: []interface{}{4, 5, 6, 1, 2, 3},
+		},
+	}
+
+	for _, test := range tests {
+		src := map[string]interface{}{
+			"testKey": test.srcSlc,
+		}
+		tgt := map[string]interface{}{
+			"testKey": test.tgtSlc,
+		}
+
+		mergeMaps(src, tgt, nil, []MergeStrategy{SliceAppendStrategy()})
+		val, ok := tgt["testKey"]
+		if !ok {
+			t.Fatal("unable to get key in merged target for map")
+		}
+		if !reflect.DeepEqual(val, test.result) {
+			t.Fatalf("unexpected key value, wanted %s got %s", test.result,
+				val)
+		}
+	}
+}
+
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)

@@ -131,6 +131,45 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	}
 }
 
+type MergeStrategy interface {
+	Can(interface{}) bool
+	Merge(src, tgt interface{}) interface{}
+}
+
+type mergeStrategy struct {
+	CanFn   func(interface{}) bool
+	MergeFn func(src, tgt interface{}) interface{}
+}
+
+func (m *mergeStrategy) Can(val interface{}) bool {
+	return m.CanFn(val)
+}
+
+func (m *mergeStrategy) Merge(src, tgt interface{}) interface{} {
+	return m.MergeFn(src, tgt)
+}
+
+func newMergeStrategy(canFn func(interface{}) bool,
+	mergeFn func(src, tgt interface{}) interface{}) *mergeStrategy {
+	return &mergeStrategy{
+		CanFn:   canFn,
+		MergeFn: mergeFn,
+	}
+}
+
+func SliceAppendStrategy() MergeStrategy {
+	return newMergeStrategy(func(i interface{}) bool {
+		val := reflect.ValueOf(i)
+		if val.Kind() != reflect.Slice {
+			return false
+		}
+		return true
+	}, func(src, tgt interface{}) interface{} {
+		return reflect.AppendSlice(reflect.ValueOf(tgt), reflect.ValueOf(src)).
+			Interface()
+	})
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
@@ -189,14 +228,15 @@ type Viper struct {
 	envKeyReplacer      *strings.Replacer
 	allowEmptyEnv       bool
 
-	config         map[string]interface{}
-	override       map[string]interface{}
-	defaults       map[string]interface{}
-	kvstore        map[string]interface{}
-	pflags         map[string]FlagValue
-	env            map[string]string
-	aliases        map[string]string
-	typeByDefValue bool
+	config          map[string]interface{}
+	override        map[string]interface{}
+	defaults        map[string]interface{}
+	kvstore         map[string]interface{}
+	pflags          map[string]FlagValue
+	env             map[string]string
+	aliases         map[string]string
+	typeByDefValue  bool
+	mergeStrategies []MergeStrategy
 
 	// Store read properties on the object so that we can write back in order with comments.
 	// This will only be used if the configuration read is a properties file.
@@ -1274,7 +1314,7 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 		v.config = make(map[string]interface{})
 	}
 	insensitiviseMap(cfg)
-	mergeMaps(cfg, v.config, nil)
+	mergeMaps(cfg, v.config, nil, v.mergeStrategies)
 	return nil
 }
 
@@ -1509,7 +1549,8 @@ func castMapFlagToMapInterface(src map[string]FlagValue) map[string]interface{} 
 // deep. Both map types are supported as there is a go-yaml fork that uses
 // `map[string]interface{}` instead.
 func mergeMaps(
-	src, tgt map[string]interface{}, itgt map[interface{}]interface{}) {
+	src, tgt map[string]interface{}, itgt map[interface{}]interface{},
+	strategies []MergeStrategy) {
 	for sk, sv := range src {
 		tk := keyExists(sk, tgt)
 		if tk == "" {
@@ -1549,15 +1590,25 @@ func mergeMaps(
 			tsv := sv.(map[interface{}]interface{})
 			ssv := castToMapStringInterface(tsv)
 			stv := castToMapStringInterface(ttv)
-			mergeMaps(ssv, stv, ttv)
+			mergeMaps(ssv, stv, ttv, strategies)
+			continue
 		case map[string]interface{}:
 			jww.TRACE.Printf("merging maps")
-			mergeMaps(sv.(map[string]interface{}), ttv, nil)
+			mergeMaps(sv.(map[string]interface{}), ttv, nil, strategies)
+			continue
 		default:
+			var val interface{} = sv
+			for _, strat := range strategies {
+				if !strat.Can(tv) {
+					continue
+				}
+				val = strat.Merge(sv, tv)
+				break
+			}
 			jww.TRACE.Printf("setting value")
-			tgt[tk] = sv
+			tgt[tk] = val
 			if itgt != nil {
-				itgt[tk] = sv
+				itgt[tk] = val
 			}
 		}
 	}
