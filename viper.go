@@ -986,6 +986,11 @@ func (v *Viper) BindEnv(input ...string) error {
 	return nil
 }
 
+func SetStrategy(strategies ...MergeStrategy) { v.SetStrategy(strategies...) }
+func (v *Viper) SetStrategy(strategies ...MergeStrategy) {
+	v.mergeStrategies = strategies
+}
+
 // Given a key, find the value.
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.

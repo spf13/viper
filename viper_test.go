@@ -1332,6 +1332,26 @@ func TestMergeMapsSliceWithStategy(t *testing.T) {
 	}
 }
 
+func TestMergeMultipleConfigSlicesWithStrategy(t *testing.T) {
+	config1 := []byte(`
+sliceData:
+- one
+- two`)
+	config2 := []byte(`
+sliceData:
+- three`)
+
+	v := New()
+	v.SetStrategy(SliceAppendStrategy())
+	v.SetConfigType("yaml")
+	v.MergeConfig(bytes.NewReader(config1))
+	v.MergeConfig(bytes.NewReader(config2))
+	val := v.GetStringSlice("sliceData")
+	if !reflect.DeepEqual(val, []string{"one", "two", "three"}) {
+		t.Fatalf("unexpected key value wanted %s got %s", []string{"one", "two", "three"}, val)
+	}
+}
+
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)
