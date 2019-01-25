@@ -1389,6 +1389,51 @@ R = 6
 	}
 }
 
+func TestCaseSensitive(t *testing.T) {
+	for _, config := range []struct {
+		typ     string
+		content string
+	}{
+		{"yaml", `
+aBcD: 1
+eF:
+  gH: 2
+  iJk: 3
+  Lm:
+    nO: 4
+    P:
+      Q: 5
+      R: 6
+`},
+		{"json", `{
+  "aBcD": 1,
+  "eF": {
+    "iJk": 3,
+    "Lm": {
+      "P": {
+        "Q": 5,
+        "R": 6
+      },
+      "nO": 4
+    },
+    "gH": 2
+  }
+}`},
+		{"toml", `aBcD = 1
+[eF]
+gH = 2
+iJk = 3
+[eF.Lm]
+nO = 4
+[eF.Lm.P]
+Q = 5
+R = 6
+`},
+	} {
+		doTestCaseSensitive(t, config.typ, config.content)
+	}
+}
+
 func TestCaseInsensitiveSet(t *testing.T) {
 	Reset()
 	m1 := map[string]interface{}{
@@ -1488,6 +1533,32 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
+}
+
+func doTestCaseSensitive(t *testing.T, typ, config string) {
+	Reset()
+	SetConfigType(typ)
+
+	// Turn on case sensitivy.
+	SetKeysCaseSensitive(true)
+	r := strings.NewReader(config)
+	if err := unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	Set("RfD", true)
+	assert.Equal(t, nil, Get("rfd"))
+	assert.Equal(t, true, Get("RfD"))
+	assert.Equal(t, 0, cast.ToInt(Get("abcd")))
+	assert.Equal(t, 1, cast.ToInt(Get("aBcD")))
+	assert.Equal(t, 0, cast.ToInt(Get("ef.gh")))
+	assert.Equal(t, 2, cast.ToInt(Get("eF.gH")))
+	assert.Equal(t, 0, cast.ToInt(Get("ef.ijk")))
+	assert.Equal(t, 3, cast.ToInt(Get("eF.iJk")))
+	assert.Equal(t, 0, cast.ToInt(Get("ef.lm.no")))
+	assert.Equal(t, 4, cast.ToInt(Get("eF.Lm.nO")))
+	assert.Equal(t, 0, cast.ToInt(Get("ef.lm.p.q")))
+	assert.Equal(t, 5, cast.ToInt(Get("eF.Lm.P.Q")))
 
 }
 

@@ -188,6 +188,7 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
 	allowEmptyEnv       bool
+	caseSensitiveKeys   bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -489,7 +490,6 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 
 // searchMap recursively searches for a value for path in source map.
 // Returns nil if not found.
-// Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
@@ -536,7 +536,7 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
-		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
+		prefixKey := v.caseKey(strings.Join(path[0:i], v.keyDelim))
 
 		next, ok := source[prefixKey]
 		if ok {
@@ -657,7 +657,7 @@ func GetViper() *Viper {
 }
 
 // Get can retrieve any value given the key to use.
-// Get is case-insensitive for a key.
+// Get's case-sensitivity for key is determined by viper.keyCaseSensitivity.
 // Get has the behavior of returning the value associated with the first
 // place from where it is set. Viper will check in the following order:
 // override, flag, env, config file, key/value store, default
@@ -665,8 +665,8 @@ func GetViper() *Viper {
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
-	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	casedKey := v.caseKey(key)
+	val := v.find(casedKey)
 	if val == nil {
 		return nil
 	}
@@ -674,7 +674,7 @@ func (v *Viper) Get(key string) interface{} {
 	if v.typeByDefValue {
 		// TODO(bep) this branch isn't covered by a single test.
 		valType := val
-		path := strings.Split(lcaseKey, v.keyDelim)
+		path := strings.Split(casedKey, v.keyDelim)
 		defVal := v.searchMap(v.defaults, path)
 		if defVal != nil {
 			valType = defVal
@@ -704,7 +704,7 @@ func (v *Viper) Get(key string) interface{} {
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
-// Sub is case-insensitive for a key.
+// Sub's case-sensitivity for key is determined by viper.keyCaseSensitivity.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
@@ -811,7 +811,9 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConf
 		return err
 	}
 
-	v.insensitiviseMaps()
+	if !v.caseSensitiveKeys {
+		v.insensitiviseMaps()
+	}
 
 	return nil
 }
@@ -828,7 +830,9 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 		return err
 	}
 
-	v.insensitiviseMaps()
+	if !v.caseSensitiveKeys {
+		v.insensitiviseMaps()
+	}
 
 	return nil
 }
@@ -872,8 +876,9 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 		return err
 	}
 
-	v.insensitiviseMaps()
-
+	if !v.caseSensitiveKeys {
+		v.insensitiviseMaps()
+	}
 	return nil
 }
 
@@ -918,7 +923,7 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
-	v.pflags[strings.ToLower(key)] = flag
+	v.pflags[v.caseKey(key)] = flag
 	return nil
 }
 
@@ -933,7 +938,7 @@ func (v *Viper) BindEnv(input ...string) error {
 		return fmt.Errorf("BindEnv missing key to bind to")
 	}
 
-	key = strings.ToLower(input[0])
+	key = v.caseKey(input[0])
 
 	if len(input) == 1 {
 		envkey = v.mergeWithEnvPrefix(key)
@@ -950,13 +955,14 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.
 // Viper will check to see if an alias exists first.
-// Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string) interface{} {
+// Note: By default, this assumes that a lowercase key is given.
+// This behavior can be modified with viper.SetKeysCaseSensitive.
+func (v *Viper) find(key string) interface{} {
 
 	var (
 		val    interface{}
 		exists bool
-		path   = strings.Split(lcaseKey, v.keyDelim)
+		path   = strings.Split(key, v.keyDelim)
 		nested = len(path) > 1
 	)
 
@@ -966,8 +972,8 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 
 	// if the requested key is an alias, then return the proper key
-	lcaseKey = v.realKey(lcaseKey)
-	path = strings.Split(lcaseKey, v.keyDelim)
+	key = v.realKey(key)
+	path = strings.Split(key, v.keyDelim)
 	nested = len(path) > 1
 
 	// Set() override first
@@ -980,7 +986,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 
 	// PFlag override next
-	flag, exists := v.pflags[lcaseKey]
+	flag, exists := v.pflags[key]
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
@@ -1004,14 +1010,14 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	if v.automaticEnvApplied {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
-		if val, ok := v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); ok {
+		if val, ok := v.getEnv(v.mergeWithEnvPrefix(key)); ok {
 			return val
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
 			return nil
 		}
 	}
-	envkey, exists := v.env[lcaseKey]
+	envkey, exists := v.env[key]
 	if exists {
 		if val, ok := v.getEnv(envkey); ok {
 			return val
@@ -1050,7 +1056,7 @@ func (v *Viper) find(lcaseKey string) interface{} {
 
 	// last chance: if no other value is returned and a flag does exist for the value,
 	// get the flag's value even if the flag's value has not changed
-	if flag, exists := v.pflags[lcaseKey]; exists {
+	if flag, exists := v.pflags[key]; exists {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
@@ -1080,11 +1086,12 @@ func readAsCSV(val string) ([]string, error) {
 }
 
 // IsSet checks to see if the key has been set in any of the data locations.
-// IsSet is case-insensitive for a key.
+// IsSet is case-insensitive for a key. This behavior can be modified
+// with viper.SetKeysCaseSensitive.
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
-	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	casedKey := v.caseKey(key)
+	val := v.find(casedKey)
 	return val != nil
 }
 
@@ -1107,11 +1114,11 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 // This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
 func (v *Viper) RegisterAlias(alias string, key string) {
-	v.registerAlias(alias, strings.ToLower(key))
+	v.registerAlias(alias, v.caseKey(key))
 }
 
 func (v *Viper) registerAlias(alias string, key string) {
-	alias = strings.ToLower(alias)
+	alias = v.caseKey(alias)
 	if alias != key && alias != v.realKey(key) {
 		_, exists := v.aliases[alias]
 
@@ -1162,16 +1169,19 @@ func (v *Viper) InConfig(key string) bool {
 }
 
 // SetDefault sets the default value for this key.
-// SetDefault is case-insensitive for a key.
+// SetDefault is case-insensitive for a key. This behavior can be modified
+// with viper.SetKeysCaseSensitive.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
-	key = v.realKey(strings.ToLower(key))
-	value = toCaseInsensitiveValue(value)
+	key = v.realKey(v.caseKey(key))
+	if !v.caseSensitiveKeys {
+		value = toCaseInsensitiveValue(value)
+	}
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := v.caseKey(path[len(path)-1])
 	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
 
 	// set innermost value
@@ -1179,17 +1189,20 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 }
 
 // Set sets the value for the key in the override register.
-// Set is case-insensitive for a key.
+// Set is case-insensitive for a key. This behavior can be modified
+// with viper.SetKeysCaseSensitive.
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
-	key = v.realKey(strings.ToLower(key))
-	value = toCaseInsensitiveValue(value)
+	key = v.realKey(v.caseKey(key))
+	if !v.caseSensitiveKeys {
+		value = toCaseInsensitiveValue(value)
+	}
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := v.caseKey(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
 	// set innermost value
@@ -1273,7 +1286,9 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-	insensitiviseMap(cfg)
+	if !v.caseSensitiveKeys {
+		insensitiviseMap(cfg)
+	}
 	mergeMaps(cfg, v.config, nil)
 	return nil
 }
@@ -1390,14 +1405,16 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 			value, _ := v.properties.Get(key)
 			// recursively build nested maps
 			path := strings.Split(key, ".")
-			lastKey := strings.ToLower(path[len(path)-1])
+			lastKey := v.caseKey(path[len(path)-1])
 			deepestMap := deepSearch(c, path[0:len(path)-1])
 			// set innermost value
 			deepestMap[lastKey] = value
 		}
 	}
 
-	insensitiviseMap(c)
+	if !v.caseSensitiveKeys {
+		insensitiviseMap(c)
+	}
 	return nil
 }
 
@@ -1468,10 +1485,9 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 }
 
 func keyExists(k string, m map[string]interface{}) string {
-	lk := strings.ToLower(k)
+	ck := v.caseKey(k)
 	for mk := range m {
-		lmk := strings.ToLower(mk)
-		if lmk == lk {
+		if mk == ck {
 			return mk
 		}
 	}
@@ -1701,7 +1717,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = true
+			shadow[v.caseKey(fullKey)] = true
 			continue
 		}
 		// recursively merge to shadow map
@@ -1727,7 +1743,7 @@ outer:
 			}
 		}
 		// add key
-		shadow[strings.ToLower(k)] = true
+		shadow[v.caseKey(k)] = true
 	}
 	return shadow
 }
@@ -1745,7 +1761,7 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
-		lastKey := strings.ToLower(path[len(path)-1])
+		lastKey := v.caseKey(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
 		deepestMap[lastKey] = value
@@ -1776,6 +1792,22 @@ func (v *Viper) SetConfigType(in string) {
 	if in != "" {
 		v.configType = in
 	}
+}
+
+// SetKeysCaseSensitive disables the default behaviour of
+// case-insensitivising (lowercasing) keys and preserves the key casing
+// as they are found in the config files. It is important
+// to note that operations such as set and merge when
+// case sensitivity is 'on', and whtn it is turneed 'off',
+// are incompatible. A key that is set when case sentivity
+// is 'on' may not be retrievable when case sensitivity is turned 'off',
+// as the original casing is permanently lost in the former mode.
+// That is ideally, this should only be invoked only once,
+// during initialisation, and the subsequent usage must adhere
+// to the same case sentivity.
+func SetKeysCaseSensitive(on bool) { v.SetKeysCaseSensitive(on) }
+func (v *Viper) SetKeysCaseSensitive(on bool) {
+	v.caseSensitiveKeys = on
 }
 
 func (v *Viper) getConfigType() string {
@@ -1819,6 +1851,15 @@ func (v *Viper) searchInPath(in string) (filename string) {
 	}
 
 	return ""
+}
+
+// caseKey cases (preserves sensitivity or lowercases) a
+// given key based on the keyCaseSensitivity config.
+func (v *Viper) caseKey(in string) (filename string) {
+	if v.caseSensitiveKeys {
+		return in
+	}
+	return strings.ToLower(in)
 }
 
 // Search all configPaths for any config file.
