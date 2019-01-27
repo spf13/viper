@@ -658,6 +658,51 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 	}
 }
 
+func TestBindPFlagsIntSlice(t *testing.T) {
+	tests := []struct {
+		Expected []int
+		Value    string
+	}{
+		{nil, ""},
+		{[]int{1}, "1"},
+		{[]int{2, 3}, "2,3"},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []int{0}
+	v.SetDefault("intslice", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.IntSlice("intslice", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestInt struct {
+				IntSlice []int
+			}
+			val := &TestInt{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			if changed {
+				assert.Equal(t, testValue.Expected, val.IntSlice)
+			} else {
+				assert.Equal(t, defaultVal, val.IntSlice)
+			}
+		}
+	}
+}
+
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
 	var testValue = newStringValue(testString, &testString)
