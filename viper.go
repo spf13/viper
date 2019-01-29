@@ -1151,8 +1151,7 @@ func (v *Viper) realKey(key string) string {
 	return key
 }
 
-// Remove the alias.
-// This enables one to remove a alias and then override the alias
+// This enables one to remove a registered alias.
 func UnregisterAlias(alias string) { v.UnregisterAlias(alias) }
 func (v *Viper) UnregisterAlias(alias string) {
 	v.unregisterAlias(alias)
@@ -1163,7 +1162,7 @@ func (v *Viper) unregisterAlias(alias string) {
 	if _, exists := v.aliases[alias]; exists {
 		delete(v.aliases, alias)
 	} else {
-		jww.DEBUG.Println("Alias already unregister alias", alias)
+		jww.DEBUG.Println("Trying to unregister a non-existent alias", alias)
 	}
 }
 
