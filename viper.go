@@ -930,7 +930,7 @@ func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
 	var key, envkey string
 	if len(input) == 0 {
-		return fmt.Errorf("BindEnv missing key to bind to")
+		return fmt.Errorf("bindEnv missing key to bind to")
 	}
 
 	key = strings.ToLower(input[0])
@@ -1315,7 +1315,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
 	ext := filepath.Ext(filename)
 	if len(ext) <= 1 {
-		return fmt.Errorf("Filename: %s requires valid extension.", filename)
+		return fmt.Errorf("filename: %s requires valid extension", filename)
 	}
 	configType := ext[1:]
 	if !stringInSlice(configType, SupportedExts) {
@@ -1331,7 +1331,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			flags = os.O_WRONLY
 		} else {
-			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
+			return fmt.Errorf("file: %s exists. Use WriteConfig to overwrite", filename)
 		}
 	}
 	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
