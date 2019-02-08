@@ -1278,6 +1278,22 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 	return nil
 }
 
+// MergeConfigOverride merges a new configuration within the config at the
+// highest lever of priority (similar to the 'Set' method). Key set here will
+// alway be retrieved before values from env, files...
+func MergeConfigOverride(in io.Reader) error { return v.MergeConfigOverride(in) }
+func (v *Viper) MergeConfigOverride(in io.Reader) error {
+	if v.override == nil {
+		v.override = make(map[string]interface{})
+	}
+	cfg := make(map[string]interface{})
+	if err := v.unmarshalReader(in, cfg); err != nil {
+		return err
+	}
+	mergeMaps(cfg, v.override, nil)
+	return nil
+}
+
 // WriteConfig writes the current configuration to a file.
 func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
