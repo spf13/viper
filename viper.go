@@ -226,7 +226,7 @@ func New() *Viper {
 	return v
 }
 
-// Intended for testing, will reset all to default settings.
+// Reset: Intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
 func Reset() {
@@ -1142,7 +1142,7 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
 }
 
-// Aliases provide another accessor for the same key.
+// RegisterAlias: Aliases provide another accessor for the same key.
 // This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
 func (v *Viper) RegisterAlias(alias string, key string) {
