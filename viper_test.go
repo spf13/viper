@@ -1620,7 +1620,7 @@ func BenchmarkGet(b *testing.B) {
 	}
 }
 
-// This is the "perfect result" for the above.
+// BenchmarkGetBoolFromMap is the "perfect result" for the above.
 func BenchmarkGetBoolFromMap(b *testing.B) {
 	m := make(map[string]bool)
 	key := "BenchmarkGetBool"
