@@ -1761,7 +1761,22 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			// check just in case anything changes
 			continue
 		}
-		path := strings.Split(k, v.keyDelim)
+
+		// Build key path by splitting the key by keyDelim and checking that the parent keys
+		// are actually set.
+		// Example use case:
+		//   Ensures sure that, for the yaml conf "foo.bar: baz", and keyDelim ".":
+		//   the generated path is []string{"foo.bar", "baz"}, instead of []string{"foo", "bar", "baz"}
+		path := []string{}
+		splitPath := strings.Split(k, v.keyDelim)
+		i := 0
+		for j := range splitPath {
+			if v.IsSet(strings.Join(splitPath[:j+1], v.keyDelim)) {
+				path = append(path, strings.Join(splitPath[i:j+1], v.keyDelim))
+				i = j + 1
+			}
+		}
+
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
