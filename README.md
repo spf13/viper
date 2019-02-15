@@ -103,6 +103,28 @@ if err != nil { // Handle errors reading the config file
 }
 ```
 
+### Writing Config Files
+
+Reading from config files is useful, but at times you want to store all modifications made at run time.
+For that, a bunch of commands are available, each with its own purpose:
+
+* WriteConfig - writes the current viper configuration to the predefined path, if exists. Errors if no predefined path. Will overwrite the current config file, if it exists.
+* SafeWriteConfig - writes the current viper configuration to the predefined path. Errors if no predefined path. Will not overwrite the current config file, if it exists.
+* WriteConfigAs - writes the current viper configuration to the given filepath. Will overwrite the given file, if it exists.
+* SafeWriteConfigAs - writes the current viper configuration to the given filepath. Will not overwrite the given file, if it exists.
+
+As a rule of the thumb, everything marked with safe won't overwrite any file, but just create if not existent, whilst the default behavior is to create or truncate.
+
+A small examples section:
+
+```go
+viper.WriteConfig() // writes current config to predefined path set by 'viper.AddConfigPath()' and 'viper.SetConfigName'
+viper.SafeWriteConfig()
+viper.WriteConfigAs("/path/to/my/.config")
+viper.SafeWriteConfigAs("/path/to/my/.config") // will error since it has already been written
+viper.SafeWriteConfigAs("/path/to/my/.other_config")
+```
+
 ### Watching and re-reading config files
 
 Viper supports the ability to have your application live read a config file while running.
