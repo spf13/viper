@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
+	"github.com/nwingert/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
@@ -280,7 +280,7 @@ func TestUnmarshaling(t *testing.T) {
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
 	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, Get("clothing"))
-	assert.Equal(t, 35, Get("age"))
+	assert.EqualValues(t, 35, Get("age"))
 }
 
 func TestUnmarshalExact(t *testing.T) {
@@ -480,7 +480,7 @@ func TestAllKeys(t *testing.T) {
 	ks.Sort()
 
 	assert.Equal(t, ks, allkeys)
-	assert.Equal(t, all, AllSettings())
+	assert.True(t, reflect.DeepEqual(all, AllSettings()))
 }
 
 func TestAllKeysWithEnv(t *testing.T) {
@@ -819,7 +819,7 @@ func TestFindsNestedKeys(t *testing.T) {
 
 	for key, expectedValue := range expected {
 
-		assert.Equal(t, expectedValue, v.Get(key))
+		assert.EqualValues(t, expectedValue, v.Get(key))
 	}
 
 }
@@ -835,7 +835,7 @@ func TestReadBufConfig(t *testing.T) {
 	assert.Equal(t, "steve", v.Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
 	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, v.Get("clothing"))
-	assert.Equal(t, 35, v.Get("age"))
+	assert.EqualValues(t, 35, v.Get("age"))
 }
 
 func TestIsSet(t *testing.T) {
@@ -1585,4 +1585,27 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 			b.Fatal("Map value was false")
 		}
 	}
+}
+
+func TestRemoveKey(t *testing.T) {
+	v := New()
+
+	v.Set("flat", 123)
+	v.Set("test.inner", 321)
+	v.Set("test.inner2", 456)
+
+	assert.EqualValues(t, 123, v.override["flat"])
+	assert.EqualValues(t, 321, v.override["test"].(map[string]interface{})["inner"])
+	assert.EqualValues(t, 456, v.override["test"].(map[string]interface{})["inner2"])
+
+	v.RemoveKey("flat")
+	v.RemoveKey("test.inner")
+
+	assert.EqualValues(t, nil, v.Get("flat"))
+	assert.EqualValues(t, nil, v.Get("test.inner"))
+	assert.EqualValues(t, 456, v.Get("test.inner2"))
+
+	v.RemoveKey("test")
+
+	assert.EqualValues(t, nil, v.Get("test"))
 }

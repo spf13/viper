@@ -45,7 +45,7 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
-	)
+)
 
 // ConfigMarshalError happens when failing to marshal the configuration.
 type ConfigMarshalError struct {
@@ -279,8 +279,33 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 	v.onConfigChange = run
 }
 
-func WatchConfig() { v.WatchConfig() }
+func (v *Viper) removeKeyFromMap(m map[string]interface{}, key string) {
+	steps := strings.SplitN(key, v.keyDelim, 2)
 
+	if val, ok := m[steps[0]]; ok {
+		if inner, ok := val.(map[string]interface{}); ok {
+			if len(steps) == 1 {
+				delete(m, steps[0])
+			} else {
+				v.removeKeyFromMap(inner, steps[1])
+			}
+		} else {
+			delete(m, steps[0])
+		}
+	}
+}
+
+func RemoveKey(path string) { v.RemoveKey(path) }
+func (v *Viper) RemoveKey(path string) {
+	v.Mutex.Lock()
+	v.removeKeyFromMap(v.config, path)
+	v.removeKeyFromMap(v.override, path)
+	v.removeKeyFromMap(v.defaults, path)
+	v.removeKeyFromMap(v.kvstore, path)
+	v.Mutex.Unlock()
+}
+
+func WatchConfig() { v.WatchConfig() }
 func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
@@ -289,7 +314,11 @@ func (v *Viper) WatchConfig() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer watcher.Close()
+		defer func() {
+			if err := watcher.Close(); err != nil {
+				log.Printf("failed to close watcher: %v", err)
+			}
+		}()
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
@@ -1714,7 +1743,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
-	for k, _ := range m {
+	for k := range m {
 		path := strings.Split(k, v.keyDelim)
 		// scan intermediate paths
 		var parentKey string
