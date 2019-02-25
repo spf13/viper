@@ -847,6 +847,21 @@ func TestIsSet(t *testing.T) {
 	assert.False(t, v.IsSet("helloworld"))
 	v.Set("helloworld", "fubar")
 	assert.True(t, v.IsSet("helloworld"))
+	v.SetDefault("default", "value")
+	assert.True(t, v.IsSet("default"))
+}
+
+func TestIsExplicit(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	assert.True(t, v.IsExplicit("clothing.jacket"))
+	assert.False(t, v.IsExplicit("clothing.jackets"))
+	assert.False(t, v.IsExplicit("helloworld"))
+	v.Set("helloworld", "fubar")
+	assert.True(t, v.IsExplicit("helloworld"))
+	v.SetDefault("default", "value")
+	assert.False(t, v.IsExplicit("default"))
 }
 
 func TestDirsSearch(t *testing.T) {
