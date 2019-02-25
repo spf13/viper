@@ -202,7 +202,8 @@ type Viper struct {
 	// This will only be used if the configuration read is a properties file.
 	properties *properties.Properties
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChange    func(fsnotify.Event)
+	onConfigChangeErr func(err error)
 }
 
 // New returns an initialized Viper instance.
@@ -276,6 +277,10 @@ func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 	v.onConfigChange = run
 }
+func OnConfigChangeErr(run func(err error)) { v.OnConfigChangeErr(run) }
+func (v *Viper) OnConfigChangeErr(run func(err error)) {
+	v.onConfigChangeErr = run
+}
 
 func WatchConfig() { v.WatchConfig() }
 
@@ -291,6 +296,9 @@ func (v *Viper) WatchConfig() {
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
+			if v.onConfigChangeErr != nil {
+				v.onConfigChangeErr(err)
+			}
 			log.Printf("error: %v\n", err)
 			return
 		}
@@ -320,6 +328,9 @@ func (v *Viper) WatchConfig() {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
 						if err != nil {
+							if v.onConfigChangeErr != nil {
+								v.onConfigChangeErr(err)
+							}
 							log.Printf("error reading config file: %v\n", err)
 						}
 						if v.onConfigChange != nil {
@@ -333,6 +344,9 @@ func (v *Viper) WatchConfig() {
 
 				case err, ok := <-watcher.Errors:
 					if ok { // 'Errors' channel is not closed
+						if v.onConfigChangeErr != nil {
+							v.onConfigChangeErr(err)
+						}
 						log.Printf("watcher error: %v\n", err)
 					}
 					eventsWG.Done()
