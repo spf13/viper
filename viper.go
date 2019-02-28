@@ -1360,7 +1360,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
 		}
 	}
-	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
+	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0664))
 	if err != nil {
 		return err
 	}
