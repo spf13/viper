@@ -1257,6 +1257,9 @@ func (v *Viper) ReadInConfig() error {
 	}
 	v.Lock()
 	v.config = config
+	v.override = make(map[string]interface{})
+	v.kvstore = make(map[string]interface{})
+	v.defaults = make(map[string]interface{})
 	v.Unlock()
 	return nil
 }
