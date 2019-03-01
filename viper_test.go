@@ -735,19 +735,24 @@ func TestBoundCaseSensitivity(t *testing.T) {
 }
 
 func TestSizeInBytes(t *testing.T) {
-	input := map[string]uint{
-		"":               0,
-		"b":              0,
-		"12 bytes":       0,
-		"200000000000gb": 0,
-		"12 b":           12,
-		"43 MB":          43 * (1 << 20),
-		"10mb":           10 * (1 << 20),
-		"1gb":            1 << 30,
+	input := map[string]struct {
+		Size  uint
+		Error bool
+	}{
+		"":               {0, true},
+		"b":              {0, true},
+		"12 bytes":       {0, true},
+		"200000000000gb": {0, true},
+		"12 b":           {12, false},
+		"43 MB":          {43 * (1 << 20), false},
+		"10mb":           {10 * (1 << 20), false},
+		"1gb":            {1 << 30, false},
 	}
 
 	for str, expected := range input {
-		assert.Equal(t, expected, parseSizeInBytes(str), str)
+		size, err := parseSizeInBytes(str)
+		assert.Equal(t, expected.Size, size, str)
+		assert.Equal(t, expected.Error, err != nil, str)
 	}
 }
 

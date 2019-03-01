@@ -146,16 +146,17 @@ func userHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-func safeMul(a, b uint) uint {
+func safeMul(a, b uint) (uint, error) {
 	c := a * b
 	if a > 1 && b > 1 && c/b != a {
-		return 0
+		return 0, fmt.Errorf("multiplication overflows uint: %d*%d", a, b)
 	}
-	return c
+	return c, nil
 }
 
 // parseSizeInBytes converts strings like 1GB or 12 mb into an unsigned integer number of bytes
-func parseSizeInBytes(sizeStr string) uint {
+func parseSizeInBytes(sizeStr string) (uint, error) {
+	rawStr := sizeStr
 	sizeStr = strings.TrimSpace(sizeStr)
 	lastChar := len(sizeStr) - 1
 	multiplier := uint(1)
@@ -181,12 +182,17 @@ func parseSizeInBytes(sizeStr string) uint {
 		}
 	}
 
-	size := cast.ToInt(sizeStr)
-	if size < 0 {
-		size = 0
+	num, err := cast.ToUintE(sizeStr)
+	if err != nil {
+		return 0, err
 	}
 
-	return safeMul(uint(size), multiplier)
+	size, err := safeMul(num, multiplier)
+	if err != nil {
+		return 0, fmt.Errorf("unable to cast %q to uint: %s", rawStr, err)
+	}
+
+	return size, nil
 }
 
 // deepSearch scans deep maps, following the key indexes listed in the
