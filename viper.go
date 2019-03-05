@@ -665,10 +665,17 @@ func GetViper() *Viper {
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
+	val, _ := v.GetE(key)
+	return val
+}
+
+// GetE is like Get but also returns parsing errors.
+func GetE(key string) (interface{}, error) { return v.GetE(key) }
+func (v *Viper) GetE(key string) (interface{}, error) {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey)
 	if val == nil {
-		return nil
+		return nil, nil
 	}
 
 	if v.typeByDefValue {
@@ -682,25 +689,32 @@ func (v *Viper) Get(key string) interface{} {
 
 		switch valType.(type) {
 		case bool:
-			return cast.ToBool(val)
+			return cast.ToBoolE(val)
 		case string:
-			return cast.ToString(val)
+			return cast.ToStringE(val)
 		case int32, int16, int8, int:
-			return cast.ToInt(val)
+			return cast.ToIntE(val)
 		case int64:
-			return cast.ToInt64(val)
+			return cast.ToInt64E(val)
 		case float64, float32:
-			return cast.ToFloat64(val)
+			return cast.ToFloat64E(val)
 		case time.Time:
-			return cast.ToTime(val)
+			return cast.ToTimeE(val)
 		case time.Duration:
-			return cast.ToDuration(val)
+			return cast.ToDurationE(val)
 		case []string:
-			return cast.ToStringSlice(val)
+			return cast.ToStringSliceE(val)
 		}
 	}
 
-	return val
+	return val, nil
+}
+
+// GetRaw is the same as Get except that it always return an uncast value.
+func GetRaw(key string) interface{} { return v.GetRaw(key) }
+func (v *Viper) GetRaw(key string) interface{} {
+	lcaseKey := strings.ToLower(key)
+	return v.find(lcaseKey)
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
@@ -726,10 +740,10 @@ func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
-// GetStringE is the same than GetString but also returns parsing errors.
+// GetStringE is the same as GetString but also returns parsing errors.
 func GetStringE(key string) (string, error) { return v.GetStringE(key) }
 func (v *Viper) GetStringE(key string) (string, error) {
-	return cast.ToStringE(v.Get(key))
+	return cast.ToStringE(v.GetRaw(key))
 }
 
 // GetBool returns the value associated with the key as a boolean.
@@ -738,10 +752,10 @@ func (v *Viper) GetBool(key string) bool {
 	return cast.ToBool(v.Get(key))
 }
 
-// GetBoolE is the same than GetBool but also returns parsing errors.
+// GetBoolE is the same as GetBool but also returns parsing errors.
 func GetBoolE(key string) (bool, error) { return v.GetBoolE(key) }
 func (v *Viper) GetBoolE(key string) (bool, error) {
-	return cast.ToBoolE(v.Get(key))
+	return cast.ToBoolE(v.GetRaw(key))
 }
 
 // GetInt returns the value associated with the key as an integer.
@@ -750,10 +764,10 @@ func (v *Viper) GetInt(key string) int {
 	return cast.ToInt(v.Get(key))
 }
 
-// GetIntE is the same than GetInt but also returns parsing errors.
+// GetIntE is the same as GetInt but also returns parsing errors.
 func GetIntE(key string) (int, error) { return v.GetIntE(key) }
 func (v *Viper) GetIntE(key string) (int, error) {
-	return cast.ToIntE(v.Get(key))
+	return cast.ToIntE(v.GetRaw(key))
 }
 
 // GetInt32 returns the value associated with the key as an integer.
@@ -762,10 +776,10 @@ func (v *Viper) GetInt32(key string) int32 {
 	return cast.ToInt32(v.Get(key))
 }
 
-// GetInt32E is the same than GetInt32 but also returns parsing errors.
+// GetInt32E is the same as GetInt32 but also returns parsing errors.
 func GetInt32E(key string) (int32, error) { return v.GetInt32E(key) }
 func (v *Viper) GetInt32E(key string) (int32, error) {
-	return cast.ToInt32E(v.Get(key))
+	return cast.ToInt32E(v.GetRaw(key))
 }
 
 // GetInt64 returns the value associated with the key as an integer.
@@ -774,22 +788,22 @@ func (v *Viper) GetInt64(key string) int64 {
 	return cast.ToInt64(v.Get(key))
 }
 
-// GetInt64E is the same than GetInt64 but also returns parsing errors.
+// GetInt64E is the same as GetInt64 but also returns parsing errors.
 func GetInt64E(key string) (int64, error) { return v.GetInt64E(key) }
 func (v *Viper) GetInt64E(key string) (int64, error) {
-	return cast.ToInt64E(v.Get(key))
+	return cast.ToInt64E(v.GetRaw(key))
 }
 
 // GetFloat64 returns the value associated with the key as a float64.
 func GetFloat64(key string) float64 { return v.GetFloat64(key) }
 func (v *Viper) GetFloat64(key string) float64 {
-	return cast.ToFloat64(v.Get(key))
+	return cast.ToFloat64(v.GetRaw(key))
 }
 
-// GetFloat64E is the same than GetFloat64 but also returns parsing errors.
+// GetFloat64E is the same as GetFloat64 but also returns parsing errors.
 func GetFloat64E(key string) (float64, error) { return v.GetFloat64E(key) }
 func (v *Viper) GetFloat64E(key string) (float64, error) {
-	return cast.ToFloat64E(v.Get(key))
+	return cast.ToFloat64E(v.GetRaw(key))
 }
 
 // GetTime returns the value associated with the key as time.
@@ -798,10 +812,10 @@ func (v *Viper) GetTime(key string) time.Time {
 	return cast.ToTime(v.Get(key))
 }
 
-// GetTimeE is the same than GetTime but also returns parsing errors.
+// GetTimeE is the same as GetTime but also returns parsing errors.
 func GetTimeE(key string) (time.Time, error) { return v.GetTimeE(key) }
 func (v *Viper) GetTimeE(key string) (time.Time, error) {
-	return cast.ToTimeE(v.Get(key))
+	return cast.ToTimeE(v.GetRaw(key))
 }
 
 // GetDuration returns the value associated with the key as a duration.
@@ -810,10 +824,10 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
-// GetDurationE is the same than GetDuration but also returns parsing errors.
+// GetDurationE is the same as GetDuration but also returns parsing errors.
 func GetDurationE(key string) (time.Duration, error) { return v.GetDurationE(key) }
 func (v *Viper) GetDurationE(key string) (time.Duration, error) {
-	return cast.ToDurationE(v.Get(key))
+	return cast.ToDurationE(v.GetRaw(key))
 }
 
 // GetStringSlice returns the value associated with the key as a slice of strings.
@@ -822,10 +836,10 @@ func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
-// GetStringSliceE is the same than GetStringSlice but also returns parsing errors.
+// GetStringSliceE is the same as GetStringSlice but also returns parsing errors.
 func GetStringSliceE(key string) ([]string, error) { return v.GetStringSliceE(key) }
 func (v *Viper) GetStringSliceE(key string) ([]string, error) {
-	return cast.ToStringSliceE(v.Get(key))
+	return cast.ToStringSliceE(v.GetRaw(key))
 }
 
 // GetStringMap returns the value associated with the key as a map of interfaces.
@@ -834,10 +848,10 @@ func (v *Viper) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(v.Get(key))
 }
 
-// GetStringMapE is the same than GetStringMap but also returns parsing errors.
+// GetStringMapE is the same as GetStringMap but also returns parsing errors.
 func GetStringMapE(key string) (map[string]interface{}, error) { return v.GetStringMapE(key) }
 func (v *Viper) GetStringMapE(key string) (map[string]interface{}, error) {
-	return cast.ToStringMapE(v.Get(key))
+	return cast.ToStringMapE(v.GetRaw(key))
 }
 
 // GetStringMapString returns the value associated with the key as a map of strings.
@@ -846,10 +860,10 @@ func (v *Viper) GetStringMapString(key string) map[string]string {
 	return cast.ToStringMapString(v.Get(key))
 }
 
-// GetStringMapStringE is the same than GetStringMapString but also returns parsing errors.
+// GetStringMapStringE is the same as GetStringMapString but also returns parsing errors.
 func GetStringMapStringE(key string) (map[string]string, error) { return v.GetStringMapStringE(key) }
 func (v *Viper) GetStringMapStringE(key string) (map[string]string, error) {
-	return cast.ToStringMapStringE(v.Get(key))
+	return cast.ToStringMapStringE(v.GetRaw(key))
 }
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
@@ -858,12 +872,12 @@ func (v *Viper) GetStringMapStringSlice(key string) map[string][]string {
 	return cast.ToStringMapStringSlice(v.Get(key))
 }
 
-// GetStringMapStringSliceE is the same than GetStringMapStringSlice but also returns parsing errors.
+// GetStringMapStringSliceE is the same as GetStringMapStringSlice but also returns parsing errors.
 func GetStringMapStringSliceE(key string) (map[string][]string, error) {
 	return v.GetStringMapStringSliceE(key)
 }
 func (v *Viper) GetStringMapStringSliceE(key string) (map[string][]string, error) {
-	return cast.ToStringMapStringSliceE(v.Get(key))
+	return cast.ToStringMapStringSliceE(v.GetRaw(key))
 }
 
 // GetSizeInBytes returns the size of the value associated with the given key
@@ -875,10 +889,10 @@ func (v *Viper) GetSizeInBytes(key string) uint {
 	return size
 }
 
-// GetSizeInBytesE is the same than GetSizeInBytes but also returns parsing errors.
+// GetSizeInBytesE is the same as GetSizeInBytes but also returns parsing errors.
 func GetSizeInBytesE(key string) (uint, error) { return v.GetSizeInBytesE(key) }
 func (v *Viper) GetSizeInBytesE(key string) (uint, error) {
-	sizeStr, err := cast.ToStringE(v.Get(key))
+	sizeStr, err := cast.ToStringE(v.GetRaw(key))
 	if err != nil {
 		return 0, err
 	}
