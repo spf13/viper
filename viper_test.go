@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nwingert/fsnotify"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
