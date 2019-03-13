@@ -1768,7 +1768,7 @@ func (v *Viper) SetConfigType(in string) {
 // SetKeyDelim set the delimiter string used to separate key values
 // returned by AllKeys(). This is useful if you need to allow for
 // the '.' character in key names.
-func SetKeyDelim(delim string) { v.keyDelim = delim }
+func SetKeyDelim(delim string)            { v.keyDelim = delim }
 func (v *Viper) SetKeyDelim(delim string) { v.keyDelim = delim }
 
 func (v *Viper) getConfigType() string {
