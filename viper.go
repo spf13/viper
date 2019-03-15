@@ -811,10 +811,6 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConf
 		return err
 	}
 
-	if !v.caseSensitiveKeys {
-		v.insensitiviseMaps()
-	}
-
 	return nil
 }
 
@@ -828,10 +824,6 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 
 	if err != nil {
 		return err
-	}
-
-	if !v.caseSensitiveKeys {
-		v.insensitiviseMaps()
 	}
 
 	return nil
@@ -870,16 +862,7 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	config := defaultDecoderConfig(rawVal)
 	config.ErrorUnused = true
 
-	err := decode(v.AllSettings(), config)
-
-	if err != nil {
-		return err
-	}
-
-	if !v.caseSensitiveKeys {
-		v.insensitiviseMaps()
-	}
-	return nil
+	return decode(v.AllSettings(), config)
 }
 
 // BindPFlags binds a full flag set to the configuration, using each flag's long
@@ -1593,13 +1576,6 @@ func (v *Viper) WatchRemoteConfig() error {
 
 func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
-}
-
-func (v *Viper) insensitiviseMaps() {
-	insensitiviseMap(v.config)
-	insensitiviseMap(v.defaults)
-	insensitiviseMap(v.override)
-	insensitiviseMap(v.kvstore)
 }
 
 // Retrieve the first found remote configuration.
