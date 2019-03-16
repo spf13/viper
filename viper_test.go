@@ -196,6 +196,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 	)
 
 	root, err := ioutil.TempDir("", "")
+	require.NoError(t, err, "Failed to create temporary directory")
 
 	cleanup := true
 	defer func() {
