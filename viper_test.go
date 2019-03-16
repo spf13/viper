@@ -191,9 +191,13 @@ func initHcl() {
 func initDirs(t *testing.T) (string, string, func()) {
 
 	var (
-		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+		testDirs = []string{`a a`, `b`, `C_`}
 		config   = `improbable`
 	)
+
+	if runtime.GOOS != "windows" {
+		testDirs = append(testDirs, `d\d`)
+	}
 
 	root, err := ioutil.TempDir("", "")
 	require.NoError(t, err, "Failed to create temporary directory")
