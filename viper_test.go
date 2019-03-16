@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"sort"
@@ -875,7 +876,7 @@ func TestDirsSearch(t *testing.T) {
 	err = v.ReadInConfig()
 	assert.Nil(t, err)
 
-	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+	assert.Equal(t, `value is `+filepath.Base(v.configPaths[0]), v.GetString(`key`))
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
