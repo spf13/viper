@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"sort"
@@ -45,6 +46,10 @@ clothing:
 age: 35
 eyes : brown
 beard: true
+emails:
+  steve@hacker.com:
+    created: 01/02/03
+    active: true
 `)
 
 var yamlExampleWithExtras = []byte(`Existing: true
@@ -207,11 +212,16 @@ func initHcl() {
 func initDirs(t *testing.T) (string, string, func()) {
 
 	var (
-		testDirs = []string{`a a`, `b`, `c\c`, `D_`}
+		testDirs = []string{`a a`, `b`, `C_`}
 		config   = `improbable`
 	)
 
+	if runtime.GOOS != "windows" {
+		testDirs = append(testDirs, `d\d`)
+	}
+
 	root, err := ioutil.TempDir("", "")
+	require.NoError(t, err, "Failed to create temporary directory")
 
 	cleanup := true
 	defer func() {
@@ -224,7 +234,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 	assert.Nil(t, err)
 
 	err = os.Chdir(root)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	for _, dir := range testDirs {
 		err = os.Mkdir(dir, 0750)
@@ -415,7 +425,10 @@ func TestEmptyEnv(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Clearenv()
+	os.Unsetenv("type")
+	os.Unsetenv("TYPE")
+	os.Unsetenv("name")
+	os.Unsetenv("NAME")
 
 	os.Setenv("TYPE", "")
 
@@ -431,7 +444,10 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Clearenv()
+	os.Unsetenv("type")
+	os.Unsetenv("TYPE")
+	os.Unsetenv("name")
+	os.Unsetenv("NAME")
 
 	os.Setenv("TYPE", "")
 
@@ -491,11 +507,98 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.trousers", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos",
-		"title_dotenv", "type_dotenv", "name_dotenv",
+	ks := sort.StringSlice{
+		"title",
+		"newkey",
+		"owner.organization",
+		"owner.dob",
+		"owner.bio",
+		"name",
+		"beard",
+		"ppu",
+		"batters.batter",
+		"hobbies",
+		"clothing.jacket",
+		"clothing.trousers",
+		"clothing.pants.size",
+		"age",
+		"hacker",
+		"id",
+		"type",
+		"eyes",
+		"p_id",
+		"p_ppu",
+		"p_batters.batter.type",
+		"p_type",
+		"p_name",
+		"foos",
+		"title_dotenv",
+		"type_dotenv",
+		"name_dotenv",
+		"emails.steve@hacker.com.active",
+		"emails.steve@hacker.com.created",
 	}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}, "title_dotenv": "DotEnv Example", "type_dotenv": "donut", "name_dotenv": "Cake"}
+	all := map[string]interface{}{
+		"owner": map[string]interface{}{
+			"organization": "MongoDB",
+			"bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"dob":          dob,
+		},
+		"title": "TOML Example",
+		"ppu":   0.55,
+		"emails": map[string]interface{}{
+			"steve@hacker.com": map[string]interface{}{
+				"active":  true,
+				"created": "01/02/03",
+			},
+		},
+		"eyes": "brown",
+		"clothing": map[string]interface{}{
+			"trousers": "denim",
+			"jacket":   "leather",
+			"pants":    map[string]interface{}{"size": "large"},
+		},
+		"id": "0001",
+		"batters": map[string]interface{}{
+			"batter": []interface{}{
+				map[string]interface{}{"type": "Regular"},
+				map[string]interface{}{"type": "Chocolate"},
+				map[string]interface{}{"type": "Blueberry"},
+				map[string]interface{}{"type": "Devil's Food"},
+			},
+		},
+		"hacker": true,
+		"beard":  true,
+		"hobbies": []interface{}{
+			"skateboarding",
+			"snowboarding",
+			"go",
+		},
+		"age":    35,
+		"type":   "donut",
+		"newkey": "remote",
+		"name":   "Cake",
+		"p_id":   "0001",
+		"p_ppu":  "0.55",
+		"p_name": "Cake",
+		"p_batters": map[string]interface{}{
+			"batter": map[string]interface{}{"type": "Regular"},
+		},
+		"p_type": "donut",
+		"foos": []map[string]interface{}{
+			{
+				"foo": []map[string]interface{}{
+					{"key": 1},
+					{"key": 2},
+					{"key": 3},
+					{"key": 4}},
+			},
+		},
+		"title_dotenv": "DotEnv Example",
+		"type_dotenv":  "donut",
+		"name_dotenv":  "Cake",
+	}
 
 	allkeys := sort.StringSlice(AllKeys())
 	allkeys.Sort()
@@ -960,7 +1063,7 @@ func TestDirsSearch(t *testing.T) {
 	err = v.ReadInConfig()
 	assert.Nil(t, err)
 
-	assert.Equal(t, `value is `+path.Base(v.configPaths[0]), v.GetString(`key`))
+	assert.Equal(t, `value is `+filepath.Base(v.configPaths[0]), v.GetString(`key`))
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
@@ -1213,6 +1316,10 @@ clothing:
   pants:
     size: large
   trousers: denim
+emails:
+  steve@hacker.com:
+    active: true
+    created: 01/02/03
 eyes: brown
 hacker: true
 hobbies:
