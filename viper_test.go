@@ -395,7 +395,8 @@ func TestEmptyEnv(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Clearenv()
+	os.Unsetenv("type")
+	os.Unsetenv("name")
 
 	os.Setenv("TYPE", "")
 
@@ -411,7 +412,8 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Clearenv()
+	os.Unsetenv("type")
+	os.Unsetenv("name")
 
 	os.Setenv("TYPE", "")
 
