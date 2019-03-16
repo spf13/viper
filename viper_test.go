@@ -209,7 +209,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 	assert.Nil(t, err)
 
 	err = os.Chdir(root)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	for _, dir := range testDirs {
 		err = os.Mkdir(dir, 0750)
