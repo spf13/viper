@@ -1346,8 +1346,12 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 
 	switch strings.ToLower(v.getConfigType()) {
 	case "yaml", "yml":
-		if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
-			return ConfigParseError{err}
+		// Try UnmarshalStrict first, so we can warn about duplicated keys
+		if strictErr := yaml.UnmarshalStrict(buf.Bytes(), &c); strictErr != nil {
+			if err := yaml.Unmarshal(buf.Bytes(), &c); err != nil {
+				return ConfigParseError{err}
+			}
+			log.Printf("warning reading config file: %v\n", strictErr)
 		}
 
 	case "json":
