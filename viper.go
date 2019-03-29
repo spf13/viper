@@ -910,8 +910,6 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConf
 		return err
 	}
 
-	v.insensitiviseMaps()
-
 	return nil
 }
 
@@ -926,8 +924,6 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 	if err != nil {
 		return err
 	}
-
-	v.insensitiviseMaps()
 
 	return nil
 }
@@ -970,8 +966,6 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	v.insensitiviseMaps()
 
 	return nil
 }
@@ -1693,13 +1687,6 @@ func (v *Viper) WatchRemoteConfig() error {
 
 func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
-}
-
-func (v *Viper) insensitiviseMaps() {
-	insensitiviseMap(v.config)
-	insensitiviseMap(v.defaults)
-	insensitiviseMap(v.override)
-	insensitiviseMap(v.kvstore)
 }
 
 // Retrieve the first found remote configuration.
