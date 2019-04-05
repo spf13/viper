@@ -7,22 +7,29 @@ package viper
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var yamlExample = []byte(`Hacker: true
@@ -381,6 +388,36 @@ func TestEnv(t *testing.T) {
 
 }
 
+func TestEmptyEnv(t *testing.T) {
+	initJSON()
+
+	BindEnv("type") // Empty environment variable
+	BindEnv("name") // Bound, but not set environment variable
+
+	os.Clearenv()
+
+	os.Setenv("TYPE", "")
+
+	assert.Equal(t, "donut", Get("type"))
+	assert.Equal(t, "Cake", Get("name"))
+}
+
+func TestEmptyEnv_Allowed(t *testing.T) {
+	initJSON()
+
+	AllowEmptyEnv(true)
+
+	BindEnv("type") // Empty environment variable
+	BindEnv("name") // Bound, but not set environment variable
+
+	os.Clearenv()
+
+	os.Setenv("TYPE", "")
+
+	assert.Equal(t, "", Get("type"))
+	assert.Equal(t, "Cake", Get("name"))
+}
+
 func TestEnvPrefix(t *testing.T) {
 	initJSON()
 
@@ -503,6 +540,42 @@ func TestUnmarshal(t *testing.T) {
 	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
 }
 
+func TestUnmarshalWithDecoderOptions(t *testing.T) {
+	Set("credentials", "{\"foo\":\"bar\"}")
+
+	opt := DecodeHook(mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		// Custom Decode Hook Function
+		func(rf reflect.Kind, rt reflect.Kind, data interface{}) (interface{}, error) {
+			if rf != reflect.String || rt != reflect.Map {
+				return data, nil
+			}
+			m := map[string]string{}
+			raw := data.(string)
+			if raw == "" {
+				return m, nil
+			}
+			return m, json.Unmarshal([]byte(raw), &m)
+		},
+	))
+
+	type config struct {
+		Credentials map[string]string
+	}
+
+	var C config
+
+	err := Unmarshal(&C, opt)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+
+	assert.Equal(t, &config{
+		Credentials: map[string]string{"foo": "bar"},
+	}, &C)
+}
+
 func TestBindPFlags(t *testing.T) {
 	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -540,24 +613,28 @@ func TestBindPFlags(t *testing.T) {
 }
 
 func TestBindPFlagsStringSlice(t *testing.T) {
-	for _, testValue := range []struct {
+	tests := []struct {
 		Expected []string
 		Value    string
 	}{
-		{[]string{}, ""},
+		{nil, ""},
 		{[]string{"jeden"}, "jeden"},
 		{[]string{"dwa", "trzy"}, "dwa,trzy"},
-		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""}} {
+		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []string{"default"}
+	v.SetDefault("stringslice", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.StringSlice("stringslice", testValue.Expected, "test")
 
 		for _, changed := range []bool{true, false} {
-			v := New() // create independent Viper object
-			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
-			flagSet.StringSlice("stringslice", testValue.Expected, "test")
-			flagSet.Visit(func(f *pflag.Flag) {
-				if len(testValue.Value) > 0 {
-					f.Value.Set(testValue.Value)
-					f.Changed = changed
-				}
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
 			})
 
 			err := v.BindPFlags(flagSet)
@@ -572,7 +649,11 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 			if err := v.Unmarshal(val); err != nil {
 				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
 			}
-			assert.Equal(t, testValue.Expected, val.StringSlice)
+			if changed {
+				assert.Equal(t, testValue.Expected, val.StringSlice)
+			} else {
+				assert.Equal(t, defaultVal, val.StringSlice)
+			}
 		}
 	}
 }
@@ -1065,10 +1146,6 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("pop != 37890, = %d", pop)
 	}
 
-	if pop := v.GetInt("hello.lagrenum"); pop != 765432101234567 {
-		t.Fatalf("lagrenum != 765432101234567, = %d", pop)
-	}
-
 	if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
 		t.Fatalf("pop != 37890, = %d", pop)
 	}
@@ -1103,10 +1180,6 @@ func TestMergeConfig(t *testing.T) {
 
 	if pop := v.GetInt("hello.pop"); pop != 45000 {
 		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if pop := v.GetInt("hello.lagrenum"); pop != 7654321001234567 {
-		t.Fatalf("lagrenum != 7654321001234567, = %d", pop)
 	}
 
 	if pop := v.GetInt32("hello.pop"); pop != int32(45000) {
@@ -1168,6 +1241,48 @@ func TestMergeConfigNoMerge(t *testing.T) {
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
 	}
+}
+
+func TestMergeConfigMap(t *testing.T) {
+	v := New()
+	v.SetConfigType("yml")
+	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	assert := func(i int) {
+		large := v.GetInt("hello.lagrenum")
+		pop := v.GetInt("hello.pop")
+		if large != 765432101234567 {
+			t.Fatal("Got large num:", large)
+		}
+
+		if pop != i {
+			t.Fatal("Got pop:", pop)
+		}
+	}
+
+	assert(37890)
+
+	update := map[string]interface{}{
+		"Hello": map[string]interface{}{
+			"Pop": 1234,
+		},
+		"World": map[interface{}]interface{}{
+			"Rock": 345,
+		},
+	}
+
+	if err := v.MergeConfigMap(update); err != nil {
+		t.Fatal(err)
+	}
+
+	if rock := v.GetInt("world.rock"); rock != 345 {
+		t.Fatal("Got rock:", rock)
+	}
+
+	assert(1234)
+
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
@@ -1386,6 +1501,111 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
+
+}
+
+func newViperWithConfigFile(t *testing.T) (*Viper, string, func()) {
+	watchDir, err := ioutil.TempDir("", "")
+	require.Nil(t, err)
+	configFile := path.Join(watchDir, "config.yaml")
+	err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0640)
+	require.Nil(t, err)
+	cleanup := func() {
+		os.RemoveAll(watchDir)
+	}
+	v := New()
+	v.SetConfigFile(configFile)
+	err = v.ReadInConfig()
+	require.Nil(t, err)
+	require.Equal(t, "bar", v.Get("foo"))
+	return v, configFile, cleanup
+}
+
+func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func()) {
+	watchDir, err := ioutil.TempDir("", "")
+	require.Nil(t, err)
+	dataDir1 := path.Join(watchDir, "data1")
+	err = os.Mkdir(dataDir1, 0777)
+	require.Nil(t, err)
+	realConfigFile := path.Join(dataDir1, "config.yaml")
+	t.Logf("Real config file location: %s\n", realConfigFile)
+	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0640)
+	require.Nil(t, err)
+	cleanup := func() {
+		os.RemoveAll(watchDir)
+	}
+	// now, symlink the tm `data1` dir to `data` in the baseDir
+	os.Symlink(dataDir1, path.Join(watchDir, "data"))
+	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
+	configFile := path.Join(watchDir, "config.yaml")
+	os.Symlink(path.Join(watchDir, "data", "config.yaml"), configFile)
+	t.Logf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
+	// init Viper
+	v := New()
+	v.SetConfigFile(configFile)
+	err = v.ReadInConfig()
+	require.Nil(t, err)
+	require.Equal(t, "bar", v.Get("foo"))
+	return v, watchDir, configFile, cleanup
+}
+
+func TestWatchFile(t *testing.T) {
+	if runtime.GOOS == "linux" {
+		// TODO(bep) FIX ME
+		t.Skip("Skip test on Linux ...")
+	}
+
+	t.Run("file content changed", func(t *testing.T) {
+		// given a `config.yaml` file being watched
+		v, configFile, cleanup := newViperWithConfigFile(t)
+		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+		t.Logf("test config file: %s\n", configFile)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		v.OnConfigChange(func(in fsnotify.Event) {
+			t.Logf("config file changed")
+			wg.Done()
+		})
+		v.WatchConfig()
+		// when overwriting the file and waiting for the custom change notification handler to be triggered
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
+		wg.Wait()
+		// then the config value should have changed
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+	})
+
+	t.Run("link to real file changed (à la Kubernetes)", func(t *testing.T) {
+		// skip if not executed on Linux
+		if runtime.GOOS != "linux" {
+			t.Skipf("Skipping test as symlink replacements don't work on non-linux environment...")
+		}
+		v, watchDir, _, _ := newViperWithSymlinkedConfigFile(t)
+		// defer cleanup()
+		wg := sync.WaitGroup{}
+		v.WatchConfig()
+		v.OnConfigChange(func(in fsnotify.Event) {
+			t.Logf("config file changed")
+			wg.Done()
+		})
+		wg.Add(1)
+		// when link to another `config.yaml` file
+		dataDir2 := path.Join(watchDir, "data2")
+		err := os.Mkdir(dataDir2, 0777)
+		require.Nil(t, err)
+		configFile2 := path.Join(dataDir2, "config.yaml")
+		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0640)
+		require.Nil(t, err)
+		// change the symlink using the `ln -sfn` command
+		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
+		require.Nil(t, err)
+		wg.Wait()
+		// then
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+	})
 
 }
 
