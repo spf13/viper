@@ -180,10 +180,11 @@ type Viper struct {
 	remoteProviders []*defaultRemoteProvider
 
 	// Name of file to look for inside the path
-	configName string
-	configFile string
-	configType string
-	envPrefix  string
+	configName        string
+	configFile        string
+	configType        string
+	configPermissions os.FileMode
+	envPrefix         string
 
 	automaticEnvApplied bool
 	envKeyReplacer      *strings.Replacer
@@ -211,6 +212,7 @@ func New() *Viper {
 	v := new(Viper)
 	v.keyDelim = "."
 	v.configName = "config"
+	v.configPermissions = os.FileMode(0644)
 	v.fs = afero.NewOsFs()
 	v.config = make(map[string]interface{})
 	v.override = make(map[string]interface{})
@@ -1332,7 +1334,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
 		}
 	}
-	f, err := v.fs.OpenFile(filename, flags, os.FileMode(0644))
+	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
 	if err != nil {
 		return err
 	}
@@ -1784,6 +1786,12 @@ func (v *Viper) SetConfigType(in string) {
 func SetKeysCaseSensitive(on bool) { v.SetKeysCaseSensitive(on) }
 func (v *Viper) SetKeysCaseSensitive(on bool) {
 	v.caseSensitiveKeys = on
+}
+
+// SetConfigPermissions sets the permissions for the config file.
+func SetConfigPermissions(perm os.FileMode) { v.SetConfigPermissions(perm) }
+func (v *Viper) SetConfigPermissions(perm os.FileMode) {
+	v.configPermissions = perm.Perm()
 }
 
 func (v *Viper) getConfigType() string {
