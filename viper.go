@@ -689,6 +689,12 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToString(val)
 		case int32, int16, int8, int:
 			return cast.ToInt(val)
+		case uint:
+			return cast.ToUint(val)
+		case uint32:
+			return cast.ToUint32(val)
+		case uint64:
+			return cast.ToUint64(val)
 		case int64:
 			return cast.ToInt64(val)
 		case float64, float32:
@@ -750,6 +756,24 @@ func (v *Viper) GetInt32(key string) int32 {
 func GetInt64(key string) int64 { return v.GetInt64(key) }
 func (v *Viper) GetInt64(key string) int64 {
 	return cast.ToInt64(v.Get(key))
+}
+
+// GetUint returns the value associated with the key as an unsigned integer.
+func GetUint(key string) uint { return v.GetUint(key) }
+func (v *Viper) GetUint(key string) uint {
+	return cast.ToUint(v.Get(key))
+}
+
+// GetUint32 returns the value associated with the key as an unsigned integer.
+func GetUint32(key string) uint32 { return v.GetUint32(key) }
+func (v *Viper) GetUint32(key string) uint32 {
+	return cast.ToUint32(v.Get(key))
+}
+
+// GetUint64 returns the value associated with the key as an unsigned integer.
+func GetUint64(key string) uint64 { return v.GetUint64(key) }
+func (v *Viper) GetUint64(key string) uint64 {
+	return cast.ToUint64(v.Get(key))
 }
 
 // GetFloat64 returns the value associated with the key as a float64.
