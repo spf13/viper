@@ -103,6 +103,16 @@ if err != nil { // Handle errors reading the config file
 }
 ```
 
+Alternatively (or in addition), the path to a specific config file can be provided (instead of a directory).
+
+```go
+viper.SetConfigFile("$HOME/customconfig.toml") // explicitly add a specific config file
+err := viper.ReadInConfig() // read the config file
+if err != nil { // Handle errors reading the config file
+	panic(fmt.Errorf("Fatal error while loading config file: %s \n", err))
+}
+```
+
 ### Watching and re-reading config files
 
 Viper supports the ability to have your application live read a config file while running.
