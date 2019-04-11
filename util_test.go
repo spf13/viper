@@ -16,6 +16,7 @@ import (
 )
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
+
 	var (
 		given = map[string]interface{}{
 			"Foo": 32,
