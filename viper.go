@@ -35,7 +35,6 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
@@ -45,6 +44,7 @@ import (
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
+	"gopkg.in/fsnotify.v1"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.

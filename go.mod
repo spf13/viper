@@ -5,7 +5,6 @@ require (
 	github.com/coreos/etcd v3.3.10+incompatible // indirect
 	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
 	github.com/coreos/go-semver v0.2.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.7
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.0
 	github.com/mitchellh/mapstructure v1.1.2
@@ -20,5 +19,6 @@ require (
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/sys v0.0.0-20181205085412-a5c9d58dba9a // indirect
 	golang.org/x/text v0.3.0 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.2.2
 )

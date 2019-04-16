@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
+	"gopkg.in/fsnotify.v1"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
