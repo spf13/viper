@@ -40,13 +40,13 @@ import (
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
 	toml "github.com/pelletier/go-toml"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 )
 
-// Logger collects log messages.
+// Logger collects log messages. The default logger logs warnings,
+// errors and  fatals.
 var Logger interface {
 	Tracef(string, ...interface{})
 	Debugf(string, ...interface{})
@@ -61,7 +61,7 @@ var Logger interface {
 	Warning(...interface{})
 	Error(...interface{})
 	Fatal(...interface{})
-} = logrus.New()
+} = logger{}
 
 // ConfigMarshalError happens when failing to marshal the configuration.
 type ConfigMarshalError struct {

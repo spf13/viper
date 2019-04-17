@@ -12,6 +12,7 @@ package viper
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -217,3 +218,19 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 	}
 	return m
 }
+
+type logger struct{}
+
+func (logger) Tracef(f string, args ...interface{})   {}
+func (logger) Debugf(f string, args ...interface{})   {}
+func (logger) Infof(f string, args ...interface{})    {}
+func (logger) Warningf(f string, args ...interface{}) { log.Printf(f, args...) }
+func (logger) Errorf(f string, args ...interface{})   { log.Printf(f, args...) }
+func (logger) Fatalf(f string, args ...interface{})   { log.Fatalf(f, args...) }
+
+func (logger) Trace(args ...interface{})   {}
+func (logger) Debug(args ...interface{})   {}
+func (logger) Info(args ...interface{})    {}
+func (logger) Warning(args ...interface{}) { log.Print(args...) }
+func (logger) Error(args ...interface{})   { log.Print(args...) }
+func (logger) Fatal(args ...interface{})   { log.Fatal(args...) }
