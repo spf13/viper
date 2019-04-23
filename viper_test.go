@@ -1766,3 +1766,23 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 		}
 	}
 }
+
+func TestKnownKeys(t *testing.T) {
+	v := New()
+	v.SetDefault("default", 45)
+	if _, ok := v.GetKnownKeys()["default"]; !ok {
+		t.Error("SetDefault didn't mark key as known")
+	}
+	v.BindEnv("bind", "my_env_var")
+	if _, ok := v.GetKnownKeys()["bind"]; !ok {
+		t.Error("BindEnv didn't mark key as known")
+	}
+	v.RegisterAlias("my_alias", "key")
+	if _, ok := v.GetKnownKeys()["my_alias"]; !ok {
+		t.Error("RegisterAlias didn't mark alias as known")
+	}
+	v.SetKnown("known")
+	if _, ok := v.GetKnownKeys()["known"]; !ok {
+		t.Error("SetKnown didn't mark key as known")
+	}
+}

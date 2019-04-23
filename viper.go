@@ -196,6 +196,7 @@ type Viper struct {
 	pflags         map[string]FlagValue
 	env            map[string]string
 	aliases        map[string]string
+	knownKeys      map[string]interface{}
 	typeByDefValue bool
 
 	// Store read properties on the object so that we can write back in order with comments.
@@ -218,6 +219,7 @@ func New() *Viper {
 	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
+	v.knownKeys = make(map[string]interface{})
 	v.typeByDefValue = false
 
 	return v
@@ -1036,6 +1038,8 @@ func (v *Viper) BindEnv(input ...string) error {
 
 	v.env[key] = envkey
 
+	v.SetKnown(key)
+
 	return nil
 }
 
@@ -1233,6 +1237,7 @@ func (v *Viper) registerAlias(alias string, key string) {
 	} else {
 		jww.WARN.Println("Creating circular reference alias", alias, key, v.realKey(key))
 	}
+	v.SetKnown(alias)
 }
 
 func (v *Viper) realKey(key string) string {
@@ -1269,6 +1274,29 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 
 	// set innermost value
 	deepestMap[lastKey] = value
+	v.SetKnown(key)
+}
+
+// SetKnown adds a key to the set of known valid config keys
+func SetKnown(key string) { v.SetKnown(key) }
+func (v *Viper) SetKnown(key string) {
+	key = strings.ToLower(key)
+	splitPath := strings.Split(key, v.keyDelim)
+	for j := range splitPath {
+		subKey := strings.Join(splitPath[:j+1], v.keyDelim)
+		v.knownKeys[subKey] = struct{}{}
+	}
+}
+
+// GetKnownKeys returns all the keys that meet at least one of these criteria:
+// 1) have a default, 2) have an environment variable binded, 3) are an alias or 4) have been SetKnown()
+func GetKnownKeys() map[string]interface{} { return v.GetKnownKeys() }
+func (v *Viper) GetKnownKeys() map[string]interface{} {
+	ret := make(map[string]interface{})
+	for key, value := range v.knownKeys {
+		ret[key] = value
+	}
+	return ret
 }
 
 // Set sets the value for the key in the override register.
