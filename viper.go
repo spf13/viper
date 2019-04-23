@@ -1278,6 +1278,7 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 }
 
 // SetKnown adds a key to the set of known valid config keys
+func SetKnown(key string) { v.SetKnown(key) }
 func (v *Viper) SetKnown(key string) {
 	key = strings.ToLower(key)
 	splitPath := strings.Split(key, v.keyDelim)
@@ -1289,6 +1290,7 @@ func (v *Viper) SetKnown(key string) {
 
 // GetKnownKeys returns all the keys that meet at least one of these criteria:
 // 1) have a default, 2) have an environment variable binded, 3) are an alias or 4) have been SetKnown()
+func GetKnownKeys() map[string]interface{} { return v.GetKnownKeys() }
 func (v *Viper) GetKnownKeys() map[string]interface{} {
 	ret := make(map[string]interface{})
 	for key, value := range v.knownKeys {
