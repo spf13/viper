@@ -8,6 +8,8 @@ import (
 )
 
 func TestBindFlagValueSet(t *testing.T) {
+	v := New()
+
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	var testValues = map[string]*string{
@@ -28,7 +30,7 @@ func TestBindFlagValueSet(t *testing.T) {
 
 	flagValueSet := pflagValueSet{flagSet}
 
-	err := BindFlagValues(flagValueSet)
+	err := v.BindFlagValues(flagValueSet)
 	if err != nil {
 		t.Fatalf("error binding flag set, %v", err)
 	}
@@ -39,11 +41,13 @@ func TestBindFlagValueSet(t *testing.T) {
 	})
 
 	for name, expected := range mutatedTestValues {
-		assert.Equal(t, Get(name), expected)
+		assert.Equal(t, v.Get(name), expected)
 	}
 }
 
 func TestBindFlagValue(t *testing.T) {
+	v := New()
+
 	var testString = "testing"
 	var testValue = newStringValue(testString, &testString)
 
@@ -54,12 +58,12 @@ func TestBindFlagValue(t *testing.T) {
 	}
 
 	flagValue := pflagValue{flag}
-	BindFlagValue("testvalue", flagValue)
+	v.BindFlagValue("testvalue", flagValue)
 
-	assert.Equal(t, testString, Get("testvalue"))
+	assert.Equal(t, testString, v.Get("testvalue"))
 
 	flag.Value.Set("testing_mutate")
 	flag.Changed = true //hack for pflag usage
 
-	assert.Equal(t, "testing_mutate", Get("testvalue"))
+	assert.Equal(t, "testing_mutate", v.Get("testvalue"))
 }
