@@ -204,6 +204,7 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+	configMutex    sync.RWMutex
 }
 
 // New returns an initialized Viper instance.
@@ -972,7 +973,8 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string) interface{} {
-
+	v.configMutex.RLock()
+	defer v.configMutex.RUnlock()
 	var (
 		val    interface{}
 		exists bool
@@ -1212,6 +1214,8 @@ func (v *Viper) Set(key string, value interface{}) {
 	lastKey := strings.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
+	v.configMutex.Lock()
+	defer v.configMutex.Unlock()
 	// set innermost value
 	deepestMap[lastKey] = value
 }
@@ -1243,6 +1247,8 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 
+	v.configMutex.Lock()
+	defer v.configMutex.Unlock()
 	v.config = config
 	return nil
 }
@@ -1272,8 +1278,12 @@ func (v *Viper) MergeInConfig() error {
 // key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
-	v.config = make(map[string]interface{})
-	return v.unmarshalReader(in, v.config)
+	config := make(map[string]interface{})
+	err := v.unmarshalReader(in, config)
+	v.configMutex.Lock()
+	defer v.configMutex.Unlock()
+	v.config = config
+	return err
 }
 
 // MergeConfig merges a new configuration with an existing config.
@@ -1290,11 +1300,18 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 // Note that the map given may be modified.
 func MergeConfigMap(cfg map[string]interface{}) error { return v.MergeConfigMap(cfg) }
 func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
-	if v.config == nil {
-		v.config = make(map[string]interface{})
+	v.configMutex.RLock()
+	config := v.config
+	v.configMutex.RUnlock()
+	if config == nil {
+		config = make(map[string]interface{})
 	}
 	insensitiviseMap(cfg)
 	mergeMaps(cfg, v.config, nil)
+
+	v.configMutex.Lock()
+	defer v.configMutex.Unlock()
+	v.config = config
 	return nil
 }
 
@@ -1367,6 +1384,8 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return v.unmarshalReader(in, c)
 }
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	v.configMutex.RLock()
+	defer v.configMutex.RUnlock()
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
@@ -1668,15 +1687,17 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 // Nested keys are returned with a v.keyDelim (= ".") separator
 func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
+	v.configMutex.RLock()
+	defer v.configMutex.RUnlock()
 	m := map[string]bool{}
 	// add all paths, by order of descending priority to ensure correct shadowing
-	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
-	m = v.flattenAndMergeMap(m, v.override, "")
-	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
-	m = v.mergeFlatMap(m, castMapStringToMapInterface(v.env))
-	m = v.flattenAndMergeMap(m, v.config, "")
-	m = v.flattenAndMergeMap(m, v.kvstore, "")
-	m = v.flattenAndMergeMap(m, v.defaults, "")
+	m = flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "", v.keyDelim)
+	m = flattenAndMergeMap(m, v.override, "", v.keyDelim)
+	m = mergeFlatMap(m, castMapFlagToMapInterface(v.pflags), v.keyDelim)
+	m = mergeFlatMap(m, castMapStringToMapInterface(v.env), v.keyDelim)
+	m = flattenAndMergeMap(m, v.config, "", v.keyDelim)
+	m = flattenAndMergeMap(m, v.kvstore, "", v.keyDelim)
+	m = flattenAndMergeMap(m, v.defaults, "", v.keyDelim)
 
 	// convert set of paths to list
 	a := []string{}
@@ -1684,65 +1705,6 @@ func (v *Viper) AllKeys() []string {
 		a = append(a, x)
 	}
 	return a
-}
-
-// flattenAndMergeMap recursively flattens the given map into a map[string]bool
-// of key paths (used as a set, easier to manipulate than a []string):
-// - each path is merged into a single key string, delimited with v.keyDelim (= ".")
-// - if a path is shadowed by an earlier value in the initial shadow map,
-//   it is skipped.
-// The resulting set of paths is merged to the given shadow set at the same time.
-func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interface{}, prefix string) map[string]bool {
-	if shadow != nil && prefix != "" && shadow[prefix] {
-		// prefix is shadowed => nothing more to flatten
-		return shadow
-	}
-	if shadow == nil {
-		shadow = make(map[string]bool)
-	}
-
-	var m2 map[string]interface{}
-	if prefix != "" {
-		prefix += v.keyDelim
-	}
-	for k, val := range m {
-		fullKey := prefix + k
-		switch val.(type) {
-		case map[string]interface{}:
-			m2 = val.(map[string]interface{})
-		case map[interface{}]interface{}:
-			m2 = cast.ToStringMap(val)
-		default:
-			// immediate value
-			shadow[strings.ToLower(fullKey)] = true
-			continue
-		}
-		// recursively merge to shadow map
-		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
-	}
-	return shadow
-}
-
-// mergeFlatMap merges the given maps, excluding values of the second map
-// shadowed by values from the first map.
-func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
-	// scan keys
-outer:
-	for k, _ := range m {
-		path := strings.Split(k, v.keyDelim)
-		// scan intermediate paths
-		var parentKey string
-		for i := 1; i < len(path); i++ {
-			parentKey = strings.Join(path[0:i], v.keyDelim)
-			if shadow[parentKey] {
-				// path is shadowed, continue
-				continue outer
-			}
-		}
-		// add key
-		shadow[strings.ToLower(k)] = true
-	}
-	return shadow
 }
 
 // AllSettings merges all settings and returns them as a map[string]interface{}.

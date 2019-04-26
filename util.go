@@ -219,3 +219,62 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 	}
 	return m
 }
+
+// mergeFlatMap merges the given maps, excluding values of the second map
+// shadowed by values from the first map.
+func mergeFlatMap(shadow map[string]bool, m map[string]interface{}, keyDelim string) map[string]bool {
+	// scan keys
+outer:
+	for k, _ := range m {
+		path := strings.Split(k, keyDelim)
+		// scan intermediate paths
+		var parentKey string
+		for i := 1; i < len(path); i++ {
+			parentKey = strings.Join(path[0:i], v.keyDelim)
+			if shadow[parentKey] {
+				// path is shadowed, continue
+				continue outer
+			}
+		}
+		// add key
+		shadow[strings.ToLower(k)] = true
+	}
+	return shadow
+}
+
+// flattenAndMergeMap recursively flattens the given map into a map[string]bool
+// of key paths (used as a set, easier to manipulate than a []string):
+// - each path is merged into a single key string, delimited with v.keyDelim (= ".")
+// - if a path is shadowed by an earlier value in the initial shadow map,
+//   it is skipped.
+// The resulting set of paths is merged to the given shadow set at the same time.
+func flattenAndMergeMap(shadow map[string]bool, m map[string]interface{}, prefix string, keyDelim string) map[string]bool {
+	if shadow != nil && prefix != "" && shadow[prefix] {
+		// prefix is shadowed => nothing more to flatten
+		return shadow
+	}
+	if shadow == nil {
+		shadow = make(map[string]bool)
+	}
+
+	var m2 map[string]interface{}
+	if prefix != "" {
+		prefix += keyDelim
+	}
+	for k, val := range m {
+		fullKey := prefix + k
+		switch val.(type) {
+		case map[string]interface{}:
+			m2 = val.(map[string]interface{})
+		case map[interface{}]interface{}:
+			m2 = cast.ToStringMap(val)
+		default:
+			// immediate value
+			shadow[strings.ToLower(fullKey)] = true
+			continue
+		}
+		// recursively merge to shadow map
+		shadow = flattenAndMergeMap(shadow, m2, fullKey, keyDelim)
+	}
+	return shadow
+}

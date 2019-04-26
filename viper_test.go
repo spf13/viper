@@ -1609,6 +1609,71 @@ func TestWatchFile(t *testing.T) {
 
 }
 
+func TestHighMutationRateAcrossGoRoutines(t *testing.T) {
+	var wg sync.WaitGroup
+	end := 25
+	v := New()
+	// given a `config.yaml` file being watched
+	v, configFile, cleanup := newViperWithConfigFile(t)
+	defer cleanup()
+	_, err := os.Stat(configFile)
+	require.NoError(t, err)
+	t.Logf("test config file: %s\n", configFile)
+
+	v.WatchConfig()
+
+	for i := 0; i < end; i++ {
+		// Set and Get
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			v.Set("key", i)
+			val := v.GetInt("key")
+			if !v.IsSet("key") {
+				t.Errorf("'key' should be set.")
+			}
+			if !(0 <= val && val < end) {
+				t.Errorf("Expected range 0 <= %d <= %d", val, end)
+			}
+		}(i)
+
+		// Trigger WatchConfig reload
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if err := ioutil.WriteFile(configFile, []byte(fmt.Sprintf("foo: %d\n", i)), 0640); err != nil {
+				t.Fatal(err)
+			}
+		}(i)
+		// ReadConfig
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		// MergeConfig
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		// AllSettings and AllKeys
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			v.AllSettings()
+			v.AllKeys()
+		}()
+	}
+	wg.Wait()
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()

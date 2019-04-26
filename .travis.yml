@@ -22,7 +22,7 @@ matrix:
 script:
   - go install ./...
   - diff -u <(echo -n) <(gofmt -d .)
-  - go test -v ./...
+  - go test -v ./... -race -cover
 
 after_success:
   - go get -u -d github.com/spf13/hugo
