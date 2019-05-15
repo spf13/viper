@@ -1123,6 +1123,16 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
 }
 
+// GetAliases returns the alias map, used for documentation generation.
+func GetAliases() map[string]string { return v.GetAliases() }
+func (v *Viper) GetAliases() map[string]string {
+	result := make(map[string]string)
+	for k, v := range v.aliases {
+		result[k] = v
+	}
+	return result
+}
+
 // Aliases provide another accessor for the same key.
 // This enables one to change a name without breaking the application
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
@@ -1139,6 +1149,12 @@ func (v *Viper) registerAlias(alias string, key string) {
 			// if we alias something that exists in one of the maps to another
 			// name, we'll never be able to get that value using the original
 			// name, so move the config value to the new realkey.
+			path := strings.Split(alias, v.keyDelim)
+			if val := v.searchMapWithPathPrefixes(v.config, path); val != nil {
+				parent := v.searchMapWithPathPrefixes(v.config, path[:len(path)-1])
+				delete(parent.(map[string]interface{}), path[len(path)-1])
+				v.config[key] = val
+			}
 			if val, ok := v.config[alias]; ok {
 				delete(v.config, alias)
 				v.config[key] = val
