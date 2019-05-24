@@ -1116,7 +1116,7 @@ func TestWriteConfigYAML(t *testing.T) {
 var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
-    lagrenum: 765432101234567
+    largenum: 765432101234567
     num2pow63: 9223372036854775808
     world:
     - us
@@ -1128,7 +1128,7 @@ hello:
 var yamlMergeExampleSrc = []byte(`
 hello:
     pop: 45000
-    lagrenum: 7654321001234567
+    largenum: 7654321001234567
     universe:
     - mw
     - ad
@@ -1150,8 +1150,8 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("pop != 37890, = %d", pop)
 	}
 
-	if pop := v.GetInt64("hello.lagrenum"); pop != int64(765432101234567) {
-		t.Fatalf("int64 lagrenum != 765432101234567, = %d", pop)
+	if pop := v.GetInt64("hello.largenum"); pop != int64(765432101234567) {
+		t.Fatalf("int64 largenum != 765432101234567, = %d", pop)
 	}
 
 	if pop := v.GetUint("hello.pop"); pop != 37890 {
@@ -1186,8 +1186,8 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("pop != 45000, = %d", pop)
 	}
 
-	if pop := v.GetInt64("hello.lagrenum"); pop != int64(7654321001234567) {
-		t.Fatalf("int64 lagrenum != 7654321001234567, = %d", pop)
+	if pop := v.GetInt64("hello.largenum"); pop != int64(7654321001234567) {
+		t.Fatalf("int64 largenum != 7654321001234567, = %d", pop)
 	}
 
 	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
@@ -1251,7 +1251,7 @@ func TestMergeConfigMap(t *testing.T) {
 	}
 
 	assert := func(i int) {
-		large := v.GetInt("hello.lagrenum")
+		large := v.GetInt("hello.largenum")
 		pop := v.GetInt("hello.pop")
 		if large != 765432101234567 {
 			t.Fatal("Got large num:", large)
