@@ -1251,7 +1251,7 @@ func TestMergeConfigMap(t *testing.T) {
 	}
 
 	assert := func(i int) {
-		large := v.GetInt("hello.largenum")
+		large := v.GetInt64("hello.largenum")
 		pop := v.GetInt("hello.pop")
 		if large != 765432101234567 {
 			t.Fatal("Got large num:", large)
