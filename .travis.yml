@@ -21,6 +21,12 @@ matrix:
 
 script:
   - go install ./...
+
+  # Ensure no dependencies were added without encoding them in go.mod/go.sum.
+  - go mod tidy
+  - git diff go.mod | tee /dev/stderr | (! read)
+  - git diff go.sum | tee /dev/stderr | (! read)
+
   - diff -u <(echo -n) <(gofmt -d .)
   - go test -v ./...
 
