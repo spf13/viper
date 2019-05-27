@@ -82,16 +82,22 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 		if err != nil {
 			return nil, err
 		}
-		if rp.Provider() == "etcd" {
+		switch rp.Provider() {
+		case "etcd":
 			cm, err = crypt.NewEtcdConfigManager([]string{rp.Endpoint()}, kr)
-		} else {
+		case "consul":
 			cm, err = crypt.NewConsulConfigManager([]string{rp.Endpoint()}, kr)
+		case "vault":
+			cm, err = NewVaultConfigManager([]string{rp.Endpoint()}, kr)
 		}
 	} else {
-		if rp.Provider() == "etcd" {
+		switch rp.Provider() {
+		case "etcd":
 			cm, err = crypt.NewStandardEtcdConfigManager([]string{rp.Endpoint()})
-		} else {
+		case "consul":
 			cm, err = crypt.NewStandardConsulConfigManager([]string{rp.Endpoint()})
+		case "vault":
+			cm, err = NewStandardVaultConfigManager([]string{rp.Endpoint()})
 		}
 	}
 	if err != nil {
