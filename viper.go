@@ -794,6 +794,12 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
+// GetStringArray returns the value associated with the key as a slice of strings.
+func GetStringArray(key string) []string { return v.GetStringArray(key) }
+func (v *Viper) GetStringArray(key string) []string {
+	return cast.ToStringSlice(v.Get(key))
+}
+
 // GetStringSlice returns the value associated with the key as a slice of strings.
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 func (v *Viper) GetStringSlice(key string) []string {
@@ -1012,6 +1018,8 @@ func (v *Viper) find(lcaseKey string) interface{} {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return res
+		case "stringArray":
+			return flag.ValueStringArray()
 		default:
 			return flag.ValueString()
 		}
@@ -1081,6 +1089,8 @@ func (v *Viper) find(lcaseKey string) interface{} {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return res
+		case "stringArray":
+			return flag.ValueStringArray()
 		default:
 			return flag.ValueString()
 		}
