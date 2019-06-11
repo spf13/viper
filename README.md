@@ -186,7 +186,7 @@ with ENV:
  * `BindEnv(string...) : error`
  * `SetEnvPrefix(string)`
  * `SetEnvKeyReplacer(string...) *strings.Replacer`
-  * `AllowEmptyEnvVar(bool)`
+ * `AllowEmptyEnv(bool)`
 
 _When working with ENV variables, it’s important to recognize that Viper
 treats ENV variables as case sensitive._
