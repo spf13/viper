@@ -619,7 +619,7 @@ if err != nil {
 
 ### Marshalling to string
 
-You may need to marhsal all the settings held in viper into a string rather than write them to a file. 
+You may need to marshal all the settings held in viper into a string rather than write them to a file. 
 You can use your favorite format's marshaller with the config returned by `AllSettings()`.
 
 ```go
