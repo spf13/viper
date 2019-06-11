@@ -540,11 +540,13 @@ func TestUnmarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")
 	Set("duration", "1s1ms")
+	Set("modes", []int{1, 2, 3})
 
 	type config struct {
 		Port     int
 		Name     string
 		Duration time.Duration
+		Modes    []int
 	}
 
 	var C config
@@ -554,14 +556,33 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, &config{Name: "Steve", Port: 1313, Duration: time.Second + time.Millisecond}, &C)
+	assert.Equal(
+		t,
+		&config{
+			Name:     "Steve",
+			Port:     1313,
+			Duration: time.Second + time.Millisecond,
+			Modes:    []int{1, 2, 3},
+		},
+		&C,
+	)
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
 	if err != nil {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
-	assert.Equal(t, &config{Name: "Steve", Port: 1234, Duration: time.Second + time.Millisecond}, &C)
+
+	assert.Equal(
+		t,
+		&config{
+			Name:     "Steve",
+			Port:     1234,
+			Duration: time.Second + time.Millisecond,
+			Modes:    []int{1, 2, 3},
+		},
+		&C,
+	)
 }
 
 func TestUnmarshalWithDecoderOptions(t *testing.T) {
@@ -677,6 +698,51 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 				assert.Equal(t, testValue.Expected, val.StringSlice)
 			} else {
 				assert.Equal(t, defaultVal, val.StringSlice)
+			}
+		}
+	}
+}
+
+func TestBindPFlagsIntSlice(t *testing.T) {
+	tests := []struct {
+		Expected []int
+		Value    string
+	}{
+		{nil, ""},
+		{[]int{1}, "1"},
+		{[]int{2, 3}, "2,3"},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []int{0}
+	v.SetDefault("intslice", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.IntSlice("intslice", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestInt struct {
+				IntSlice []int
+			}
+			val := &TestInt{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			if changed {
+				assert.Equal(t, testValue.Expected, val.IntSlice)
+			} else {
+				assert.Equal(t, defaultVal, val.IntSlice)
 			}
 		}
 	}
