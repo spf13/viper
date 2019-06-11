@@ -64,6 +64,11 @@ organization = "MongoDB"
 Bio = "MongoDB Chief Developer Advocate & Hacker at Large"
 dob = 1979-05-27T07:32:00Z # First class dates? Why not?`)
 
+var dotenvExample = []byte(`
+TITLE_DOTENV="DotEnv Example"
+TYPE_DOTENV=donut
+NAME_DOTENV=Cake`)
+
 var jsonExample = []byte(`{
 "id": "0001",
 "type": "donut",
@@ -136,6 +141,10 @@ func initConfigs() {
 	r = bytes.NewReader(tomlExample)
 	unmarshalReader(r, v.config)
 
+	SetConfigType("env")
+	r = bytes.NewReader(dotenvExample)
+	unmarshalReader(r, v.config)
+
 	SetConfigType("json")
 	remote := bytes.NewReader(remoteExample)
 	unmarshalReader(remote, v.kvstore)
@@ -175,6 +184,14 @@ func initTOML() {
 	Reset()
 	SetConfigType("toml")
 	r := bytes.NewReader(tomlExample)
+
+	unmarshalReader(r, v.config)
+}
+
+func initDotEnv() {
+	Reset()
+	SetConfigType("env")
+	r := bytes.NewReader(dotenvExample)
 
 	unmarshalReader(r, v.config)
 }
@@ -342,6 +359,11 @@ func TestTOML(t *testing.T) {
 	assert.Equal(t, "TOML Example", Get("title"))
 }
 
+func TestDotEnv(t *testing.T) {
+	initDotEnv()
+	assert.Equal(t, "DotEnv Example", Get("title_dotenv"))
+}
+
 func TestHCL(t *testing.T) {
 	initHcl()
 	assert.Equal(t, "0001", Get("id"))
@@ -470,9 +492,11 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.trousers", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos"}
+	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.trousers", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos",
+		"title_dotenv", "type_dotenv", "name_dotenv",
+	}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"trousers": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}, "title_dotenv": "DotEnv Example", "type_dotenv": "donut", "name_dotenv": "Cake"}
 
 	var allkeys sort.StringSlice
 	allkeys = AllKeys()
@@ -756,8 +780,11 @@ func TestFindsNestedKeys(t *testing.T) {
 		"hobbies": []interface{}{
 			"skateboarding", "snowboarding", "go",
 		},
-		"title":  "TOML Example",
-		"newkey": "remote",
+		"TITLE_DOTENV": "DotEnv Example",
+		"TYPE_DOTENV":  "donut",
+		"NAME_DOTENV":  "Cake",
+		"title":        "TOML Example",
+		"newkey":       "remote",
 		"batters": map[string]interface{}{
 			"batter": []interface{}{
 				map[string]interface{}{
@@ -1075,6 +1102,43 @@ func TestWriteConfigTOML(t *testing.T) {
 	assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
 	assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
 	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
+}
+
+var dotenvWriteExpected = []byte(`
+TITLE="DotEnv Write Example"
+NAME=Oreo
+KIND=Biscuit
+`)
+
+func TestWriteConfigDotEnv(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	v := New()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("env")
+	err := v.ReadConfig(bytes.NewBuffer(dotenvWriteExpected))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c.env"); err != nil {
+		t.Fatal(err)
+	}
+
+	// The TOML String method does not order the contents.
+	// Therefore, we must read the generated file and compare the data.
+	v2 := New()
+	v2.SetFs(fs)
+	v2.SetConfigName("c")
+	v2.SetConfigType("env")
+	v2.SetConfigFile("c.env")
+	err = v2.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
+	assert.Equal(t, v.GetString("type"), v2.GetString("type"))
+	assert.Equal(t, v.GetString("kind"), v2.GetString("kind"))
 }
 
 var yamlWriteExpected = []byte(`age: 35
