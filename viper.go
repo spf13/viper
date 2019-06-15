@@ -1346,14 +1346,11 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 func writeConfig(filename string, force bool) error { return v.writeConfig(filename, force) }
 func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
-	ext := filepath.Ext(filename)
-	if len(ext) <= 1 {
-		return fmt.Errorf("Filename: %s requires valid extension.", filename)
+
+	if !stringInSlice(v.getConfigType(), SupportedExts) {
+		return UnsupportedConfigError(v.getConfigType())
 	}
-	configType := ext[1:]
-	if !stringInSlice(configType, SupportedExts) {
-		return UnsupportedConfigError(configType)
-	}
+
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
@@ -1371,7 +1368,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if err != nil {
 		return err
 	}
-	return v.marshalWriter(f, configType)
+	return v.marshalWriter(f, v.getConfigType())
 }
 
 // Unmarshal a Reader into a map.
