@@ -1262,6 +1262,9 @@ hello:
     universe:
     - mw
     - ad
+    ints:
+    - 1
+    - 2
 fu: bar
 `)
 
@@ -1328,6 +1331,10 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("len(universe) != 2, = %d", len(universe))
 	}
 
+	if ints := v.GetIntSlice("hello.ints"); len(ints) != 2 {
+		t.Fatalf("len(ints) != 2, = %d", len(ints))
+	}
+
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
 	}
@@ -1366,6 +1373,10 @@ func TestMergeConfigNoMerge(t *testing.T) {
 
 	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
 		t.Fatalf("len(universe) != 2, = %d", len(universe))
+	}
+
+	if ints := v.GetIntSlice("hello.ints"); len(ints) != 2 {
+		t.Fatalf("len(ints) != 2, = %d", len(ints))
 	}
 
 	if fu := v.GetString("fu"); fu != "bar" {
