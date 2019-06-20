@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"sort"
@@ -270,6 +271,22 @@ func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
 	filename, err := v.getConfigFile()
 	assert.Equal(t, "/tmp/config.yaml", filename)
+	assert.NoError(t, err)
+}
+
+func TestSearchInPath(t *testing.T) {
+	filename := ".dotfilenoext"
+	path := "/tmp"
+	file := filepath.Join(path, filename)
+	SetConfigName(filename)
+	AddConfigPath(path)
+	_, createErr := v.fs.Create(file)
+	defer func() {
+		_ = v.fs.Remove(file)
+	}()
+	assert.NoError(t, createErr)
+	filename, err := v.getConfigFile()
+	assert.Equal(t, file, filename)
 	assert.NoError(t, err)
 }
 
