@@ -225,9 +225,8 @@ prefix.
 `BindEnv` takes one or two parameters. The first parameter is the key name, the
 second is the name of the environment variable. The name of the environment
 variable is case sensitive. If the ENV variable name is not provided, then
-Viper will automatically assume that the key name matches the ENV variable name,
-but the ENV variable is IN ALL CAPS. When you explicitly provide the ENV
-variable name, it **does not** automatically add the prefix.
+Viper will automatically assume that the ENV variable is the prefix + "_" + the key name in ALL CAPS. When you explicitly provide the ENV
+variable name which is the second parameter, it **does not** automatically add the prefix, which means if the second parameter is "id", the environment variable is just plain "ID".
 
 One important thing to recognize when working with ENV variables is that the
 value will be read each time it is accessed. Viper does not fix the value when
