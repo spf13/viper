@@ -107,6 +107,20 @@ if err != nil { // Handle errors reading the config file
 }
 ```
 
+You can handle the specific case where no config file is found like this:
+
+```go
+if err := viper.ReadInConfig(); err != nil {
+    if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+        // Config file not found; ignore error if desired
+    } else {
+        // Config file was found but another error was produced
+    }
+}
+
+// Config file found and successfully parsed
+```
+
 ### Writing Config Files
 
 Reading from config files is useful, but at times you want to store all modifications made at run time.
