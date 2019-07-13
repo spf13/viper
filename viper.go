@@ -797,7 +797,7 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
-// GetIntSlice returns the value associated with the key as a slice of strings.
+// GetIntSlice returns the value associated with the key as a slice of int values.
 func GetIntSlice(key string) []int { return v.GetIntSlice(key) }
 func (v *Viper) GetIntSlice(key string) []int {
 	return cast.ToIntSlice(v.Get(key))
