@@ -200,6 +200,8 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
+	previousValues map[string]interface{}
+
 	// Store read properties on the object so that we can write back in order with comments.
 	// This will only be used if the configuration read is a properties file.
 	properties *properties.Properties
@@ -220,6 +222,7 @@ func New() *Viper {
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
 	v.kvstore = make(map[string]interface{})
+	v.previousValues = make(map[string]interface{})
 	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
@@ -685,6 +688,45 @@ func GetViper() *Viper {
 	return v
 }
 
+// HasChanged returns true if a key has changed and the change has not been retrieved yet using `Get()` and all
+// casters `GetString()`, `GetDuration()`, ...
+//
+// If the value has not been retrieved at all this will also return true.
+func HasChanged(key string) bool { return v.HasChanged(key) }
+func (v *Viper) HasChanged(key string) bool {
+	lcaseKey := strings.ToLower(key)
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
+	value, ok := v.previousValues[lcaseKey]
+	if !ok {
+		return IsSet(lcaseKey)
+	}
+
+	// Avoid writing the change
+	return value != v.find(lcaseKey)
+}
+
+// HasChangedSinceInit returns true if a key has changed and the change has not been retrieved yet using `Get()` and all
+// casters `GetString()`, `GetDuration()`, ...
+//
+// If the value has not been retrieved before at all this will return false.
+func HasChangedSinceInit(key string) bool { return v.HasChangedSinceInit(key) }
+func (v *Viper) HasChangedSinceInit(key string) bool {
+	lcaseKey := strings.ToLower(key)
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
+	value, ok := v.previousValues[lcaseKey]
+	if !ok {
+		return false
+	}
+
+	// Avoid writing the change
+	return value != v.find(lcaseKey)
+
+}
+
 // Get can retrieve any value given the key to use.
 // Get is case-insensitive for a key.
 // Get has the behavior of returning the value associated with the first
@@ -696,6 +738,11 @@ func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey)
+
+	v.lock.Lock()
+	v.previousValues[lcaseKey] = val
+	v.lock.Unlock()
+
 	if val == nil {
 		return nil
 	}

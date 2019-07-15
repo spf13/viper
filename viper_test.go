@@ -1761,6 +1761,25 @@ func TestArrayOfObjects(t *testing.T) {
 	require.NoError(t, WriteConfig())
 }
 
+func TestHasChanged(t *testing.T) {
+	Reset()
+	require.False(t, HasChanged("foo"))
+	require.False(t, HasChangedSinceInit("foo"))
+
+	Set("foo", "bar")
+	require.False(t, HasChangedSinceInit("foo"))
+	require.True(t, HasChanged("foo"))
+	require.Equal(t, "bar", Get("foo"))
+	require.False(t, HasChanged("foo"))
+
+	Set("foo", "baz")
+	require.True(t, HasChangedSinceInit("foo"))
+	require.True(t, HasChanged("foo"))
+	require.Equal(t, "baz", Get("foo"))
+	require.False(t, HasChanged("foo"))
+	require.False(t, HasChangedSinceInit("foo"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
