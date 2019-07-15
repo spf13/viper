@@ -11,8 +11,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/viper"
 	crypt "github.com/xordataexchange/crypt/config"
+
+	"github.com/ory/viper"
 )
 
 type remoteConfigProvider struct{}

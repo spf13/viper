@@ -1,4 +1,4 @@
-go_import_path: github.com/spf13/viper
+go_import_path: github.com/ory/viper
 
 language: go
 

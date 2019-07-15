@@ -13,6 +13,8 @@ package viper
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
@@ -51,4 +53,22 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 	if _, ok := m["ABc"]; !ok {
 		t.Fatal("Input map changed")
 	}
+}
+
+func TestToMapStringInterface(t *testing.T) {
+	assert.EqualValues(
+		t,
+		map[string]interface{}{
+			"foo": "bar",
+			"items": map[string]interface{}{
+				"foo": "bar",
+			},
+		},
+		toMapStringInterface(map[string]interface{}{
+			"foo": "bar",
+			"items": map[interface{}]interface{}{
+				"foo": "bar",
+			},
+		}),
+	)
 }

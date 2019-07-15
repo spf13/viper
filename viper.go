@@ -33,14 +33,14 @@ import (
 	"sync"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
-	toml "github.com/pelletier/go-toml"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
@@ -205,6 +205,8 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+
+	lock sync.RWMutex
 }
 
 // New returns an initialized Viper instance.
@@ -355,6 +357,8 @@ func (v *Viper) WatchConfig() {
 // Viper will use this and not check any of the config paths.
 func SetConfigFile(in string) { v.SetConfigFile(in) }
 func (v *Viper) SetConfigFile(in string) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	if in != "" {
 		v.configFile = in
 	}
@@ -365,6 +369,8 @@ func (v *Viper) SetConfigFile(in string) {
 // variables that start with "SPF_".
 func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
 func (v *Viper) SetEnvPrefix(in string) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	if in != "" {
 		v.envPrefix = in
 	}
@@ -383,6 +389,8 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // For backward compatibility reasons this is false by default.
 func AllowEmptyEnv(allowEmptyEnv bool) { v.AllowEmptyEnv(allowEmptyEnv) }
 func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.allowEmptyEnv = allowEmptyEnv
 }
 
@@ -404,13 +412,21 @@ func (v *Viper) getEnv(key string) (string, bool) {
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
-func ConfigFileUsed() string            { return v.ConfigFileUsed() }
-func (v *Viper) ConfigFileUsed() string { return v.configFile }
+func ConfigFileUsed() string { return v.ConfigFileUsed() }
+func (v *Viper) ConfigFileUsed() string {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
+	return v.configFile
+}
 
 // AddConfigPath adds a path for Viper to search for the config file in.
 // Can be called multiple times to define multiple search paths.
 func AddConfigPath(in string) { v.AddConfigPath(in) }
 func (v *Viper) AddConfigPath(in string) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	if in != "" {
 		absin := absPathify(in)
 		jww.INFO.Println("adding", absin, "to paths to search")
@@ -432,6 +448,9 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 	return v.AddRemoteProvider(provider, endpoint, path)
 }
 func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
 	}
@@ -464,6 +483,9 @@ func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) err
 }
 
 func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
 	}
@@ -652,6 +674,9 @@ func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 //   "a b c"
 func SetTypeByDefaultValue(enable bool) { v.SetTypeByDefaultValue(enable) }
 func (v *Viper) SetTypeByDefaultValue(enable bool) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	v.typeByDefValue = enable
 }
 
@@ -945,6 +970,8 @@ func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
 //
 func BindFlagValue(key string, flag FlagValue) error { return v.BindFlagValue(key, flag) }
 func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
@@ -958,6 +985,8 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	var key, envkey string
 	if len(input) == 0 {
 		return fmt.Errorf("BindEnv missing key to bind to")
@@ -982,6 +1011,8 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string) interface{} {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
 
 	var (
 		val    interface{}
@@ -1132,6 +1163,8 @@ func (v *Viper) IsSet(key string) bool {
 // keys set in config, default & flags
 func AutomaticEnv() { v.AutomaticEnv() }
 func (v *Viper) AutomaticEnv() {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.automaticEnvApplied = true
 }
 
@@ -1140,6 +1173,8 @@ func (v *Viper) AutomaticEnv() {
 // not match it.
 func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
 func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.envKeyReplacer = r
 }
 
@@ -1153,6 +1188,8 @@ func (v *Viper) RegisterAlias(alias string, key string) {
 func (v *Viper) registerAlias(alias string, key string) {
 	alias = strings.ToLower(alias)
 	if alias != key && alias != v.realKey(key) {
+		v.lock.Lock()
+		defer v.lock.Unlock()
 		_, exists := v.aliases[alias]
 
 		if !exists {
@@ -1183,6 +1220,8 @@ func (v *Viper) registerAlias(alias string, key string) {
 }
 
 func (v *Viper) realKey(key string) string {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
 	newkey, exists := v.aliases[key]
 	if exists {
 		jww.DEBUG.Println("Alias", key, "to", newkey)
@@ -1232,6 +1271,9 @@ func (v *Viper) Set(key string, value interface{}) {
 	lastKey := strings.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	// set innermost value
 	deepestMap[lastKey] = value
 }
@@ -1263,6 +1305,8 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.config = config
 	return nil
 }
@@ -1292,6 +1336,8 @@ func (v *Viper) MergeInConfig() error {
 // key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.config = make(map[string]interface{})
 	return v.unmarshalReader(in, v.config)
 }
@@ -1310,6 +1356,8 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 // Note that the map given may be modified.
 func MergeConfigMap(cfg map[string]interface{}) error { return v.MergeConfigMap(cfg) }
 func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
@@ -1374,13 +1422,19 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
 		}
 	}
+
+	var buffer bytes.Buffer
+	if err := v.marshalWriter(&buffer, configType); err != nil {
+		return err
+	}
+
 	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	if err := v.marshalWriter(f, configType); err != nil {
+	if _, err := io.Copy(f, &buffer); err != nil {
 		return err
 	}
 
@@ -1456,11 +1510,16 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return nil
 }
 
+type fileWriter interface {
+	io.Writer
+	io.StringWriter
+}
+
 // Marshal a map into Writer.
 func marshalWriter(f afero.File, configType string) error {
 	return v.marshalWriter(f, configType)
 }
-func (v *Viper) marshalWriter(f afero.File, configType string) error {
+func (v *Viper) marshalWriter(f fileWriter, configType string) error {
 	c := v.AllSettings()
 	switch configType {
 	case "json":
@@ -1648,8 +1707,11 @@ func (v *Viper) WatchRemoteConfigOnChannel() error {
 
 // Retrieve the first found remote configuration.
 func (v *Viper) getKeyValueConfig() error {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
 	if RemoteConfig == nil {
-		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/spf13/viper/remote'")
+		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/ory/viper/remote'")
 	}
 
 	for _, rp := range v.remoteProviders {
@@ -1664,6 +1726,9 @@ func (v *Viper) getKeyValueConfig() error {
 }
 
 func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
 	reader, err := RemoteConfig.Get(provider)
 	if err != nil {
 		return nil, err
@@ -1715,6 +1780,9 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 // Nested keys are returned with a v.keyDelim (= ".") separator
 func AllKeys() []string { return v.AllKeys() }
 func (v *Viper) AllKeys() []string {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
 	m := map[string]bool{}
 	// add all paths, by order of descending priority to ensure correct shadowing
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
@@ -1810,12 +1878,15 @@ func (v *Viper) AllSettings() map[string]interface{} {
 		// set innermost value
 		deepestMap[lastKey] = value
 	}
-	return m
+	return toMapStringInterface(m).(map[string]interface{}) // This is safe because the input is map[string]interface{}
 }
 
 // SetFs sets the filesystem to use to read configuration.
 func SetFs(fs afero.Fs) { v.SetFs(fs) }
 func (v *Viper) SetFs(fs afero.Fs) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	v.fs = fs
 }
 
@@ -1824,6 +1895,8 @@ func (v *Viper) SetFs(fs afero.Fs) {
 func SetConfigName(in string) { v.SetConfigName(in) }
 func (v *Viper) SetConfigName(in string) {
 	if in != "" {
+		v.lock.Lock()
+		defer v.lock.Unlock()
 		v.configName = in
 		v.configFile = ""
 	}
@@ -1834,6 +1907,8 @@ func (v *Viper) SetConfigName(in string) {
 func SetConfigType(in string) { v.SetConfigType(in) }
 func (v *Viper) SetConfigType(in string) {
 	if in != "" {
+		v.lock.Lock()
+		defer v.lock.Unlock()
 		v.configType = in
 	}
 }
@@ -1841,6 +1916,8 @@ func (v *Viper) SetConfigType(in string) {
 // SetConfigPermissions sets the permissions for the config file.
 func SetConfigPermissions(perm os.FileMode) { v.SetConfigPermissions(perm) }
 func (v *Viper) SetConfigPermissions(perm os.FileMode) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
 	v.configPermissions = perm.Perm()
 }
 
@@ -1905,6 +1982,8 @@ func (v *Viper) findConfigFile() (string, error) {
 // purposes.
 func Debug() { v.Debug() }
 func (v *Viper) Debug() {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
 	fmt.Printf("Aliases:\n%#v\n", v.aliases)
 	fmt.Printf("Override:\n%#v\n", v.override)
 	fmt.Printf("PFlags:\n%#v\n", v.pflags)
