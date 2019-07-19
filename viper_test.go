@@ -952,6 +952,7 @@ func TestDirsSearch(t *testing.T) {
 	v.SetDefault(`key`, `default`)
 
 	entries, err := ioutil.ReadDir(root)
+	assert.Nil(t, err)
 	for _, e := range entries {
 		if e.IsDir() {
 			v.AddConfigPath(e.Name())
