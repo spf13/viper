@@ -1402,7 +1402,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		}
 
 	case "hcl":
-		obj, err := hcl.Parse(string(buf.Bytes()))
+		obj, err := hcl.Parse(buf.String())
 		if err != nil {
 			return ConfigParseError{err}
 		}
@@ -1772,7 +1772,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
-	for k, _ := range m {
+	for k := range m {
 		path := strings.Split(k, v.keyDelim)
 		// scan intermediate paths
 		var parentKey string
