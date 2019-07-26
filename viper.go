@@ -1316,7 +1316,15 @@ func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
 	filename, err := v.getConfigFile()
 	if err != nil {
-		return err
+		ext := SupportedExts[0]
+		if v.configType != "" {
+			ext = v.configType
+		}
+		path := ""
+		if len(v.configPaths) > 0 {
+			path = v.configPaths[0]
+		}
+		filename = filepath.Join(path, v.configName+"."+ext)
 	}
 	return v.writeConfig(filename, true)
 }
@@ -1326,7 +1334,15 @@ func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
 	filename, err := v.getConfigFile()
 	if err != nil {
-		return err
+		ext := SupportedExts[0]
+		if v.configType != "" {
+			ext = v.configType
+		}
+		path := ""
+		if len(v.configPaths) > 0 {
+			path = v.configPaths[0]
+		}
+		filename = filepath.Join(path, v.configName+"."+ext)
 	}
 	return v.writeConfig(filename, false)
 }

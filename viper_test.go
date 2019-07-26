@@ -1243,6 +1243,26 @@ func TestWriteConfigYAML(t *testing.T) {
 	assert.Equal(t, yamlWriteExpected, read)
 }
 
+func TestWriteNotExistTarget(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfig(); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, yamlWriteExpected, read)
+}
+
 var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
