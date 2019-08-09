@@ -493,7 +493,7 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 
 // searchMap recursively searches for a value for path in source map.
 // Returns nil if not found.
-// Note: This assumes that the path entries and map keys are lower cased.
+// Note: This assumes that the path entries and map keys are cased sensitive.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
@@ -532,7 +532,7 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 // This should be useful only at config level (other maps may not contain dots
 // in their keys).
 //
-// Note: This assumes that the path entries and map keys are lower cased.
+// Note: This assumes that the path entries and map keys are case sensitive.
 func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
@@ -540,7 +540,7 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
-		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
+		prefixKey := strings.Join(path[0:i], v.keyDelim)
 
 		next, ok := source[prefixKey]
 		if ok {
@@ -661,7 +661,7 @@ func GetViper() *Viper {
 }
 
 // Get can retrieve any value given the key to use.
-// Get is case-insensitive for a key.
+// Get is case-sensitive for a key.
 // Get has the behavior of returning the value associated with the first
 // place from where it is set. Viper will check in the following order:
 // override, flag, env, config file, key/value store, default
@@ -669,7 +669,7 @@ func GetViper() *Viper {
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
-	lcaseKey := strings.ToLower(key)
+	lcaseKey := key
 	val := v.find(lcaseKey)
 	if val == nil {
 		return nil
@@ -716,7 +716,7 @@ func (v *Viper) Get(key string) interface{} {
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
-// Sub is case-insensitive for a key.
+// Sub is case-sensitive for a key.
 func Sub(key string) *Viper { return v.Sub(key) }
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
@@ -948,7 +948,7 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
-	v.pflags[strings.ToLower(key)] = flag
+	v.pflags[key] = flag
 	return nil
 }
 
@@ -963,7 +963,7 @@ func (v *Viper) BindEnv(input ...string) error {
 		return fmt.Errorf("BindEnv missing key to bind to")
 	}
 
-	key = strings.ToLower(input[0])
+	key = input[0]
 
 	if len(input) == 1 {
 		envkey = v.mergeWithEnvPrefix(key)
@@ -980,7 +980,7 @@ func (v *Viper) BindEnv(input ...string) error {
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.
 // Viper will check to see if an alias exists first.
-// Note: this assumes a lower-cased key given.
+// Note: this assumes a case-sensitive key given.
 func (v *Viper) find(lcaseKey string) interface{} {
 
 	var (
@@ -1120,10 +1120,10 @@ func readAsCSV(val string) ([]string, error) {
 }
 
 // IsSet checks to see if the key has been set in any of the data locations.
-// IsSet is case-insensitive for a key.
+// IsSet is case-sensitive for a key.
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
-	lcaseKey := strings.ToLower(key)
+	lcaseKey := key
 	val := v.find(lcaseKey)
 	return val != nil
 }
@@ -1147,11 +1147,10 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 // This enables one to change a name without breaking the application.
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
 func (v *Viper) RegisterAlias(alias string, key string) {
-	v.registerAlias(alias, strings.ToLower(key))
+	v.registerAlias(alias, key)
 }
 
 func (v *Viper) registerAlias(alias string, key string) {
-	alias = strings.ToLower(alias)
 	if alias != key && alias != v.realKey(key) {
 		_, exists := v.aliases[alias]
 
@@ -1202,16 +1201,15 @@ func (v *Viper) InConfig(key string) bool {
 }
 
 // SetDefault sets the default value for this key.
-// SetDefault is case-insensitive for a key.
+// SetDefault is case-sensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
-	key = v.realKey(strings.ToLower(key))
-	value = toCaseInsensitiveValue(value)
+	key = v.realKey(key)
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := path[len(path)-1]
 	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
 
 	// set innermost value
@@ -1219,17 +1217,16 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 }
 
 // Set sets the value for the key in the override register.
-// Set is case-insensitive for a key.
+// Set is case-sensitive for a key.
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
-	key = v.realKey(strings.ToLower(key))
-	value = toCaseInsensitiveValue(value)
+	key = v.realKey(key)
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := path[len(path)-1]
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
 	// set innermost value
@@ -1313,7 +1310,6 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-	insensitiviseMap(cfg)
 	mergeMaps(cfg, v.config, nil)
 	return nil
 }
@@ -1439,14 +1435,13 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 			value, _ := v.properties.Get(key)
 			// recursively build nested maps
 			path := strings.Split(key, ".")
-			lastKey := strings.ToLower(path[len(path)-1])
+			lastKey := path[len(path)-1]
 			deepestMap := deepSearch(c, path[0:len(path)-1])
 			// set innermost value
 			deepestMap[lastKey] = value
 		}
 	}
 
-	insensitiviseMap(c)
 	return nil
 }
 
@@ -1532,9 +1527,9 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 }
 
 func keyExists(k string, m map[string]interface{}) string {
-	lk := strings.ToLower(k)
+	lk := k
 	for mk := range m {
-		lmk := strings.ToLower(mk)
+		lmk := mk
 		if lmk == lk {
 			return mk
 		}
@@ -1758,7 +1753,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = true
+			shadow[fullKey] = true
 			continue
 		}
 		// recursively merge to shadow map
@@ -1784,7 +1779,7 @@ outer:
 			}
 		}
 		// add key
-		shadow[strings.ToLower(k)] = true
+		shadow[k] = true
 	}
 	return shadow
 }
@@ -1802,7 +1797,7 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
-		lastKey := strings.ToLower(path[len(path)-1])
+		lastKey := path[len(path)-1]
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
 		deepestMap[lastKey] = value

@@ -66,7 +66,7 @@ dob = 1979-05-27T07:32:00Z # First class dates? Why not?`)
 var dotenvExample = []byte(`
 TITLE_DOTENV="DotEnv Example"
 TYPE_DOTENV=donut
-NAME_DOTENV=Cake`)
+name_dotenv=Cake`)
 
 var jsonExample = []byte(`{
 "id": "0001",
@@ -295,7 +295,7 @@ func TestUnmarshaling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.Equal(t, "steve", Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "TROUSERS": "denim", "pants": map[string]interface{}{"size": "large"}}, Get("clothing"))
+	assert.Equal(t, map[interface{}]interface{}{"TROUSERS": "denim", "jacket": "leather", "pants": map[interface{}]interface{}{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 
@@ -360,7 +360,7 @@ func TestTOML(t *testing.T) {
 
 func TestDotEnv(t *testing.T) {
 	initDotEnv()
-	assert.Equal(t, "DotEnv Example", Get("title_dotenv"))
+	assert.Equal(t, "DotEnv Example", Get("TITLE_DOTENV"))
 }
 
 func TestHCL(t *testing.T) {
@@ -491,11 +491,11 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.TROUSERS", "clothing.pants.size", "age", "hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos",
-		"title_dotenv", "type_dotenv", "name_dotenv",
+	ks := sort.StringSlice{"title", "newkey", "owner.organization", "owner.dob", "owner.Bio", "name", "beard", "ppu", "batters.batter", "hobbies", "clothing.jacket", "clothing.TROUSERS", "clothing.pants.size", "age", "Hacker", "id", "type", "eyes", "p_id", "p_ppu", "p_batters.batter.type", "p_type", "p_name", "foos",
+		"TITLE_DOTENV", "TYPE_DOTENV", "name_dotenv",
 	}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"TROUSERS": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}, "title_dotenv": "DotEnv Example", "type_dotenv": "donut", "name_dotenv": "Cake"}
+	all := map[string]interface{}{"owner": map[string]interface{}{"organization": "MongoDB", "Bio": "MongoDB Chief Developer Advocate & Hacker at Large", "dob": dob}, "title": "TOML Example", "ppu": 0.55, "eyes": "brown", "clothing": map[string]interface{}{"TROUSERS": "denim", "jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "id": "0001", "batters": map[string]interface{}{"batter": []interface{}{map[string]interface{}{"type": "Regular"}, map[string]interface{}{"type": "Chocolate"}, map[string]interface{}{"type": "Blueberry"}, map[string]interface{}{"type": "Devil's Food"}}}, "Hacker": true, "beard": true, "hobbies": []interface{}{"skateboarding", "snowboarding", "go"}, "age": 35, "type": "donut", "newkey": "remote", "name": "Cake", "p_id": "0001", "p_ppu": "0.55", "p_name": "Cake", "p_batters": map[string]interface{}{"batter": map[string]interface{}{"type": "Regular"}}, "p_type": "donut", "foos": []map[string]interface{}{map[string]interface{}{"foo": []map[string]interface{}{map[string]interface{}{"key": 1}, map[string]interface{}{"key": 2}, map[string]interface{}{"key": 3}, map[string]interface{}{"key": 4}}}}, "TITLE_DOTENV": "DotEnv Example", "TYPE_DOTENV": "donut", "name_dotenv": "Cake"}
 
 	allkeys := sort.StringSlice(AllKeys())
 	allkeys.Sort()
@@ -526,7 +526,7 @@ func TestAliasesOfAliases(t *testing.T) {
 	Set("Title", "Checking Case")
 	RegisterAlias("Foo", "Bar")
 	RegisterAlias("Bar", "Title")
-	assert.Equal(t, "Checking Case", Get("FOO"))
+	assert.Equal(t, "Checking Case", Get("Foo"))
 }
 
 func TestRecursiveAliases(t *testing.T) {
@@ -773,7 +773,8 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	BindEnv("eYEs", "TURTLE_EYES")
 	os.Setenv("TURTLE_EYES", "blue")
 
-	assert.Equal(t, "blue", Get("eyes"))
+	assert.Equal(t, "blue", Get("eYEs"))
+	assert.Nil(t, Get("eyeS"))
 
 	var testString = "green"
 	var testValue = newStringValue(testString, &testString)
@@ -785,7 +786,8 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	}
 
 	BindPFlag("eYEs", flag)
-	assert.Equal(t, "green", Get("eyes"))
+	assert.Equal(t, "green", Get("eYEs"))
+	assert.Nil(t, Get("Eyes"))
 
 }
 
@@ -846,7 +848,7 @@ func TestFindsNestedKeys(t *testing.T) {
 		},
 		"TITLE_DOTENV": "DotEnv Example",
 		"TYPE_DOTENV":  "donut",
-		"NAME_DOTENV":  "Cake",
+		"name_dotenv":  "Cake",
 		"title":        "TOML Example",
 		"newkey":       "remote",
 		"batters": map[string]interface{}{
@@ -867,19 +869,19 @@ func TestFindsNestedKeys(t *testing.T) {
 		"age":  35,
 		"owner": map[string]interface{}{
 			"organization": "MongoDB",
-			"bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
 			"dob":          dob,
 		},
-		"owner.bio": "MongoDB Chief Developer Advocate & Hacker at Large",
+		"owner.Bio": "MongoDB Chief Developer Advocate & Hacker at Large",
 		"type":      "donut",
 		"id":        "0001",
 		"name":      "Cake",
-		"hacker":    true,
+		"Hacker":    true,
 		"ppu":       0.55,
-		"clothing": map[string]interface{}{
+		"clothing": map[interface{}]interface{}{
 			"jacket":   "leather",
 			"TROUSERS": "denim",
-			"pants": map[string]interface{}{
+			"pants": map[interface{}]interface{}{
 				"size": "large",
 			},
 		},
@@ -925,7 +927,7 @@ func TestReadBufConfig(t *testing.T) {
 	assert.False(t, v.InConfig("state"))
 	assert.Equal(t, "steve", v.Get("name"))
 	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "TROUSERS": "denim", "pants": map[string]interface{}{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, map[interface{}]interface{}{"TROUSERS": "denim", "jacket": "leather", "pants": map[interface{}]interface{}{"size": "large"}}, v.Get("clothing"))
 	assert.Equal(t, 35, v.Get("age"))
 }
 
@@ -1164,7 +1166,7 @@ func TestWriteConfigTOML(t *testing.T) {
 	}
 
 	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
-	assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
+	assert.Equal(t, v.GetString("owner.Bio"), v2.GetString("owner.Bio"))
 	assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
 	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
 }
@@ -1206,15 +1208,15 @@ func TestWriteConfigDotEnv(t *testing.T) {
 	assert.Equal(t, v.GetString("kind"), v2.GetString("kind"))
 }
 
-var yamlWriteExpected = []byte(`age: 35
+var yamlWriteExpected = []byte(`Hacker: true
+age: 35
 beard: true
 clothing:
+  TROUSERS: denim
   jacket: leather
   pants:
     size: large
-  TROUSERS: denim
 eyes: brown
-hacker: true
 hobbies:
 - skateboarding
 - snowboarding
@@ -1225,6 +1227,9 @@ name: steve
 func TestWriteConfigYAML(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
+	a := afero.Afero{
+		Fs: fs,
+	}
 	v.SetFs(fs)
 	v.SetConfigName("c")
 	v.SetConfigType("yaml")
@@ -1235,7 +1240,7 @@ func TestWriteConfigYAML(t *testing.T) {
 	if err := v.WriteConfigAs("c.yaml"); err != nil {
 		t.Fatal(err)
 	}
-	read, err := afero.ReadFile(fs, "c.yaml")
+	read, err := a.ReadFile("c.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1405,8 +1410,8 @@ func TestMergeConfigMap(t *testing.T) {
 	assert(37890)
 
 	update := map[string]interface{}{
-		"Hello": map[string]interface{}{
-			"Pop": 1234,
+		"hello": map[interface{}]interface{}{
+			"pop": 1234,
 		},
 		"World": map[interface{}]interface{}{
 			"Rock": 345,
@@ -1417,7 +1422,7 @@ func TestMergeConfigMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if rock := v.GetInt("world.rock"); rock != 345 {
+	if rock := v.GetInt("World.Rock"); rock != 345 {
 		t.Fatal("Got rock:", rock)
 	}
 
@@ -1497,7 +1502,7 @@ func TestDotParameter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestCaseInsensitive(t *testing.T) {
+func TestCaseSensitive(t *testing.T) {
 	for _, config := range []struct {
 		typ     string
 		content string
@@ -1538,7 +1543,7 @@ Q = 5
 R = 6
 `},
 	} {
-		doTestCaseInsensitive(t, config.typ, config.content)
+		doTestCaseSensitive(t, config.typ, config.content)
 	}
 }
 
@@ -1567,15 +1572,15 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	SetDefault("Number2", 52)
 
 	// Verify SetDefault
-	if v := Get("number2"); v != 52 {
+	if v := Get("Number2"); v != 52 {
 		t.Fatalf("Expected 52 got %q", v)
 	}
 
-	if v := Get("given2.foo"); v != 52 {
+	if v := Get("Given2.Foo"); v != 52 {
 		t.Fatalf("Expected 52 got %q", v)
 	}
 
-	if v := Get("given2.bar.bcd"); v != "A" {
+	if v := Get("Given2.Bar.bCd"); v != "A" {
 		t.Fatalf("Expected A got %q", v)
 	}
 
@@ -1584,15 +1589,15 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	}
 
 	// Verify Set
-	if v := Get("number1"); v != 42 {
+	if v := Get("Number1"); v != 42 {
 		t.Fatalf("Expected 42 got %q", v)
 	}
 
-	if v := Get("given1.foo"); v != 32 {
+	if v := Get("Given1.Foo"); v != 32 {
 		t.Fatalf("Expected 32 got %q", v)
 	}
 
-	if v := Get("given1.bar.abc"); v != "A" {
+	if v := Get("Given1.Bar.ABc"); v != "A" {
 		t.Fatalf("Expected A got %q", v)
 	}
 
@@ -1630,17 +1635,18 @@ func TestParseNested(t *testing.T) {
 	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
 }
 
-func doTestCaseInsensitive(t *testing.T, typ, config string) {
+func doTestCaseSensitive(t *testing.T, typ, config string) {
 	initConfig(typ, config)
 	Set("RfD", true)
-	assert.Equal(t, true, Get("rfd"))
-	assert.Equal(t, true, Get("rFD"))
-	assert.Equal(t, 1, cast.ToInt(Get("abcd")))
-	assert.Equal(t, 1, cast.ToInt(Get("Abcd")))
-	assert.Equal(t, 2, cast.ToInt(Get("ef.gh")))
-	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
-	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
-	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
+	assert.Nil(t, Get("rfd"))
+	assert.Nil(t, Get("rFD"))
+	assert.Nil(t, Get("RFD"))
+	assert.Equal(t, true, Get("RfD"))
+	assert.Equal(t, 1, cast.ToInt(Get("aBcD")))
+	assert.Equal(t, 2, cast.ToInt(Get("eF.gH")))
+	assert.Equal(t, 3, cast.ToInt(Get("eF.iJk")))
+	assert.Equal(t, 4, cast.ToInt(Get("eF.Lm.nO")))
+	assert.Equal(t, 5, cast.ToInt(Get("eF.Lm.P.Q")))
 
 }
 

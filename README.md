@@ -66,7 +66,7 @@ item below it:
  * key/value store
  * default
 
-Viper configuration keys are case insensitive.
+Viper configuration keys are case sensitive.
 
 ## Putting Values into Viper
 
@@ -512,7 +512,7 @@ has been provided.
 
 Example:
 ```go
-viper.GetString("logfile") // case-insensitive Setting & Getting
+viper.GetString("logfile") // case-sensitive Setting & Getting
 if viper.GetBool("verbose") {
     fmt.Println("verbose enabled")
 }
