@@ -1783,7 +1783,7 @@ func initDotEnvFile(t *testing.T) (string, func()) {
 	}
 }
 
-func TestFindDotEnvFile(t *testing.T){
+func TestFindDotEnvFile(t *testing.T) {
 	v := New()
 	v.SetConfigType("env")
 	err := v.ReadConfig(bytes.NewBuffer(dotenvWriteExpected))
