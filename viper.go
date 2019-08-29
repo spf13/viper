@@ -1820,10 +1820,8 @@ func (v *Viper) SetFs(fs afero.Fs) {
 // Does not include extension.
 func SetConfigName(in string) { v.SetConfigName(in) }
 func (v *Viper) SetConfigName(in string) {
-	if in != "" {
-		v.configName = in
-		v.configFile = ""
-	}
+	v.configFile = ""
+	v.configName = in
 }
 
 // SetConfigType sets the type of the configuration returned by the

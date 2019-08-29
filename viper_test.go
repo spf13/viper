@@ -1749,6 +1749,65 @@ func TestWatchFile(t *testing.T) {
 
 }
 
+// make .env for testing
+func initDotEnvFile(t *testing.T) (string, func()) {
+
+	root, err := ioutil.TempDir("", "")
+
+	cleanup := true
+	defer func() {
+		if cleanup {
+			os.Chdir("..")
+			os.RemoveAll(root)
+		}
+	}()
+
+	assert.Nil(t, err)
+
+	err = os.Chdir(root)
+	assert.Nil(t, err)
+
+	configfile := ".env"
+
+	err = ioutil.WriteFile(
+		path.Join(root, configfile),
+		dotenvWriteExpected,
+		0640,
+	)
+	assert.Nil(t, err)
+
+	cleanup = false
+	return root, func() {
+		os.Chdir("..")
+		os.RemoveAll(root)
+	}
+}
+
+func TestFindDotEnvFile(t *testing.T){
+	v := New()
+	v.SetConfigType("env")
+	err := v.ReadConfig(bytes.NewBuffer(dotenvWriteExpected))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	root, cleanup := initDotEnvFile(t)
+	defer cleanup()
+
+	v2 := New()
+	v2.AddConfigPath(root)
+	v2.SetConfigName("")
+	v2.SetConfigType("env")
+	err = v2.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
+	assert.Equal(t, v.GetString("type"), v2.GetString("type"))
+	assert.Equal(t, v.GetString("kind"), v2.GetString("kind"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
