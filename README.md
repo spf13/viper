@@ -62,7 +62,8 @@ item below it:
  * key/value store
  * default
 
-Viper configuration keys are case insensitive.
+Viper configuration keys are case insensitive by default. They can be made case
+sensitive with `viper.SetKeysCaseSensitive(true)`.
 
 ## Putting Values into Viper
 
