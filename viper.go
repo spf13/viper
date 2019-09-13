@@ -115,6 +115,22 @@ func (fnfe ConfigFileNotFoundError) Error() string {
 	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
 }
 
+// ConfigFileAlreadyExistsError denotes failure to write new configuration file.
+type ConfigFileAlreadyExistsError string
+
+// Error returns the formatted error when configuration already exists.
+func (faee ConfigFileAlreadyExistsError) Error() string {
+	return fmt.Sprintf("Config File %q Already Exists", string(faee))
+}
+
+// MissingConfigurationError denotes a required configuration setting has not been provided.
+type MissingConfigurationError string
+
+// Error returns the formatted error when a required configuration element has not been provided.
+func (mce MissingConfigurationError) Error() string {
+	return fmt.Sprintf("Missing Configuration for %q", string(mce))
+}
+
 // A DecoderConfigOption can be passed to viper.Unmarshal to configure
 // mapstructure.DecoderConfig options
 type DecoderConfigOption func(*mapstructure.DecoderConfig)
@@ -1331,11 +1347,10 @@ func (v *Viper) WriteConfig() error {
 // SafeWriteConfig writes current configuration to file only if the file does not exist.
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
-	filename, err := v.getConfigFile()
-	if err != nil {
-		return err
+	if len(v.configPaths) < 1 {
+		return MissingConfigurationError("configPath")
 	}
-	return v.writeConfig(filename, false)
+	return v.SafeWriteConfigAs(filepath.Join(v.configPaths[0], v.configName+"."+v.configType))
 }
 
 // WriteConfigAs writes current configuration to a given filename.
@@ -1347,6 +1362,10 @@ func (v *Viper) WriteConfigAs(filename string) error {
 // SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 func (v *Viper) SafeWriteConfigAs(filename string) error {
+	handle, err := v.fs.Stat(filename)
+	if handle != nil && err == nil {
+		return ConfigFileAlreadyExistsError(filename)
+	}
 	return v.writeConfig(filename, false)
 }
 
