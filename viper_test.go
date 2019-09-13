@@ -1384,6 +1384,86 @@ func TestWriteConfigYAML(t *testing.T) {
 	assert.Equal(t, yamlWriteExpected, read)
 }
 
+func TestSafeWriteConfig(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.AddConfigPath("/test")
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = v.SafeWriteConfig(); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "/test/c.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, yamlWriteExpected, read)
+}
+
+func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.SafeWriteConfig()
+	if err == nil {
+		t.Fatal("Expected exception")
+	}
+	_, ok := err.(MissingConfigurationError)
+	assert.True(t, ok, "Expected MissingConfigurationError")
+}
+
+func TestSafeWriteConfigWithExistingFile(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	fs.Create("/test/c.yaml")
+	v.SetFs(fs)
+	v.AddConfigPath("/test")
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.SafeWriteConfig()
+	if err == nil {
+		t.Fatal("Expected exception")
+	}
+	_, ok := err.(ConfigFileAlreadyExistsError)
+	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
+}
+
+func TestSafeWriteAsConfig(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = v.SafeWriteConfigAs("/test/c.yaml"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = afero.ReadFile(fs, "/test/c.yaml"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	fs.Create("/test/c.yaml")
+	v.SetFs(fs)
+	err := v.SafeWriteConfigAs("/test/c.yaml")
+	if err == nil {
+		t.Fatal("Expected exception")
+	}
+	_, ok := err.(ConfigFileAlreadyExistsError)
+	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
+}
+
 var yamlMergeExampleTgt = []byte(`
 hello:
     pop: 37890
