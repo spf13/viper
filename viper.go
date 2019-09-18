@@ -1789,14 +1789,35 @@ outer:
 	return shadow
 }
 
+// Checks to see if a key may exist as a parent node.
+// Similar to v.IsSet(), but checks pflags as a fallback.
+func (v *Viper) isComponent(key string) bool {
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey)
+	if val != nil {
+		return true
+	}
+	for k := range v.pflags {
+		if strings.HasPrefix(k, lcaseKey) {
+			return true
+		}
+	}
+	for k := range v.env {
+		if strings.HasPrefix(k, lcaseKey) {
+			return true
+		}
+	}
+	return false
+}
+
 // Converts a fully qualified map key into a list of relative
 // map keys, allowing for keys to contain the delimiter themselves
 func keyComponents(v *Viper, key string) []string {
 	var result []string
 	components := strings.Split(key, v.keyDelim)
-	for index := 0; index < len(components); index++ {
+	for index := 1; index < len(components); index++ {
 		potentialKey := strings.Join(components[0:index], v.keyDelim)
-		if v.Get(potentialKey) != nil {
+		if v.isComponent(potentialKey) {
 			result = append(result, potentialKey)
 		}
 	}

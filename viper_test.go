@@ -758,6 +758,39 @@ func TestBindPFlags(t *testing.T) {
 
 }
 
+func TestUnmarshalOnlyPFlagSet(t *testing.T) {
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("foo.bar", "cobra_flag", "")
+
+	v := New()
+	assert.NoError(t, v.BindPFlags(flags))
+
+	config := &struct {
+		Foo struct {
+			Bar string
+		}
+	}{}
+
+	assert.NoError(t, v.Unmarshal(config))
+	assert.Equal(t, "cobra_flag", config.Foo.Bar)
+}
+
+func TestUnmarshalOnlyEnvSet(t *testing.T) {
+	v := New()
+	v.SetEnvPrefix("viper")
+	assert.NoError(t, v.BindEnv("foo.bar"))
+	assert.NoError(t, os.Setenv("VIPER_FOO.BAR", "testval"))
+
+	config := &struct {
+		Foo struct {
+			Bar string
+		}
+	}{}
+
+	assert.NoError(t, v.Unmarshal(config))
+	assert.Equal(t, "testval", config.Foo.Bar)
+}
+
 func TestBindPFlagsStringSlice(t *testing.T) {
 	tests := []struct {
 		Expected []string
