@@ -46,10 +46,6 @@ clothing:
 age: 35
 eyes : brown
 beard: true
-emails:
-  steve@hacker.com:
-    created: 01/02/03
-    active: true
 `)
 
 var yamlExampleWithExtras = []byte(`Existing: true
@@ -535,8 +531,6 @@ func TestAllKeys(t *testing.T) {
 		"title_dotenv",
 		"type_dotenv",
 		"name_dotenv",
-		"emails.steve@hacker.com.active",
-		"emails.steve@hacker.com.created",
 	}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
 	all := map[string]interface{}{
@@ -547,13 +541,7 @@ func TestAllKeys(t *testing.T) {
 		},
 		"title": "TOML Example",
 		"ppu":   0.55,
-		"emails": map[string]interface{}{
-			"steve@hacker.com": map[string]interface{}{
-				"active":  true,
-				"created": "01/02/03",
-			},
-		},
-		"eyes": "brown",
+		"eyes":  "brown",
 		"clothing": map[string]interface{}{
 			"trousers": "denim",
 			"jacket":   "leather",
@@ -1316,10 +1304,6 @@ clothing:
   pants:
     size: large
   trousers: denim
-emails:
-  steve@hacker.com:
-    active: true
-    created: 01/02/03
 eyes: brown
 hacker: true
 hobbies:

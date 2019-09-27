@@ -1789,24 +1789,6 @@ outer:
 	return shadow
 }
 
-// Converts a fully qualified map key into a list of relative
-// map keys, allowing for keys to contain the delimiter themselves
-func keyComponents(v *Viper, key string) []string {
-	var result []string
-	components := strings.Split(key, v.keyDelim)
-	for index := 0; index < len(components); index++ {
-		potentialKey := strings.Join(components[0:index], v.keyDelim)
-		if v.Get(potentialKey) != nil {
-			result = append(result, potentialKey)
-		}
-	}
-	result = append(result, key)
-	for i := len(result) - 1; i > 0; i-- {
-		result[i] = strings.Replace(result[i], result[i-1]+v.keyDelim, "", 1)
-	}
-	return result
-}
-
 // AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
@@ -1819,7 +1801,7 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			// check just in case anything changes
 			continue
 		}
-		path := keyComponents(v, k)
+		path := strings.Split(k, v.keyDelim)
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
