@@ -1,5 +1,7 @@
 module github.com/spf13/viper
 
+go 1.12
+
 require (
 	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/coreos/bbolt v1.3.2 // indirect
