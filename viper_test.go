@@ -254,7 +254,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 	}
 }
 
-//stubs for PFlag Values
+// stubs for PFlag Values
 type stringValue string
 
 func newStringValue(val string, p *string) *stringValue {
@@ -864,7 +864,7 @@ func TestBindPFlag(t *testing.T) {
 	assert.Equal(t, testString, Get("testvalue"))
 
 	flag.Value.Set("testing_mutate")
-	flag.Changed = true //hack for pflag usage
+	flag.Changed = true // hack for pflag usage
 
 	assert.Equal(t, "testing_mutate", Get("testvalue"))
 
@@ -1854,6 +1854,23 @@ func TestWatchFile(t *testing.T) {
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 
+}
+
+func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("foo.bar", "cobra_flag", "")
+
+	v := New()
+	assert.NoError(t, v.BindPFlags(flags))
+
+	config := &struct {
+		Foo struct {
+			Bar string
+		}
+	}{}
+
+	assert.NoError(t, v.Unmarshal(config))
+	assert.Equal(t, "cobra_flag", config.Foo.Bar)
 }
 
 func BenchmarkGetBool(b *testing.B) {
