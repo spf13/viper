@@ -1723,7 +1723,7 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, v.defaults, "")
 
 	// convert set of paths to list
-	a := []string{}
+	a := make([]string, 0, len(m))
 	for x := range m {
 		a = append(a, x)
 	}
