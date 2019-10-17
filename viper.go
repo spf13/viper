@@ -1874,7 +1874,7 @@ func (v *Viper) getConfigFile() (string, error) {
 func (v *Viper) searchInPath(in string) (filename string) {
 	jww.DEBUG.Println("Searching for config in ", in)
 	for _, ext := range SupportedExts {
-		configFilePlusExt := ""
+		var configFilePlusExt string
 		if ext != "" {
 			configFilePlusExt = v.configName + "." + ext
 		} else {
