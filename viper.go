@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-// Viper is a application configuration system.
+// Viper is an application configuration system.
 // It believes that applications can be configured a variety of ways
 // via flags, ENVIRONMENT variables, configuration files retrieved
 // from the file system, or a remote key/value store.
@@ -226,7 +226,7 @@ func New() *Viper {
 	return v
 }
 
-// Intended for testing, will reset all to default settings.
+// Reset is intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
 func Reset() {
@@ -295,6 +295,7 @@ func (v *Viper) WatchConfig() {
 		filename, err := v.getConfigFile()
 		if err != nil {
 			log.Printf("error: %v\n", err)
+			initWG.Done()
 			return
 		}
 
@@ -344,7 +345,7 @@ func (v *Viper) WatchConfig() {
 			}
 		}()
 		watcher.Add(configDir)
-		initWG.Done()   // done initalizing the watch in this go routine, so the parent routine can move on...
+		initWG.Done()   // done initializing the watch in this go routine, so the parent routine can move on...
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
@@ -797,6 +798,12 @@ func (v *Viper) GetDuration(key string) time.Duration {
 	return cast.ToDuration(v.Get(key))
 }
 
+// GetIntSlice returns the value associated with the key as a slice of int values.
+func GetIntSlice(key string) []int { return v.GetIntSlice(key) }
+func (v *Viper) GetIntSlice(key string) []int {
+	return cast.ToIntSlice(v.Get(key))
+}
+
 // GetStringSlice returns the value associated with the key as a slice of strings.
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 func (v *Viper) GetStringSlice(key string) []string {
@@ -1136,8 +1143,8 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
 }
 
-// Aliases provide another accessor for the same key.
-// This enables one to change a name without breaking the application
+// RegisterAlias creates an alias that provides another accessor for the same key.
+// This enables one to change a name without breaking the application.
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
 func (v *Viper) RegisterAlias(alias string, key string) {
 	v.registerAlias(alias, strings.ToLower(key))
@@ -1357,21 +1364,21 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-	var flags int
-	if force == true {
-		flags = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-	} else {
-		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			flags = os.O_WRONLY
-		} else {
-			return fmt.Errorf("File: %s exists. Use WriteConfig to overwrite.", filename)
-		}
+	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+	if !force {
+		flags |= os.O_EXCL
 	}
 	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
 	if err != nil {
 		return err
 	}
-	return v.marshalWriter(f, configType)
+	defer f.Close()
+
+	if err := v.marshalWriter(f, configType); err != nil {
+		return err
+	}
+
+	return f.Sync()
 }
 
 // Unmarshal a Reader into a map.
@@ -1395,7 +1402,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		}
 
 	case "hcl":
-		obj, err := hcl.Parse(string(buf.Bytes()))
+		obj, err := hcl.Parse(buf.String())
 		if err != nil {
 			return ConfigParseError{err}
 		}
@@ -1462,6 +1469,9 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 
 	case "hcl":
 		b, err := json.Marshal(c)
+		if err != nil {
+			return ConfigMarshalError{err}
+		}
 		ast, err := hcl.Parse(string(b))
 		if err != nil {
 			return ConfigMarshalError{err}
@@ -1713,7 +1723,7 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, v.defaults, "")
 
 	// convert set of paths to list
-	a := []string{}
+	a := make([]string, 0, len(m))
 	for x := range m {
 		a = append(a, x)
 	}
@@ -1762,7 +1772,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
-	for k, _ := range m {
+	for k := range m {
 		path := strings.Split(k, v.keyDelim)
 		// scan intermediate paths
 		var parentKey string
