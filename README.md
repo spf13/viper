@@ -661,6 +661,33 @@ if err != nil {
 }
 ```
 
+If you want to unmarshal configuration where the keys themselves contain dot (the default key delimiter),
+you have to change the delimiter:
+
+```go
+v := viper.New()
+v.SetKeyDelimiter("::")
+
+v.SetDefault("chart::values", map[string]interface{}{
+    "ingress": map[string]interface{}{
+        "annotations": map[string]interface{}{
+            "traefik.frontend.rule.type":                 "PathPrefix",
+            "traefik.ingress.kubernetes.io/ssl-redirect": "true",
+        },
+    },
+})
+
+type config struct {
+	Chart struct{
+        Values map[string]interface{}
+    }
+}
+
+var C config
+
+viper.Unmarshal(&C)
+```
+
 Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
 
 ### Marshalling to string
