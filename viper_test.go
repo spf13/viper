@@ -278,6 +278,22 @@ func TestBasics(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSearchInPath(t *testing.T) {
+	filename := ".dotfilenoext"
+	path := "/tmp"
+	file := filepath.Join(path, filename)
+	SetConfigName(filename)
+	AddConfigPath(path)
+	_, createErr := v.fs.Create(file)
+	defer func() {
+		_ = v.fs.Remove(file)
+	}()
+	assert.NoError(t, createErr)
+	filename, err := v.getConfigFile()
+	assert.Equal(t, file, filename)
+	assert.NoError(t, err)
+}
+
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))

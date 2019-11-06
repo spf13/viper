@@ -121,6 +121,8 @@ if err := viper.ReadInConfig(); err != nil {
 // Config file found and successfully parsed
 ```
 
+*NOTE:* You can also have a file without an extension and specify the format programmaticaly. For those configuration files that lie in the home of the user without any extension like `.bashrc`
+
 ### Writing Config Files
 
 Reading from config files is useful, but at times you want to store all modifications made at run time.
