@@ -2009,6 +2009,74 @@ func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {
 	assert.Equal(t, "cobra_flag", config.Foo.Bar)
 }
 
+var yamlExampleWithDot = []byte(`Hacker: true
+name: steve
+hobbies:
+  - skateboarding
+  - snowboarding
+  - go
+clothing:
+  jacket: leather
+  trousers: denim
+  pants:
+    size: large
+age: 35
+eyes : brown
+beard: true
+emails:
+  steve@hacker.com:
+    created: 01/02/03
+    active: true
+`)
+
+func TestSetKeyDelimiter(t *testing.T) {
+	v := New()
+	v.SetKeyDelimiter("::")
+	v.SetConfigType("yaml")
+	r := strings.NewReader(string(yamlExampleWithDot))
+
+	err := v.unmarshalReader(r, v.config)
+	require.NoError(t, err)
+
+	values := map[string]interface{}{
+		"image": map[string]interface{}{
+			"repository": "someImage",
+			"tag":        "1.0.0",
+		},
+		"ingress": map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"traefik.frontend.rule.type":                 "PathPrefix",
+				"traefik.ingress.kubernetes.io/ssl-redirect": "true",
+			},
+		},
+	}
+
+	v.SetDefault("charts::values", values)
+
+	assert.Equal(t, "leather", v.GetString("clothing::jacket"))
+	assert.Equal(t, "01/02/03", v.GetString("emails::steve@hacker.com::created"))
+
+	type config struct {
+		Charts struct {
+			Values map[string]interface{}
+		}
+	}
+
+	expected := config{
+		Charts: struct {
+			Values map[string]interface{}
+		}{
+			Values: values,
+		},
+	}
+
+	var actual config
+
+	assert.NoError(t, v.Unmarshal(&actual))
+
+	assert.Equal(t, expected, actual)
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
