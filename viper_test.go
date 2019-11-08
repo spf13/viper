@@ -2029,9 +2029,8 @@ emails:
     active: true
 `)
 
-func TestSetKeyDelimiter(t *testing.T) {
-	v := New()
-	v.SetKeyDelimiter("::")
+func TestKeyDelimiter(t *testing.T) {
+	v := NewWithOptions(KeyDelimiter("::"))
 	v.SetConfigType("yaml")
 	r := strings.NewReader(string(yamlExampleWithDot))
 

@@ -667,8 +667,7 @@ If you want to unmarshal configuration where the keys themselves contain dot (th
 you have to change the delimiter:
 
 ```go
-v := viper.New()
-v.SetKeyDelimiter("::")
+v := viper.NewWithOptions(viper.KeyDelimiter("::"))
 
 v.SetDefault("chart::values", map[string]interface{}{
     "ingress": map[string]interface{}{
