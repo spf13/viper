@@ -253,9 +253,8 @@ func initDirs(t *testing.T) (string, string, func()) {
 // stubs for PFlag Values
 type stringValue string
 
-func newStringValue(val string, p *string) *stringValue {
-	*p = val
-	return (*stringValue)(p)
+func newStringValue(val string) *stringValue {
+	return (*stringValue)(&val)
 }
 
 func (s *stringValue) Set(val string) error {
@@ -853,9 +852,17 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 	}
 }
 
+func TestBindPFlagsNil(t *testing.T) {
+	v := New()
+	err := v.BindPFlags(nil)
+	if err == nil {
+		t.Fatalf("expected error when passing nil to BindPFlags")
+	}
+}
+
 func TestBindPFlag(t *testing.T) {
 	var testString = "testing"
-	var testValue = newStringValue(testString, &testString)
+	var testValue = newStringValue(testString)
 
 	flag := &pflag.Flag{
 		Name:    "testflag",
@@ -874,6 +881,14 @@ func TestBindPFlag(t *testing.T) {
 
 }
 
+func TestBindPFlagNil(t *testing.T) {
+	v := New()
+	err := v.BindPFlag("any", nil)
+	if err == nil {
+		t.Fatalf("expected error when passing nil to BindPFlag")
+	}
+}
+
 func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "brown", Get("eyes"))
 
@@ -883,7 +898,7 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "blue", Get("eyes"))
 
 	var testString = "green"
-	var testValue = newStringValue(testString, &testString)
+	var testValue = newStringValue(testString)
 
 	flag := &pflag.Flag{
 		Name:    "eyeballs",
@@ -1116,6 +1131,73 @@ func TestSub(t *testing.T) {
 	v.ReadConfig(bytes.NewBuffer(yamlExample))
 
 	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+
+	subv = v.Sub("clothing.pants")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("missing.key")
+	assert.Equal(t, (*Viper)(nil), subv)
+}
+
+func TestSubPflags(t *testing.T) {
+	v := New()
+
+	// same as yamlExample, without hobbies
+	v.BindPFlag("name", &pflag.Flag{Value: newStringValue("steve"), Changed: true})
+	v.BindPFlag("clothing.jacket", &pflag.Flag{Value: newStringValue("leather"), Changed: true})
+	v.BindPFlag("clothing.trousers", &pflag.Flag{Value: newStringValue("denim"), Changed: true})
+	v.BindPFlag("clothing.pants.size", &pflag.Flag{Value: newStringValue("large"), Changed: true})
+	v.BindPFlag("age", &pflag.Flag{Value: newStringValue("35"), Changed: true})
+	v.BindPFlag("eyes", &pflag.Flag{Value: newStringValue("brown"), Changed: true})
+	v.BindPFlag("beard", &pflag.Flag{Value: newStringValue("yes"), Changed: true})
+
+	type pants struct {
+		Size string
+	}
+
+	type clothing struct {
+		Jacket   string
+		Trousers string
+		Pants    pants
+	}
+
+	type cfg struct {
+		Name     string
+		Clothing clothing
+		Age      int
+		Eyes     string
+		Beard    bool
+	}
+
+	var c cfg
+	v.Unmarshal(&c)
+	assert.Equal(t, v.Get("name"), c.Name)
+	assert.Equal(t, v.Get("clothing.jacket"), c.Clothing.Jacket)
+	assert.Equal(t, v.Get("clothing.trousers"), c.Clothing.Trousers)
+	assert.Equal(t, v.Get("clothing.pants.size"), c.Clothing.Pants.Size)
+	assert.Equal(t, v.GetInt("age"), c.Age)
+	assert.Equal(t, v.Get("eyes"), c.Eyes)
+	assert.Equal(t, v.GetBool("beard"), c.Beard)
+
+	var cloth clothing
+	v.UnmarshalKey("clothing", &cloth)
+	assert.Equal(t, c.Clothing, cloth)
+
+	var p pants
+	v.UnmarshalKey("clothing.pants", &p)
+	assert.Equal(t, c.Clothing.Pants, p)
+
+	var size string
+	v.UnmarshalKey("clothing.pants.size", &size)
+	assert.Equal(t, c.Clothing.Pants.Size, size)
+
+	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.jacket"), subv.Get("jacket"))
+	assert.Equal(t, v.Get("clothing.trousers"), subv.Get("trousers"))
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
 
 	subv = v.Sub("clothing.pants")
