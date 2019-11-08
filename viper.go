@@ -236,6 +236,39 @@ func New() *Viper {
 	return v
 }
 
+// Option configures Viper using the functional options paradigm popularized by Rob Pike and Dave Cheney.
+// If you're unfamiliar with this style,
+// see https://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html and
+// https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis.
+type Option interface {
+	apply(v *Viper)
+}
+
+type optionFunc func(v *Viper)
+
+func (fn optionFunc) apply(v *Viper) {
+	fn(v)
+}
+
+// KeyDelimiter sets the delimiter used for determining key parts.
+// By default it's value is ".".
+func KeyDelimiter(d string) Option {
+	return optionFunc(func(v *Viper) {
+		v.keyDelim = d
+	})
+}
+
+// NewWithOptions creates a new Viper instance.
+func NewWithOptions(opts ...Option) *Viper {
+	v := New()
+
+	for _, opt := range opts {
+		opt.apply(v)
+	}
+
+	return v
+}
+
 // Reset is intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
@@ -243,15 +276,6 @@ func Reset() {
 	v = New()
 	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "consul"}
-}
-
-// SetKeyDelimiter sets the delimiter used for determining key parts.
-// By default it's value is ".".
-func SetKeyDelimiter(keyDelim string) { v.SetKeyDelimiter(keyDelim) }
-func (v *Viper) SetKeyDelimiter(keyDelim string) {
-	if keyDelim != "" {
-		v.keyDelim = keyDelim
-	}
 }
 
 type defaultRemoteProvider struct {
