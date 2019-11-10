@@ -205,6 +205,7 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+	watchConfigCancel func() (waiter func())
 }
 
 // New returns an initialized Viper instance.
@@ -305,6 +306,13 @@ func (v *Viper) WatchConfig() {
 
 		eventsWG := sync.WaitGroup{}
 		eventsWG.Add(1)
+		v.watchConfigCancel = func() (waiter func()) {
+			watcher.Close()
+			v.watchConfigCancel = nil
+			return func() {
+				eventsWG.Wait()
+			}
+		}
 		go func() {
 			for {
 				select {
@@ -349,6 +357,16 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+}
+
+func CancelWatchConfig() (future func()) {
+	return v.CancelWatchConfig()
+}
+func (v *Viper) CancelWatchConfig() (future func()) {
+	if v.watchConfigCancel != nil {
+		return v.watchConfigCancel()
+	}
+	return func(){}
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
