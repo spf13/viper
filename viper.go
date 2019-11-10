@@ -200,11 +200,12 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
+	onConfigChange       func(fsnotify.Event)
+	onRemoteConfigChange func()
+
 	// Store read properties on the object so that we can write back in order with comments.
 	// This will only be used if the configuration read is a properties file.
 	properties *properties.Properties
-
-	onConfigChange func(fsnotify.Event)
 }
 
 // New returns an initialized Viper instance.
@@ -278,6 +279,11 @@ var SupportedRemoteProviders = []string{"etcd", "consul"}
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 	v.onConfigChange = run
+}
+
+func OnRemoteConfigChange(run func()) { v.OnRemoteConfigChange(run) }
+func (v *Viper) OnRemoteConfigChange(run func()) {
+	v.onRemoteConfigChange = run
 }
 
 func WatchConfig() { v.WatchConfig() }
@@ -1639,6 +1645,7 @@ func (v *Viper) WatchRemoteConfig() error {
 	return v.watchKeyValueConfig()
 }
 
+func WatchRemoteConfigOnChannel() error { return v.watchKeyValueConfigOnChannel() }
 func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
 }
@@ -1674,13 +1681,14 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		//Todo: Add quit channel
-		go func(rc <-chan *RemoteResponse) {
-			for {
-				b := <-rc
-				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
-			}
-		}(respc)
+
+		b := <-respc
+		reader := bytes.NewReader(b.Value)
+		v.unmarshalReader(reader, v.kvstore)
+
+		if v.onRemoteConfigChange != nil {
+			v.onRemoteConfigChange()
+		}
 		return nil
 	}
 	return RemoteConfigError("No Files Found")
