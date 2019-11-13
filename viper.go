@@ -1639,7 +1639,7 @@ func (v *Viper) WatchRemoteConfig() error {
 	return v.watchKeyValueConfig()
 }
 
-func (v *Viper) WatchRemoteConfigOnChannel() error {
+func (v *Viper) WatchRemoteConfigOnChannel() (<-chan bool, error) {
 	return v.watchKeyValueConfigOnChannel()
 }
 
@@ -1670,20 +1670,23 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 }
 
 // Retrieve the first found remote configuration.
-func (v *Viper) watchKeyValueConfigOnChannel() error {
+func (v *Viper) watchKeyValueConfigOnChannel() (<-chan bool, error) {
+	wCh := make(chan bool)
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		//Todo: Add quit channel
-		go func(rc <-chan *RemoteResponse) {
+		go func(rc <-chan *RemoteResponse, rc2 chan<- bool) {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
 				v.unmarshalReader(reader, v.kvstore)
+				rc2 <- true
 			}
-		}(respc)
-		return nil
+		}(respc, wCh)
+		return wCh, nil
 	}
-	return RemoteConfigError("No Files Found")
+	close(wCh)
+	return nil, RemoteConfigError("No Files Found")
 }
 
 // Retrieve the first found remote configuration.
