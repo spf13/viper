@@ -670,7 +670,7 @@ func GetViper() *Viper {
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
 	}
@@ -981,7 +981,7 @@ func (v *Viper) BindEnv(input ...string) error {
 // flag, env, config file, key/value store, default.
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string) interface{} {
+func (v *Viper) find(lcaseKey string, useDefault bool) interface{} {
 
 	var (
 		val    interface{}
@@ -1074,6 +1074,11 @@ func (v *Viper) find(lcaseKey string) interface{} {
 		return nil
 	}
 
+	// Only use default values if asked
+	if !useDefault {
+		return nil
+	}
+
 	// Default next
 	val = v.searchMap(v.defaults, path)
 	if val != nil {
@@ -1124,7 +1129,16 @@ func readAsCSV(val string) ([]string, error) {
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, true)
+	return val != nil
+}
+
+// IsExplicit checks to see if the key has a non-default value set.
+// IsExplicit is case-insensitive for a key.
+func IsExplicit(key string) bool { return v.IsExplicit(key) }
+func (v *Viper) IsExplicit(key string) bool {
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey, false)
 	return val != nil
 }
 
