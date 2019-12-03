@@ -118,6 +118,24 @@ var remoteExample = []byte(`{
 "newkey":"remote"
 }`)
 
+var iniExample = []byte(`; Package name
+NAME        = ini
+; Package version
+VERSION     = v1
+; Package import path
+IMPORT_PATH = gopkg.in/%(NAME)s.%(VERSION)s
+
+# Information about package author
+# Bio can be written in multiple lines.
+[author]
+NAME   = Unknwon  ; Succeeding comment
+E-MAIL = fake@localhost
+GITHUB = https://github.com/%(NAME)s
+BIO    = """Gopher.
+Coding addict.
+Good man.
+"""  # Succeeding comment`)
+
 func initConfigs() {
 	Reset()
 	var r io.Reader
@@ -148,6 +166,10 @@ func initConfigs() {
 	SetConfigType("json")
 	remote := bytes.NewReader(remoteExample)
 	unmarshalReader(remote, v.kvstore)
+
+	SetConfigType("ini")
+	r = bytes.NewReader(iniExample)
+	unmarshalReader(r, v.config)
 }
 
 func initConfig(typ, config string) {
@@ -200,6 +222,14 @@ func initHcl() {
 	Reset()
 	SetConfigType("hcl")
 	r := bytes.NewReader(hclExample)
+
+	unmarshalReader(r, v.config)
+}
+
+func initIni() {
+	Reset()
+	SetConfigType("ini")
+	r := bytes.NewReader(iniExample)
 
 	unmarshalReader(r, v.config)
 }
@@ -396,6 +426,11 @@ func TestHCL(t *testing.T) {
 	assert.NotEqual(t, "cronut", Get("type"))
 }
 
+func TestIni(t *testing.T) {
+	initIni()
+	assert.Equal(t, "ini", Get("default.name"))
+}
+
 func TestRemotePrecedence(t *testing.T) {
 	initJSON()
 
@@ -521,6 +556,10 @@ func TestAllKeys(t *testing.T) {
 
 	ks := sort.StringSlice{
 		"title",
+		"author.bio",
+		"author.e-mail",
+		"author.github",
+		"author.name",
 		"newkey",
 		"owner.organization",
 		"owner.dob",
@@ -532,6 +571,9 @@ func TestAllKeys(t *testing.T) {
 		"hobbies",
 		"clothing.jacket",
 		"clothing.trousers",
+		"default.import_path",
+		"default.name",
+		"default.version",
 		"clothing.pants.size",
 		"age",
 		"hacker",
@@ -556,12 +598,23 @@ func TestAllKeys(t *testing.T) {
 			"dob":          dob,
 		},
 		"title": "TOML Example",
-		"ppu":   0.55,
-		"eyes":  "brown",
+		"author": map[string]interface{}{
+			"e-mail": "fake@localhost",
+			"github": "https://github.com/Unknwon",
+			"name":   "Unknwon",
+			"bio":    "Gopher.\nCoding addict.\nGood man.\n",
+		},
+		"ppu":  0.55,
+		"eyes": "brown",
 		"clothing": map[string]interface{}{
 			"trousers": "denim",
 			"jacket":   "leather",
 			"pants":    map[string]interface{}{"size": "large"},
+		},
+		"default": map[string]interface{}{
+			"import_path": "gopkg.in/ini.v1",
+			"name":        "ini",
+			"version":     "v1",
 		},
 		"id": "0001",
 		"batters": map[string]interface{}{

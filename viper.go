@@ -46,6 +46,7 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	"github.com/subosito/gotenv"
+	"gopkg.in/ini.v1"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.
@@ -231,7 +232,7 @@ func New() *Viper {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env"}
+	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "consul"}
 }
 
@@ -270,7 +271,7 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env"}
+var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
 
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul"}
@@ -1450,6 +1451,23 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 			// set innermost value
 			deepestMap[lastKey] = value
 		}
+
+	case "ini":
+		cfg := ini.Empty()
+		err := cfg.Append(buf.Bytes())
+		if err != nil {
+			return ConfigParseError{err}
+		}
+		sections := cfg.Sections()
+		for i := 0; i < len(sections); i++ {
+			section := sections[i]
+			keys := section.Keys()
+			for j := 0; j < len(keys); j++ {
+				key := keys[j]
+				value := cfg.Section(section.Name()).Key(key.Name()).String()
+				c[section.Name()+"."+key.Name()] = value
+			}
+		}
 	}
 
 	insensitiviseMap(c)
@@ -1533,6 +1551,22 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		if _, err = f.WriteString(string(b)); err != nil {
 			return ConfigMarshalError{err}
 		}
+
+	case "ini":
+		keys := v.AllKeys()
+		cfg := ini.Empty()
+		ini.PrettyFormat = false
+		for i := 0; i < len(keys); i++ {
+			key := keys[i]
+			lastSep := strings.LastIndex(key, ".")
+			sectionName := key[:(lastSep)]
+			keyName := key[(lastSep + 1):]
+			if sectionName == "default" {
+				sectionName = ""
+			}
+			cfg.Section(sectionName).Key(keyName).SetValue(Get(key).(string))
+		}
+		cfg.WriteTo(f)
 	}
 	return nil
 }
