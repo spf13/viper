@@ -1356,17 +1356,10 @@ func TestSafeWriteConfig(t *testing.T) {
 	v.AddConfigPath("/test")
 	v.SetConfigName("c")
 	v.SetConfigType("yaml")
-	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = v.SafeWriteConfig(); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
+	require.NoError(t, v.SafeWriteConfig())
 	read, err := afero.ReadFile(fs, "/test/c.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	assert.Equal(t, yamlWriteExpected, read)
 }
 
@@ -1376,12 +1369,7 @@ func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
 	v.SetFs(fs)
 	v.SetConfigName("c")
 	v.SetConfigType("yaml")
-	err := v.SafeWriteConfig()
-	if err == nil {
-		t.Fatal("Expected exception")
-	}
-	_, ok := err.(MissingConfigurationError)
-	assert.True(t, ok, "Expected MissingConfigurationError")
+	require.EqualError(t, v.SafeWriteConfig(), "Missing configuration for 'configPath'")
 }
 
 func TestSafeWriteConfigWithExistingFile(t *testing.T) {
@@ -1393,9 +1381,7 @@ func TestSafeWriteConfigWithExistingFile(t *testing.T) {
 	v.SetConfigName("c")
 	v.SetConfigType("yaml")
 	err := v.SafeWriteConfig()
-	if err == nil {
-		t.Fatal("Expected exception")
-	}
+	require.Error(t, err)
 	_, ok := err.(ConfigFileAlreadyExistsError)
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
@@ -1408,9 +1394,7 @@ func TestSafeWriteAsConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = v.SafeWriteConfigAs("/test/c.yaml"); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, v.SafeWriteConfigAs("/test/c.yaml"))
 	if _, err = afero.ReadFile(fs, "/test/c.yaml"); err != nil {
 		t.Fatal(err)
 	}
@@ -1422,9 +1406,7 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 	fs.Create("/test/c.yaml")
 	v.SetFs(fs)
 	err := v.SafeWriteConfigAs("/test/c.yaml")
-	if err == nil {
-		t.Fatal("Expected exception")
-	}
+	require.Error(t, err)
 	_, ok := err.(ConfigFileAlreadyExistsError)
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }

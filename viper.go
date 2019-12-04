@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -121,14 +122,6 @@ type ConfigFileAlreadyExistsError string
 // Error returns the formatted error when configuration already exists.
 func (faee ConfigFileAlreadyExistsError) Error() string {
 	return fmt.Sprintf("Config File %q Already Exists", string(faee))
-}
-
-// MissingConfigurationError denotes a required configuration setting has not been provided.
-type MissingConfigurationError string
-
-// Error returns the formatted error when a required configuration element has not been provided.
-func (mce MissingConfigurationError) Error() string {
-	return fmt.Sprintf("Missing Configuration for %q", string(mce))
 }
 
 // A DecoderConfigOption can be passed to viper.Unmarshal to configure
@@ -1348,7 +1341,7 @@ func (v *Viper) WriteConfig() error {
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
 	if len(v.configPaths) < 1 {
-		return MissingConfigurationError("configPath")
+		return errors.New("Missing configuration for 'configPath'")
 	}
 	return v.SafeWriteConfigAs(filepath.Join(v.configPaths[0], v.configName+"."+v.configType))
 }
@@ -1362,8 +1355,8 @@ func (v *Viper) WriteConfigAs(filename string) error {
 // SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 func (v *Viper) SafeWriteConfigAs(filename string) error {
-	handle, err := v.fs.Stat(filename)
-	if handle != nil && err == nil {
+	alreadyExists, err := afero.Exists(v.fs, filename)
+	if alreadyExists && err == nil {
 		return ConfigFileAlreadyExistsError(filename)
 	}
 	return v.writeConfig(filename, false)
