@@ -686,7 +686,7 @@ type config struct {
 
 var C config
 
-viper.Unmarshal(&C)
+v.Unmarshal(&C)
 ```
 
 Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
