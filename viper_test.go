@@ -236,7 +236,6 @@ func initIni() {
 
 // make directories for testing
 func initDirs(t *testing.T) (string, string, func()) {
-
 	var (
 		testDirs = []string{`a a`, `b`, `C_`}
 		config   = `improbable`
@@ -463,7 +462,6 @@ func TestEnv(t *testing.T) {
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
-
 }
 
 func TestEmptyEnv(t *testing.T) {
@@ -812,7 +810,6 @@ func TestBindPFlags(t *testing.T) {
 	for name, expected := range mutatedTestValues {
 		assert.Equal(t, expected, v.Get(name))
 	}
-
 }
 
 func TestBindPFlagsStringSlice(t *testing.T) {
@@ -924,7 +921,6 @@ func TestBindPFlag(t *testing.T) {
 	flag.Changed = true // hack for pflag usage
 
 	assert.Equal(t, "testing_mutate", Get("testvalue"))
-
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
@@ -946,7 +942,6 @@ func TestBoundCaseSensitivity(t *testing.T) {
 
 	BindPFlag("eYEs", flag)
 	assert.Equal(t, "green", Get("eyes"))
-
 }
 
 func TestSizeInBytes(t *testing.T) {
@@ -1069,10 +1064,8 @@ func TestFindsNestedKeys(t *testing.T) {
 	}
 
 	for key, expectedValue := range expected {
-
 		assert.Equal(t, expectedValue, v.Get(key))
 	}
-
 }
 
 func TestReadBufConfig(t *testing.T) {
@@ -1136,7 +1129,6 @@ func TestIsSet(t *testing.T) {
 }
 
 func TestDirsSearch(t *testing.T) {
-
 	root, config, cleanup := initDirs(t)
 	defer cleanup()
 
@@ -1159,7 +1151,6 @@ func TestDirsSearch(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
-
 	_, config, cleanup := initDirs(t)
 	defer cleanup()
 
@@ -1179,7 +1170,6 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
-
 	_, config, cleanup := initDirs(t)
 	defer cleanup()
 
@@ -1679,7 +1669,6 @@ func TestMergeConfigMap(t *testing.T) {
 	}
 
 	assert(1234)
-
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
@@ -1718,7 +1707,6 @@ func TestSetConfigNameClearsFileCache(t *testing.T) {
 }
 
 func TestShadowedNestedValue(t *testing.T) {
-
 	config := `name: steve
 clothing:
   jacket: leather
@@ -1898,7 +1886,6 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
-
 }
 
 func newViperWithConfigFile(t *testing.T) (*Viper, string, func()) {
@@ -2003,7 +1990,6 @@ func TestWatchFile(t *testing.T) {
 		require.Nil(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
-
 }
 
 func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {

@@ -996,7 +996,6 @@ func (v *Viper) BindEnv(input ...string) error {
 //
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
-
 	var (
 		val    interface{}
 		exists bool
