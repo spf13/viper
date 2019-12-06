@@ -128,7 +128,7 @@ IMPORT_PATH = gopkg.in/%(NAME)s.%(VERSION)s
 # Information about package author
 # Bio can be written in multiple lines.
 [author]
-NAME   = Unknwon  ; Succeeding comment
+NAME   = Unknown  ; Succeeding comment
 E-MAIL = fake@localhost
 GITHUB = https://github.com/%(NAME)s
 BIO    = """Gopher.
@@ -598,8 +598,8 @@ func TestAllKeys(t *testing.T) {
 		"title": "TOML Example",
 		"author": map[string]interface{}{
 			"e-mail": "fake@localhost",
-			"github": "https://github.com/Unknwon",
-			"name":   "Unknwon",
+			"github": "https://github.com/Unknown",
+			"name":   "Unknown",
 			"bio":    "Gopher.\nCoding addict.\nGood man.\n",
 		},
 		"ppu":  0.55,
