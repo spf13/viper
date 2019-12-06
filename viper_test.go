@@ -323,6 +323,26 @@ func TestSearchInPath(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSearchInPath_FilesOnly(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	err := fs.Mkdir("/tmp/config", 0777)
+	require.NoError(t, err)
+
+	_, err = fs.Create("/tmp/config/config.yaml")
+	require.NoError(t, err)
+
+	v := New()
+
+	v.SetFs(fs)
+	v.AddConfigPath("/tmp")
+	v.AddConfigPath("/tmp/config")
+
+	filename, err := v.getConfigFile()
+	assert.Equal(t, "/tmp/config/config.yaml", filename)
+	assert.NoError(t, err)
+}
+
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))
