@@ -20,9 +20,11 @@ Many Go projects are built using Viper including:
 
 
 ## Install
+
 ```console
-go get -u github.com/spf13/viper
+go get github.com/spf13/viper
 ```
+
 
 ## What is Viper?
 
@@ -39,8 +41,8 @@ and formats. It supports:
 * reading from buffer
 * setting explicit values
 
-Viper can be thought of as a registry for all of your applications
-configuration needs.
+Viper can be thought of as a registry for all of your applications configuration needs.
+
 
 ## Why Viper?
 
@@ -50,34 +52,31 @@ Viper is here to help with that.
 
 Viper does the following for you:
 
-1. Find, load, and unmarshal a configuration file in JSON, TOML, YAML, HCL, envfile or Java properties formats.
-2. Provide a mechanism to set default values for your different
-   configuration options.
-3. Provide a mechanism to set override values for options specified through
-   command line flags.
-4. Provide an alias system to easily rename parameters without breaking existing
-   code.
-5. Make it easy to tell the difference between when a user has provided a
-   command line or config file which is the same as the default.
+1. Find, load, and unmarshal a configuration file in JSON, TOML, YAML, HCL, INI, envfile or Java properties formats.
+2. Provide a mechanism to set default values for your different configuration options.
+3. Provide a mechanism to set override values for options specified through command line flags.
+4. Provide an alias system to easily rename parameters without breaking existing code.
+5. Make it easy to tell the difference between when a user has provided a command line or config file which is the same as the default.
 
-Viper uses the following precedence order. Each item takes precedence over the
-item below it:
+Viper uses the following precedence order. Each item takes precedence over the item below it:
 
- * explicit call to Set
+ * explicit call to `Set`
  * flag
  * env
  * config
  * key/value store
  * default
 
-Viper configuration keys are case insensitive.
+**Important:** Viper configuration keys are case insensitive.
+There are ongoing discussions about making that optional.
+
 
 ## Putting Values into Viper
 
 ### Establishing Defaults
 
 A good configuration system will support default values. A default value is not
-required for a key, but it’s useful in the event that a key hasn’t been set via
+required for a key, but it’s useful in the event that a key hasn't been set via
 config file, environment variable, remote configuration or flag.
 
 Examples:
@@ -91,7 +90,7 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 ### Reading Config Files
 
 Viper requires minimal configuration so it knows where to look for config files.
-Viper supports JSON, TOML, YAML, HCL, envfile and Java Properties files. Viper can search multiple paths, but
+Viper supports JSON, TOML, YAML, HCL, INI, envfile and Java Properties files. Viper can search multiple paths, but
 currently a single Viper instance only supports a single configuration file.
 Viper does not default to any configuration search paths leaving defaults decision
 to an application.
