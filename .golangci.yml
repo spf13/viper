@@ -12,8 +12,6 @@ linters:
 
         # TODO: fix me
         - wsl
-        - golint
-        - stylecheck
         - gochecknoinits
         - misspell
         - gosimple
