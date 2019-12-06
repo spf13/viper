@@ -34,8 +34,6 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
@@ -48,6 +46,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/subosito/gotenv"
 	"gopkg.in/ini.v1"
+	"gopkg.in/yaml.v2"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.
