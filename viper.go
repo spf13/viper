@@ -197,7 +197,7 @@ type Viper struct {
 	envPrefix         string
 
 	automaticEnvApplied bool
-	envKeyReplacer      *strings.Replacer
+	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
 
 	config         map[string]interface{}
@@ -254,6 +254,19 @@ func (fn optionFunc) apply(v *Viper) {
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
 		v.keyDelim = d
+	})
+}
+
+// StringReplacer applies a set of replacements to a string.
+type StringReplacer interface {
+	// Replace returns a copy of s with all replacements performed.
+	Replace(s string) string
+}
+
+// EnvKeyReplacer sets a replacer used for mapping environment variables to internal keys.
+func EnvKeyReplacer(r StringReplacer) Option {
+	return optionFunc(func(v *Viper) {
+		v.envKeyReplacer = r
 	})
 }
 
