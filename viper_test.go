@@ -1049,18 +1049,18 @@ func TestFindsNestedKeys(t *testing.T) {
 		"owner.dob":           dob,
 		"beard":               true,
 		"foos": []map[string]interface{}{
-			map[string]interface{}{
+			{
 				"foo": []map[string]interface{}{
-					map[string]interface{}{
+					{
 						"key": 1,
 					},
-					map[string]interface{}{
+					{
 						"key": 2,
 					},
-					map[string]interface{}{
+					{
 						"key": 3,
 					},
-					map[string]interface{}{
+					{
 						"key": 4,
 					},
 				},
