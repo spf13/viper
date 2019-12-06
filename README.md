@@ -2,6 +2,10 @@
 
 Go configuration with fangs!
 
+[![Actions](https://github.com/spf13/viper/workflows/CI/badge.svg)](https://github.com/spf13/viper)
+[![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![GoDoc](https://godoc.org/github.com/spf13/viper?status.svg)](https://godoc.org/github.com/spf13/viper)
+
 Many Go projects are built using Viper including:
 
 * [Hugo](http://gohugo.io)
@@ -14,7 +18,6 @@ Many Go projects are built using Viper including:
 * [Clairctl](https://github.com/jgsqware/clairctl)
 * [Mercure](https://mercure.rocks)
 
-[![Build Status](https://travis-ci.org/spf13/viper.svg)](https://travis-ci.org/spf13/viper) [![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![GoDoc](https://godoc.org/github.com/spf13/viper?status.svg)](https://godoc.org/github.com/spf13/viper)
 
 ## Install
 ```console
