@@ -970,7 +970,7 @@ func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
 	var key, envkey string
 	if len(input) == 0 {
-		return fmt.Errorf("BindEnv missing key to bind to")
+		return fmt.Errorf("missing key to bind to")
 	}
 
 	key = strings.ToLower(input[0])
@@ -1347,7 +1347,7 @@ func (v *Viper) WriteConfig() error {
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 func (v *Viper) SafeWriteConfig() error {
 	if len(v.configPaths) < 1 {
-		return errors.New("Missing configuration for 'configPath'")
+		return errors.New("missing configuration for 'configPath'")
 	}
 	return v.SafeWriteConfigAs(filepath.Join(v.configPaths[0], v.configName+"."+v.configType))
 }
@@ -1372,7 +1372,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
 	ext := filepath.Ext(filename)
 	if len(ext) <= 1 {
-		return fmt.Errorf("Filename: %s requires valid extension.", filename)
+		return fmt.Errorf("filename: %s requires valid extension", filename)
 	}
 	configType := ext[1:]
 	if !stringInSlice(configType, SupportedExts) {

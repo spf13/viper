@@ -1447,7 +1447,7 @@ func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
 	v.SetFs(fs)
 	v.SetConfigName("c")
 	v.SetConfigType("yaml")
-	require.EqualError(t, v.SafeWriteConfig(), "Missing configuration for 'configPath'")
+	require.EqualError(t, v.SafeWriteConfig(), "missing configuration for 'configPath'")
 }
 
 func TestSafeWriteConfigWithExistingFile(t *testing.T) {
