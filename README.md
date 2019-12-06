@@ -718,13 +718,6 @@ different vipers.
 
 ## Q & A
 
-Q: Why not INI files?
-
-A: Ini files are pretty awful. There’s no standard format, and they are hard to
-validate. Viper is designed to work with JSON, TOML or YAML files. If someone
-really wants to add this feature, I’d be happy to merge it. It’s easy to specify
-which formats your application will permit.
-
 Q: Why is it called “Viper”?
 
 A: Viper is designed to be a [companion](http://en.wikipedia.org/wiki/Viper_(G.I._Joe))
