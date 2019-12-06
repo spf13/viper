@@ -24,7 +24,7 @@ clear: ## Clear the working area and the project
 	rm -rf bin/
 
 .PHONY: check
-check: lint ## Run tests and linters
+check: test lint ## Run tests and linters
 
 bin/gotestsum: bin/gotestsum-${GOTESTSUM_VERSION}
 	@ln -sf gotestsum-${GOTESTSUM_VERSION} bin/gotestsum
