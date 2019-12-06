@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Check" type="CompoundRunConfigurationType">
+    <toRun name="Tests" type="GoTestRunConfiguration" />
+    <toRun name="Lint" type="MAKEFILE_TARGET_RUN_CONFIGURATION" />
+    <method v="2" />
+  </configuration>
+</component>
