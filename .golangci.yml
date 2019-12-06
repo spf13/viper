@@ -11,8 +11,6 @@ linters:
         - maligned
 
         # TODO: fix me
-        - deadcode
-        - unused
         - wsl
         - golint
         - stylecheck

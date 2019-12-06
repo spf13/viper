@@ -1368,7 +1368,6 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
-func writeConfig(filename string, force bool) error { return v.writeConfig(filename, force) }
 func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
 	ext := filepath.Ext(filename)
@@ -1486,9 +1485,6 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 
 // Marshal a map into Writer.
-func marshalWriter(f afero.File, configType string) error {
-	return v.marshalWriter(f, configType)
-}
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
