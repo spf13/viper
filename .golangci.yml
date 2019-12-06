@@ -11,7 +11,6 @@ linters:
         - maligned
 
         # TODO: fix me
-        - goimports
         - whitespace
         - deadcode
         - unused
