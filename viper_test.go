@@ -549,6 +549,15 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 	assert.Equal(t, "30s", Get("refresh-interval"))
 }
 
+func TestEnvKeyReplacer(t *testing.T) {
+	v := NewWithOptions(EnvKeyReplacer(strings.NewReplacer("-", "_")))
+
+	v.AutomaticEnv()
+	_ = os.Setenv("REFRESH_INTERVAL", "30s")
+
+	assert.Equal(t, "30s", v.Get("refresh-interval"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
