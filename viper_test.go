@@ -1261,46 +1261,6 @@ var hclWriteExpected = []byte(`"foos" = {
 
 "type" = "donut"`)
 
-func TestWriteConfigHCL(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("hcl")
-	err := v.ReadConfig(bytes.NewBuffer(hclExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.hcl"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.hcl")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, hclWriteExpected, read)
-}
-
-func TestWriteConfigHCLWithoutFileExtension(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("hcl")
-	err := v.ReadConfig(bytes.NewBuffer(hclExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, hclWriteExpected, read)
-}
-
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
@@ -1356,6 +1316,20 @@ func TestWriteConfig(t *testing.T) {
 		input           []byte
 		expectedContent []byte
 	}{
+		"hcl with file extension": {
+			configName:      "c",
+			configType:      "hcl",
+			fileName:        "c.hcl",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
+		"hcl without file extension": {
+			configName:      "c",
+			configType:      "hcl",
+			fileName:        "c",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
 		"json with file extension": {
 			configName:      "c",
 			configType:      "json",
