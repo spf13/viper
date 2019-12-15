@@ -1281,6 +1281,26 @@ func TestWriteConfigHCL(t *testing.T) {
 	assert.Equal(t, hclWriteExpected, read)
 }
 
+func TestWriteConfigHCLWithoutFileExtension(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("hcl")
+	err := v.ReadConfig(bytes.NewBuffer(hclExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c"); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, hclWriteExpected, read)
+}
+
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
@@ -1324,6 +1344,26 @@ func TestWriteConfigJson(t *testing.T) {
 	assert.Equal(t, jsonWriteExpected, read)
 }
 
+func TestWriteConfigJsonWithoutFileExtension(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("json")
+	err := v.ReadConfig(bytes.NewBuffer(jsonExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c"); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, jsonWriteExpected, read)
+}
+
 var propertiesWriteExpected = []byte(`p_id = 0001
 p_type = donut
 p_name = Cake
@@ -1332,6 +1372,26 @@ p_batters.batter.type = Regular
 `)
 
 func TestWriteConfigProperties(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("properties")
+	err := v.ReadConfig(bytes.NewBuffer(propertiesExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c.properties"); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c.properties")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, propertiesWriteExpected, read)
+}
+
+func TestWriteConfigPropertiesWithoutFileExtension(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
 	v.SetFs(fs)
@@ -1383,6 +1443,38 @@ func TestWriteConfigTOML(t *testing.T) {
 	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
 }
 
+func TestWriteConfigTOMLWithoutFileExtension(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	v := New()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("toml")
+	err := v.ReadConfig(bytes.NewBuffer(tomlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c"); err != nil {
+		t.Fatal(err)
+	}
+
+	// The TOML String method does not order the contents.
+	// Therefore, we must read the generated file and compare the data.
+	v2 := New()
+	v2.SetFs(fs)
+	v2.SetConfigName("c")
+	v2.SetConfigType("toml")
+	v2.SetConfigFile("c")
+	err = v2.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
+	assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
+	assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
+	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
+}
+
 var dotenvWriteExpected = []byte(`
 TITLE="DotEnv Write Example"
 NAME=Oreo
@@ -1410,6 +1502,37 @@ func TestWriteConfigDotEnv(t *testing.T) {
 	v2.SetConfigName("c")
 	v2.SetConfigType("env")
 	v2.SetConfigFile("c.env")
+	err = v2.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
+	assert.Equal(t, v.GetString("type"), v2.GetString("type"))
+	assert.Equal(t, v.GetString("kind"), v2.GetString("kind"))
+}
+
+func TestWriteConfigDotEnvWithoutFileExtension(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	v := New()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("env")
+	err := v.ReadConfig(bytes.NewBuffer(dotenvWriteExpected))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c"); err != nil {
+		t.Fatal(err)
+	}
+
+	// The TOML String method does not order the contents.
+	// Therefore, we must read the generated file and compare the data.
+	v2 := New()
+	v2.SetFs(fs)
+	v2.SetConfigName("c")
+	v2.SetConfigType("env")
+	v2.SetConfigFile("c")
 	err = v2.ReadInConfig()
 	if err != nil {
 		t.Fatal(err)
@@ -1450,6 +1573,26 @@ func TestWriteConfigYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 	read, err := afero.ReadFile(fs, "c.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, yamlWriteExpected, read)
+}
+
+func TestWriteConfigYAMLWithoutFileExtension(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := v.WriteConfigAs("c"); err != nil {
+		t.Fatal(err)
+	}
+	read, err := afero.ReadFile(fs, "c")
 	if err != nil {
 		t.Fatal(err)
 	}
