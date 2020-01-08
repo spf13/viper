@@ -692,6 +692,37 @@ var C config
 v.Unmarshal(&C)
 ```
 
+Viper also supports unmarshaling into embedded structs:
+
+```go
+/*
+Example config:
+
+module:
+    enabled: true
+    token: 89h3f98hbwf987h3f98wenf89ehf
+*/
+type config struct {
+	Module struct {
+		Enabled bool
+
+		moduleConfig `mapstructure:",squash"`
+	}
+}
+
+// moduleConfig could be in a module specific package
+type moduleConfig struct {
+	Token string
+}
+
+var C config
+
+err := viper.Unmarshal(&C)
+if err != nil {
+	t.Fatalf("unable to decode into struct, %v", err)
+}
+```
+
 Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
 
 ### Marshalling to string
