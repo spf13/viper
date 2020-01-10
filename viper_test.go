@@ -1311,64 +1311,97 @@ func TestWriteConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	testCases := map[string]struct {
 		configName      string
-		configType      string
+		inConfigType    string
+		outConfigType   string
 		fileName        string
 		input           []byte
 		expectedContent []byte
 	}{
 		"hcl with file extension": {
 			configName:      "c",
-			configType:      "hcl",
+			inConfigType:    "hcl",
+			outConfigType:   "hcl",
 			fileName:        "c.hcl",
 			input:           hclExample,
 			expectedContent: hclWriteExpected,
 		},
 		"hcl without file extension": {
 			configName:      "c",
-			configType:      "hcl",
+			inConfigType:    "hcl",
+			outConfigType:   "hcl",
 			fileName:        "c",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
+		"hcl with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "hcl",
+			outConfigType:   "json",
+			fileName:        "c.hcl",
 			input:           hclExample,
 			expectedContent: hclWriteExpected,
 		},
 		"json with file extension": {
 			configName:      "c",
-			configType:      "json",
+			inConfigType:    "json",
+			outConfigType:   "json",
 			fileName:        "c.json",
 			input:           jsonExample,
 			expectedContent: jsonWriteExpected,
 		},
 		"json without file extension": {
 			configName:      "c",
-			configType:      "json",
+			inConfigType:    "json",
+			outConfigType:   "json",
 			fileName:        "c",
+			input:           jsonExample,
+			expectedContent: jsonWriteExpected,
+		},
+		"json with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "hcl",
+			fileName:        "c.json",
 			input:           jsonExample,
 			expectedContent: jsonWriteExpected,
 		},
 		"properties with file extension": {
 			configName:      "c",
-			configType:      "properties",
+			inConfigType:    "properties",
+			outConfigType:   "properties",
 			fileName:        "c.properties",
 			input:           propertiesExample,
 			expectedContent: propertiesWriteExpected,
 		},
 		"properties without file extension": {
 			configName:      "c",
-			configType:      "properties",
+			inConfigType:    "properties",
+			outConfigType:   "properties",
 			fileName:        "c",
 			input:           propertiesExample,
 			expectedContent: propertiesWriteExpected,
 		},
 		"yaml with file extension": {
 			configName:      "c",
-			configType:      "yaml",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
 			fileName:        "c.yaml",
 			input:           yamlExample,
 			expectedContent: yamlWriteExpected,
 		},
 		"yaml without file extension": {
 			configName:      "c",
-			configType:      "yaml",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
 			fileName:        "c",
+			input:           yamlExample,
+			expectedContent: yamlWriteExpected,
+		},
+		"yaml with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "json",
+			fileName:        "c.yaml",
 			input:           yamlExample,
 			expectedContent: yamlWriteExpected,
 		},
@@ -1378,12 +1411,13 @@ func TestWriteConfig(t *testing.T) {
 			v := New()
 			v.SetFs(fs)
 			v.SetConfigName(tc.fileName)
-			v.SetConfigType(tc.configType)
+			v.SetConfigType(tc.inConfigType)
 
 			err := v.ReadConfig(bytes.NewBuffer(tc.input))
 			if err != nil {
 				t.Fatal(err)
 			}
+			v.SetConfigType(tc.outConfigType)
 			if err := v.WriteConfigAs(tc.fileName); err != nil {
 				t.Fatal(err)
 			}
