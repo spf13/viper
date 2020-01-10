@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/viper"
+	"github.com/SpectraLogic/viper"
 	crypt "github.com/xordataexchange/crypt/config"
 )
 
