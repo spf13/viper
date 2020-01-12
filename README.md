@@ -101,6 +101,7 @@ where a configuration file is expected.
 
 ```go
 viper.SetConfigName("config") // name of config file (without extension)
+viper.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
 viper.AddConfigPath("/etc/appname/")   // path to look for the config file in
 viper.AddConfigPath("$HOME/.appname")  // call multiple times to add many search paths
 viper.AddConfigPath(".")               // optionally look for config in the working directory
@@ -124,7 +125,7 @@ if err := viper.ReadInConfig(); err != nil {
 // Config file found and successfully parsed
 ```
 
-*NOTE:* You can also have a file without an extension and specify the format programmaticaly. For those configuration files that lie in the home of the user without any extension like `.bashrc`
+*NOTE [since 1.6]:* You can also have a file without an extension and specify the format programmaticaly. For those configuration files that lie in the home of the user without any extension like `.bashrc`
 
 ### Writing Config Files
 

@@ -1976,7 +1976,7 @@ func (v *Viper) searchInPath(in string) (filename string) {
 		}
 	}
 
-	if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
+	if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b && v.configType != "" {
 		return filepath.Join(in, v.configName)
 	}
 
