@@ -318,7 +318,7 @@ func TestSearchInPath_WithoutConfigTypeSet(t *testing.T) {
 		_ = v.fs.Remove(file)
 	}()
 	assert.NoError(t, createErr)
-	filename, err := v.getConfigFile()
+	_, err := v.getConfigFile()
 	// unless config type is set, files without extension
 	// are not considered
 	assert.Error(t, err)
