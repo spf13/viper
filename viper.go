@@ -551,8 +551,8 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 // Returns nil if not found.
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
-	//v.mu.RLock()
-	//defer v.mu.RUnlock()
+	//v.mu.Lock()
+	//defer v.mu.Unlock()
 	if len(path) == 0 {
 		return source
 	}
@@ -592,7 +592,7 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 //
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
-	//v.mu.RLock()
+	//v.mu.Lock()
 	//defer v.mu.Unlock()
 	if len(path) == 0 {
 		return source
@@ -729,6 +729,8 @@ func GetViper() *Viper {
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
+	v.mu.Lock()
+	defer v.mu.Unlock()
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, true)
 	if val == nil {
