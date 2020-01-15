@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ghodss/yaml"
 	"io"
 	"log"
 	"os"
@@ -215,7 +214,7 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
-	mu *sync.RWMutex
+	mu             *sync.RWMutex
 }
 
 // New returns an initialized Viper instance.
