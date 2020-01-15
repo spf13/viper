@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"io"
 	"log"
 	"os"
@@ -551,8 +552,8 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 // Returns nil if not found.
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
-	v.mu.RLock()
-	defer v.mu.RUnlock()
+	//v.mu.RLock()
+	//defer v.mu.RUnlock()
 	if len(path) == 0 {
 		return source
 	}
@@ -592,8 +593,8 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 //
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
-	v.mu.RLock()
-	defer v.mu.Unlock()
+	//v.mu.RLock()
+	//defer v.mu.Unlock()
 	if len(path) == 0 {
 		return source
 	}
@@ -1462,9 +1463,11 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	v.mu.Lock()
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
 	defer v.mu.Unlock()
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(in); err != nil {
+		return err
+	}
 
 	switch strings.ToLower(v.getConfigType()) {
 	case "yaml", "yml":
@@ -1898,8 +1901,8 @@ outer:
 // AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
-	v.mu.Lock()
-	defer v.mu.Unlock()
+	//v.mu.Lock()
+	//defer v.mu.Unlock()
 	m := map[string]interface{}{}
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range v.AllKeys() {
