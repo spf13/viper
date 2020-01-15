@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"io"
 	"log"
 	"os"
@@ -1752,7 +1753,7 @@ func (v *Viper) WatchRemoteConfigOnChannel() error {
 // Retrieve the first found remote configuration.
 func (v *Viper) getKeyValueConfig() error {
 	if RemoteConfig == nil {
-		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/spf13/viper/remote'")
+		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/ShaleApps/viper/remote'")
 	}
 
 	for _, rp := range v.remoteProviders {
