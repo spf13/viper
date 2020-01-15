@@ -214,6 +214,7 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+	mu *sync.RWMutex
 }
 
 // New returns an initialized Viper instance.
@@ -231,7 +232,7 @@ func New() *Viper {
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
-
+	v.mu = &sync.RWMutex{}
 	return v
 }
 
@@ -550,6 +551,8 @@ func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 // Returns nil if not found.
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMap(source map[string]interface{}, path []string) interface{} {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
 	if len(path) == 0 {
 		return source
 	}
@@ -589,6 +592,8 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 //
 // Note: This assumes that the path entries and map keys are lower cased.
 func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
+	v.mu.RLock()
+	defer v.mu.Unlock()
 	if len(path) == 0 {
 		return source
 	}
@@ -1278,7 +1283,9 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
 
 	// set innermost value
+	v.mu.Lock()
 	deepestMap[lastKey] = value
+	v.mu.Unlock()
 }
 
 // Set sets the value for the key in the override register.
@@ -1296,7 +1303,9 @@ func (v *Viper) Set(key string, value interface{}) {
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
 	// set innermost value
+	v.mu.Lock()
 	deepestMap[lastKey] = value
+	v.mu.Unlock()
 }
 
 // ReadInConfig will discover and load the configuration file from disk
@@ -1452,8 +1461,10 @@ func unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	return v.unmarshalReader(in, c)
 }
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
+	v.mu.Lock()
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
+	defer v.mu.Unlock()
 
 	switch strings.ToLower(v.getConfigType()) {
 	case "yaml", "yml":
@@ -1887,6 +1898,8 @@ outer:
 // AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
+	v.mu.Lock()
+	defer v.mu.Unlock()
 	m := map[string]interface{}{}
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range v.AllKeys() {
