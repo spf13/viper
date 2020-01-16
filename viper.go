@@ -513,7 +513,7 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
 // "myapp"
-// Secure Remote Providers are implemented with github.com/xordataexchange/crypt
+// Secure Remote Providers are implemented with github.com/bketelsen/crypt
 func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
 	return v.AddSecureRemoteProvider(provider, endpoint, path, secretkeyring)
 }
