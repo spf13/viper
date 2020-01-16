@@ -307,11 +307,29 @@ func TestBasics(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSearchInPath_WithoutConfigTypeSet(t *testing.T) {
+	filename := ".dotfilenoext"
+	path := "/tmp"
+	file := filepath.Join(path, filename)
+	SetConfigName(filename)
+	AddConfigPath(path)
+	_, createErr := v.fs.Create(file)
+	defer func() {
+		_ = v.fs.Remove(file)
+	}()
+	assert.NoError(t, createErr)
+	_, err := v.getConfigFile()
+	// unless config type is set, files without extension
+	// are not considered
+	assert.Error(t, err)
+}
+
 func TestSearchInPath(t *testing.T) {
 	filename := ".dotfilenoext"
 	path := "/tmp"
 	file := filepath.Join(path, filename)
 	SetConfigName(filename)
+	SetConfigType("yaml")
 	AddConfigPath(path)
 	_, createErr := v.fs.Create(file)
 	defer func() {
