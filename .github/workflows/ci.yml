@@ -11,7 +11,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 10
       matrix:
         go: ['1.11', '1.12', '1.13']
     env:
@@ -26,7 +25,7 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Run tests
         run: make test
