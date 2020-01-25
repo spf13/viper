@@ -358,50 +358,43 @@ func (v *Viper) WatchConfig() {
 		configDir, _ := filepath.Split(configFile)
 		realConfigFile, _ := filepath.EvalSymlinks(filename)
 
-		eventsWG := sync.WaitGroup{}
-		eventsWG.Add(1)
-		go func() {
-			for {
-				select {
-				case event, ok := <-watcher.Events:
-					if !ok { // 'Events' channel is closed
-						eventsWG.Done()
-						return
-					}
-					currentConfigFile, _ := filepath.EvalSymlinks(filename)
-					// we only care about the config file with the following cases:
-					// 1 - if the config file was modified or created
-					// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
-					const writeOrCreateMask = fsnotify.Write | fsnotify.Create
-					if (filepath.Clean(event.Name) == configFile &&
-						event.Op&writeOrCreateMask != 0) ||
-						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
-						realConfigFile = currentConfigFile
-						err := v.ReadInConfig()
-						if err != nil {
-							log.Printf("error reading config file: %v\n", err)
-						}
-						if v.onConfigChange != nil {
-							v.onConfigChange(event)
-						}
-					} else if filepath.Clean(event.Name) == configFile &&
-						event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
-						eventsWG.Done()
-						return
-					}
+		watcher.Add(configDir)
+		initWG.Done() // done initializing the watch in this go routine, so the parent routine can move on...
 
-				case err, ok := <-watcher.Errors:
-					if ok { // 'Errors' channel is not closed
-						log.Printf("watcher error: %v\n", err)
-					}
-					eventsWG.Done()
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok { // 'Events' channel is closed
 					return
 				}
+				currentConfigFile, _ := filepath.EvalSymlinks(filename)
+				// we only care about the config file with the following cases:
+				// 1 - if the config file was modified or created
+				// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
+				const writeOrCreateMask = fsnotify.Write | fsnotify.Create
+				if (filepath.Clean(event.Name) == configFile &&
+					event.Op&writeOrCreateMask != 0) ||
+					(currentConfigFile != "" && currentConfigFile != realConfigFile) {
+					realConfigFile = currentConfigFile
+					err := v.ReadInConfig()
+					if err != nil {
+						log.Printf("error reading config file: %v\n", err)
+					}
+					if v.onConfigChange != nil {
+						v.onConfigChange(event)
+					}
+				} else if filepath.Clean(event.Name) == configFile &&
+					event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
+					return
+				}
+
+			case err, ok := <-watcher.Errors:
+				if ok { // 'Errors' channel is not closed
+					log.Printf("watcher error: %v\n", err)
+				}
+				return
 			}
-		}()
-		watcher.Add(configDir)
-		initWG.Done()   // done initializing the watch in this go routine, so the parent routine can move on...
-		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
+		}
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
 }
