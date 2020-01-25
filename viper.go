@@ -1417,7 +1417,14 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if len(ext) <= 1 {
 		return fmt.Errorf("filename: %s requires valid extension", filename)
 	}
-	configType := ext[1:]
+
+	var configType string
+	if v.configType == "" {
+		configType = ext[1:]
+	} else {
+		configType = v.configType
+	}
+
 	if !stringInSlice(configType, SupportedExts) {
 		return UnsupportedConfigError(configType)
 	}
@@ -2005,4 +2012,27 @@ func (v *Viper) Debug() {
 	fmt.Printf("Key/Value Store:\n%#v\n", v.kvstore)
 	fmt.Printf("Config:\n%#v\n", v.config)
 	fmt.Printf("Defaults:\n%#v\n", v.defaults)
+}
+
+func SubSlice(key string) (out []*Viper) { return v.SubSlice(key) }
+func (v *Viper) SubSlice(key string) (out []*Viper) {
+	data := v.Get(key)
+
+	if data == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(data).Kind() != reflect.Slice {
+		return nil
+	}
+
+	for _, elem := range data.([]interface{}) {
+		subv := New()
+		if reflect.TypeOf(elem).Kind() == reflect.Map {
+			subv.config = cast.ToStringMap(elem)
+			out = append(out, subv)
+		}
+	}
+
+	return
 }
