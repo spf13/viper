@@ -453,6 +453,16 @@ fmt.Println(viper.Get("port")) // 8080
 fmt.Println(viper.Get("hostname")) // myhostname.com
 ```
 
+#### Firestore
+
+```go
+viper.AddRemoteProvider("firestore", "google-cloud-project-id", "collection/document")
+viper.SetConfigType("json") // Config's format: "json", "toml", "yaml", "yml"
+err := viper.ReadRemoteConfig()
+```
+
+Of course, you're allowed to use `SecureRemoteProvider` also
+
 ### Remote Key/Value Store Example - Encrypted
 
 ```go
