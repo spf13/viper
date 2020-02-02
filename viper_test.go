@@ -18,7 +18,6 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -1992,17 +1991,15 @@ func TestWatchFile(t *testing.T) {
 		defer cleanup()
 		_, err := os.Stat(configFile)
 		require.NoError(t, err)
-		t.Logf("test config file: %s\n", configFile)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
+		done := make(chan struct{})
 		v.OnConfigChange(func(in fsnotify.Event) {
 			t.Logf("config file changed")
-			wg.Done()
+			close(done)
 		})
 		v.WatchConfig()
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
 		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
-		wg.Wait()
+		<-done
 		// then the config value should have changed
 		require.Nil(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
@@ -2015,13 +2012,12 @@ func TestWatchFile(t *testing.T) {
 		}
 		v, watchDir, _, _ := newViperWithSymlinkedConfigFile(t)
 		// defer cleanup()
-		wg := sync.WaitGroup{}
 		v.WatchConfig()
+		done := make(chan struct{})
 		v.OnConfigChange(func(in fsnotify.Event) {
 			t.Logf("config file changed")
-			wg.Done()
+			close(done)
 		})
-		wg.Add(1)
 		// when link to another `config.yaml` file
 		dataDir2 := path.Join(watchDir, "data2")
 		err := os.Mkdir(dataDir2, 0777)
@@ -2032,10 +2028,122 @@ func TestWatchFile(t *testing.T) {
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
 		require.Nil(t, err)
-		wg.Wait()
+		<-done
 		// then
 		require.Nil(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
+	})
+
+	t.Run("file content changed after cancel", func(t *testing.T) {
+		// given a `config.yaml` file being watched
+		v, configFile, cleanup := newViperWithConfigFile(t)
+		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+
+		// first run through with watching enabled
+		done := make(chan struct{})
+		v.OnConfigChange(func(in fsnotify.Event) {
+			done <- struct{}{}
+		})
+		v.WatchConfig()
+		// when overwriting the file and waiting for the custom change notification handler to be triggered
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
+		<-done
+		// then the config value should have changed
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+
+		// cancel and wait for the canceling to finish.
+		v.OnConfigChange(func(in fsnotify.Event) {
+			t.Error("CancelWatchConfig did not prevent second change from being seen.")
+		})
+		v.CancelWatchConfig()
+
+		// use another viper as a signal to wait this invisible write
+		v2 := New()
+		v2.SetConfigFile(configFile)
+		v2.WatchConfig()
+		v2.OnConfigChange(func(in fsnotify.Event) {
+			close(done)
+		})
+		err = ioutil.WriteFile(configFile, []byte("foo: quz\n"), 0640)
+		<-done
+		// the config value should still be the same.
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"), "CancelWatchConfig did not prevent second change from being seen.")
+	})
+
+	t.Run("do not watchConfig during writeConfig", func(t *testing.T) {
+		// given a `config.yaml` file being watched
+		v, configFile, cleanup := newViperWithConfigFile(t)
+		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+
+		// first run through with watching enabled
+		done := make(chan struct{})
+		v.OnConfigChange(func(in fsnotify.Event) {
+			close(done)
+		})
+		v.WatchConfig()
+		// when overwriting the file and waiting for the custom change notification handler to be triggered
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\nbar: foo\n"), 0640)
+		<-done
+		// then the config value should have changed
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+
+		v.Set("foo", "bar")
+		v.WriteConfig()
+		v.Set("baz", "foo")
+		v.WriteConfig()
+		v.Set("aa", "bb")
+		v.WriteConfig()
+		v.Set("aaa", "10s")
+		v.WriteConfig()
+
+		f, err := ioutil.ReadFile(configFile)
+		assert.NoError(t, err)
+		assert.Equal(t, string([]byte("aa: bb\naaa: 10s\nbar: foo\nbaz: foo\nfoo: bar\n")), string(f))
+	})
+	t.Run("still watchConfig after writeConfig", func(t *testing.T) {
+		// given a `config.yaml` file being watched
+		v, configFile, cleanup := newViperWithConfigFile(t)
+		defer cleanup()
+		_, err := os.Stat(configFile)
+		require.NoError(t, err)
+
+		// first run through with watching enabled
+		done := make(chan struct{})
+		v.OnConfigChange(func(in fsnotify.Event) {
+			done <- struct{}{}
+		})
+		v.WatchConfig()
+		// when overwriting the file and waiting for the custom change notification handler to be triggered
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\nbar: foo\n"), 0640)
+		<-done
+		// then the config value should have changed
+		require.Nil(t, err)
+		assert.Equal(t, "baz", v.Get("foo"))
+
+		v.Set("foo", "bar")
+		v.Set("baz", "foo")
+		v.Set("aa", "bb")
+		v.Set("aaa", "10s")
+		v.WriteConfig()
+
+		f, err := ioutil.ReadFile(configFile)
+		assert.NoError(t, err)
+		assert.Equal(t, string([]byte("aa: bb\naaa: 10s\nbar: foo\nbaz: foo\nfoo: bar\n")), string(f))
+		// Check still watching after write
+		v.OnConfigChange(func(in fsnotify.Event) {
+			close(done)
+		})
+		err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0640)
+		require.Nil(t, err)
+		<-done // then the config value should have changed
+		assert.Equal(t, "bar", v.Get("foo"))
 	})
 }
 
