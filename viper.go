@@ -980,6 +980,9 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
 //
 func BindPFlag(key string, flag *pflag.Flag) error { return v.BindPFlag(key, flag) }
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
+	if flag == nil {
+		return fmt.Errorf("flag for %q is nil", flag)
+	}
 	return v.BindFlagValue(key, pflagValue{flag})
 }
 
