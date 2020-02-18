@@ -361,6 +361,30 @@ func TestSearchInPath_FilesOnly(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSearchInPath_ExtensionFirst(t *testing.T) {
+	exceptFile := "/tmp/withExtension.yaml"
+	_, err := v.fs.Create(exceptFile)
+	defer func() {
+		_ = v.fs.Remove("/tmp/withExtension.yaml")
+	}()
+
+	assert.NoError(t, err)
+	_, err = v.fs.Create("./.withoutExtension")
+	assert.NoError(t, err)
+	defer func() {
+		_ = v.fs.Remove("./.withoutExtension")
+	}()
+
+	SetConfigName("withExtension")
+	SetConfigType("yaml")
+	AddConfigPath(".")
+	AddConfigPath("/tmp")
+
+	filename, err := v.getConfigFile()
+	assert.Equal(t, exceptFile, filename)
+	assert.NoError(t, err)
+}
+
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))

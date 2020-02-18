@@ -1978,12 +1978,6 @@ func (v *Viper) searchInPath(in string) (filename string) {
 		}
 	}
 
-	if v.configType != "" {
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
-			return filepath.Join(in, v.configName)
-		}
-	}
-
 	return ""
 }
 
@@ -1996,6 +1990,14 @@ func (v *Viper) findConfigFile() (string, error) {
 		file := v.searchInPath(cp)
 		if file != "" {
 			return file, nil
+		}
+	}
+
+	for _, in := range v.configPaths {
+		if v.configType != "" {
+			if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
+				return filepath.Join(in, v.configName), nil
+			}
 		}
 	}
 	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
