@@ -1413,11 +1413,18 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 
 func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
+	var configType string
+
 	ext := filepath.Ext(filename)
-	if len(ext) <= 1 {
-		return fmt.Errorf("filename: %s requires valid extension", filename)
+	if ext != "" {
+		configType = ext[1:]
+	} else {
+		configType = v.configType
 	}
-	configType := ext[1:]
+	if configType == "" {
+		return fmt.Errorf("config type could not be determined for %s", filename)
+	}
+
 	if !stringInSlice(configType, SupportedExts) {
 		return UnsupportedConfigError(configType)
 	}

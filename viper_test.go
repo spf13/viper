@@ -1279,26 +1279,6 @@ var hclWriteExpected = []byte(`"foos" = {
 
 "type" = "donut"`)
 
-func TestWriteConfigHCL(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("hcl")
-	err := v.ReadConfig(bytes.NewBuffer(hclExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.hcl"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.hcl")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, hclWriteExpected, read)
-}
-
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
@@ -1322,121 +1302,12 @@ var jsonWriteExpected = []byte(`{
   "type": "donut"
 }`)
 
-func TestWriteConfigJson(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("json")
-	err := v.ReadConfig(bytes.NewBuffer(jsonExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.json"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, jsonWriteExpected, read)
-}
-
 var propertiesWriteExpected = []byte(`p_id = 0001
 p_type = donut
 p_name = Cake
 p_ppu = 0.55
 p_batters.batter.type = Regular
 `)
-
-func TestWriteConfigProperties(t *testing.T) {
-	v := New()
-	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("properties")
-	err := v.ReadConfig(bytes.NewBuffer(propertiesExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.properties"); err != nil {
-		t.Fatal(err)
-	}
-	read, err := afero.ReadFile(fs, "c.properties")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, propertiesWriteExpected, read)
-}
-
-func TestWriteConfigTOML(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	v := New()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("toml")
-	err := v.ReadConfig(bytes.NewBuffer(tomlExample))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.toml"); err != nil {
-		t.Fatal(err)
-	}
-
-	// The TOML String method does not order the contents.
-	// Therefore, we must read the generated file and compare the data.
-	v2 := New()
-	v2.SetFs(fs)
-	v2.SetConfigName("c")
-	v2.SetConfigType("toml")
-	v2.SetConfigFile("c.toml")
-	err = v2.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
-	assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
-	assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
-	assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
-}
-
-var dotenvWriteExpected = []byte(`
-TITLE="DotEnv Write Example"
-NAME=Oreo
-KIND=Biscuit
-`)
-
-func TestWriteConfigDotEnv(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	v := New()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("env")
-	err := v.ReadConfig(bytes.NewBuffer(dotenvWriteExpected))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := v.WriteConfigAs("c.env"); err != nil {
-		t.Fatal(err)
-	}
-
-	// The TOML String method does not order the contents.
-	// Therefore, we must read the generated file and compare the data.
-	v2 := New()
-	v2.SetFs(fs)
-	v2.SetConfigName("c")
-	v2.SetConfigType("env")
-	v2.SetConfigFile("c.env")
-	err = v2.ReadInConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, v.GetString("title"), v2.GetString("title"))
-	assert.Equal(t, v.GetString("type"), v2.GetString("type"))
-	assert.Equal(t, v.GetString("kind"), v2.GetString("kind"))
-}
 
 var yamlWriteExpected = []byte(`age: 35
 beard: true
@@ -1454,24 +1325,237 @@ hobbies:
 name: steve
 `)
 
-func TestWriteConfigYAML(t *testing.T) {
-	v := New()
+func TestWriteConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	v.SetFs(fs)
-	v.SetConfigName("c")
-	v.SetConfigType("yaml")
-	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
-	if err != nil {
-		t.Fatal(err)
+	testCases := map[string]struct {
+		configName      string
+		inConfigType    string
+		outConfigType   string
+		fileName        string
+		input           []byte
+		expectedContent []byte
+	}{
+		"hcl with file extension": {
+			configName:      "c",
+			inConfigType:    "hcl",
+			outConfigType:   "hcl",
+			fileName:        "c.hcl",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
+		"hcl without file extension": {
+			configName:      "c",
+			inConfigType:    "hcl",
+			outConfigType:   "hcl",
+			fileName:        "c",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
+		"hcl with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "hcl",
+			outConfigType:   "json",
+			fileName:        "c.hcl",
+			input:           hclExample,
+			expectedContent: hclWriteExpected,
+		},
+		"json with file extension": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "json",
+			fileName:        "c.json",
+			input:           jsonExample,
+			expectedContent: jsonWriteExpected,
+		},
+		"json without file extension": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "json",
+			fileName:        "c",
+			input:           jsonExample,
+			expectedContent: jsonWriteExpected,
+		},
+		"json with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "hcl",
+			fileName:        "c.json",
+			input:           jsonExample,
+			expectedContent: jsonWriteExpected,
+		},
+		"properties with file extension": {
+			configName:      "c",
+			inConfigType:    "properties",
+			outConfigType:   "properties",
+			fileName:        "c.properties",
+			input:           propertiesExample,
+			expectedContent: propertiesWriteExpected,
+		},
+		"properties without file extension": {
+			configName:      "c",
+			inConfigType:    "properties",
+			outConfigType:   "properties",
+			fileName:        "c",
+			input:           propertiesExample,
+			expectedContent: propertiesWriteExpected,
+		},
+		"yaml with file extension": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
+			fileName:        "c.yaml",
+			input:           yamlExample,
+			expectedContent: yamlWriteExpected,
+		},
+		"yaml without file extension": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
+			fileName:        "c",
+			input:           yamlExample,
+			expectedContent: yamlWriteExpected,
+		},
+		"yaml with file extension and mismatch type": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "json",
+			fileName:        "c.yaml",
+			input:           yamlExample,
+			expectedContent: yamlWriteExpected,
+		},
 	}
-	if err := v.WriteConfigAs("c.yaml"); err != nil {
-		t.Fatal(err)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigName(tc.fileName)
+			v.SetConfigType(tc.inConfigType)
+
+			err := v.ReadConfig(bytes.NewBuffer(tc.input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			v.SetConfigType(tc.outConfigType)
+			if err := v.WriteConfigAs(tc.fileName); err != nil {
+				t.Fatal(err)
+			}
+			read, err := afero.ReadFile(fs, tc.fileName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tc.expectedContent, read)
+		})
 	}
-	read, err := afero.ReadFile(fs, "c.yaml")
-	if err != nil {
-		t.Fatal(err)
+}
+
+func TestWriteConfigTOML(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	testCases := map[string]struct {
+		configName string
+		configType string
+		fileName   string
+		input      []byte
+	}{
+		"with file extension": {
+			configName: "c",
+			configType: "toml",
+			fileName:   "c.toml",
+			input:      tomlExample,
+		},
+		"without file extension": {
+			configName: "c",
+			configType: "toml",
+			fileName:   "c",
+			input:      tomlExample,
+		},
 	}
-	assert.Equal(t, yamlWriteExpected, read)
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigName(tc.configName)
+			v.SetConfigType(tc.configType)
+			err := v.ReadConfig(bytes.NewBuffer(tc.input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := v.WriteConfigAs(tc.fileName); err != nil {
+				t.Fatal(err)
+			}
+
+			// The TOML String method does not order the contents.
+			// Therefore, we must read the generated file and compare the data.
+			v2 := New()
+			v2.SetFs(fs)
+			v2.SetConfigName(tc.configName)
+			v2.SetConfigType(tc.configType)
+			v2.SetConfigFile(tc.fileName)
+			err = v2.ReadInConfig()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, v.GetString("title"), v2.GetString("title"))
+			assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
+			assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
+			assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
+		})
+	}
+}
+
+func TestWriteConfigDotEnv(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	testCases := map[string]struct {
+		configName string
+		configType string
+		fileName   string
+		input      []byte
+	}{
+		"with file extension": {
+			configName: "c",
+			configType: "env",
+			fileName:   "c.env",
+			input:      dotenvExample,
+		},
+		"without file extension": {
+			configName: "c",
+			configType: "env",
+			fileName:   "c",
+			input:      dotenvExample,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigName(tc.configName)
+			v.SetConfigType(tc.configType)
+			err := v.ReadConfig(bytes.NewBuffer(tc.input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := v.WriteConfigAs(tc.fileName); err != nil {
+				t.Fatal(err)
+			}
+
+			// The TOML String method does not order the contents.
+			// Therefore, we must read the generated file and compare the data.
+			v2 := New()
+			v2.SetFs(fs)
+			v2.SetConfigName(tc.configName)
+			v2.SetConfigType(tc.configType)
+			v2.SetConfigFile(tc.fileName)
+			err = v2.ReadInConfig()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, v.GetString("title_dotenv"), v2.GetString("title_dotenv"))
+			assert.Equal(t, v.GetString("type_dotenv"), v2.GetString("type_dotenv"))
+			assert.Equal(t, v.GetString("kind_dotenv"), v2.GetString("kind_dotenv"))
+		})
+	}
 }
 
 func TestSafeWriteConfig(t *testing.T) {
