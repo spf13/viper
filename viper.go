@@ -793,6 +793,16 @@ func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
+// GetStringPt returns the value associated with the key as a string pointer, nil if it's empty string.
+func GetStringPtr(key string) *string { return v.GetStringPtr(key) }
+func (v *Viper) GetStringPtr(key string) *string {
+	s := v.GetString(key)
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // GetBool returns the value associated with the key as a boolean.
 func GetBool(key string) bool { return v.GetBool(key) }
 func (v *Viper) GetBool(key string) bool {

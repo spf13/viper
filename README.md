@@ -507,6 +507,7 @@ The following functions and methods exist:
  * `GetInt(key string) : int`
  * `GetIntSlice(key string) : []int`
  * `GetString(key string) : string`
+ * `GetStringPtr(key string) : *string`
  * `GetStringMap(key string) : map[string]interface{}`
  * `GetStringMapString(key string) : map[string]string`
  * `GetStringSlice(key string) : []string`
@@ -517,7 +518,7 @@ The following functions and methods exist:
 
 One important thing to recognize is that each Get function will return a zero
 value if it’s not found. To check if a given key exists, the `IsSet()` method
-has been provided.
+has been provided. `GetStringPtr()`, though, will return nil for empty string.
 
 Example:
 ```go
