@@ -34,6 +34,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dgraph-io/ristretto"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
@@ -214,6 +216,8 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+
+	cache *ristretto.Cache
 }
 
 // New returns an initialized Viper instance.
@@ -231,6 +235,21 @@ func New() *Viper {
 	v.env = make(map[string]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
+
+	var err error
+	v.cache, err = ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1000,
+		MaxCost:     1 << 20, // 1MB max cache
+		BufferItems: 64,
+	})
+	if err != nil {
+		// This will only happen if ristretto decides to throw an error based on the given configuration
+		// in future versions which is unlikely and therefore a panic'able error.
+		//
+		// Currently, ristretto will only error if one of the provided settings (NumCounters, MaxCost, BufferItems)
+		// is <= 0.
+		panic(fmt.Sprintf("cache options are invalid because: %s", err))
+	}
 
 	return v
 }
@@ -267,6 +286,13 @@ type StringReplacer interface {
 func EnvKeyReplacer(r StringReplacer) Option {
 	return optionFunc(func(v *Viper) {
 		v.envKeyReplacer = r
+	})
+}
+
+// Cache sets Viper's cache (*ristretto.Cache).
+func Cache(c *ristretto.Cache) Option {
+	return optionFunc(func(v *Viper) {
+		v.cache = c
 	})
 }
 
@@ -420,6 +446,7 @@ func (v *Viper) SetConfigFile(in string) {
 // variables that start with "SPF_".
 func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
 func (v *Viper) SetEnvPrefix(in string) {
+	v.cache.Clear()
 	if in != "" {
 		v.envPrefix = in
 	}
@@ -438,6 +465,7 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 // For backward compatibility reasons this is false by default.
 func AllowEmptyEnv(allowEmptyEnv bool) { v.AllowEmptyEnv(allowEmptyEnv) }
 func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
+	v.cache.Clear()
 	v.allowEmptyEnv = allowEmptyEnv
 }
 
@@ -466,6 +494,7 @@ func (v *Viper) ConfigFileUsed() string { return v.configFile }
 // Can be called multiple times to define multiple search paths.
 func AddConfigPath(in string) { v.AddConfigPath(in) }
 func (v *Viper) AddConfigPath(in string) {
+	v.cache.Clear()
 	if in != "" {
 		absin := absPathify(in)
 		jww.INFO.Println("adding", absin, "to paths to search")
@@ -487,6 +516,7 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 	return v.AddRemoteProvider(provider, endpoint, path)
 }
 func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
+	v.cache.Clear()
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
 	}
@@ -519,6 +549,7 @@ func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) err
 }
 
 func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
+	v.cache.Clear()
 	if !stringInSlice(provider, SupportedRemoteProviders) {
 		return UnsupportedRemoteProviderError(provider)
 	}
@@ -707,6 +738,7 @@ func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 //   "a b c"
 func SetTypeByDefaultValue(enable bool) { v.SetTypeByDefaultValue(enable) }
 func (v *Viper) SetTypeByDefaultValue(enable bool) {
+	v.cache.Clear()
 	v.typeByDefValue = enable
 }
 
@@ -725,7 +757,8 @@ func GetViper() *Viper {
 func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey, true)
+
+	val := v.cachedFind(lcaseKey, true)
 	if val == nil {
 		return nil
 	}
@@ -741,7 +774,7 @@ func (v *Viper) Get(key string) interface{} {
 
 		switch valType.(type) {
 		case bool:
-			return cast.ToBool(val)
+			val = cast.ToBool(val)
 		case string:
 			return cast.ToString(val)
 		case int32, int16, int8, int:
@@ -969,6 +1002,7 @@ func (v *Viper) UnmarshalExact(rawVal interface{}, opts ...DecoderConfigOption) 
 // name as the config key.
 func BindPFlags(flags *pflag.FlagSet) error { return v.BindPFlags(flags) }
 func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
+	v.cache.Clear()
 	return v.BindFlagValues(pflagValueSet{flags})
 }
 
@@ -980,6 +1014,7 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
 //
 func BindPFlag(key string, flag *pflag.Flag) error { return v.BindPFlag(key, flag) }
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
+	v.cache.Clear()
 	return v.BindFlagValue(key, pflagValue{flag})
 }
 
@@ -987,6 +1022,7 @@ func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
 // name as the config key.
 func BindFlagValues(flags FlagValueSet) error { return v.BindFlagValues(flags) }
 func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
+	v.cache.Clear()
 	flags.VisitAll(func(flag FlagValue) {
 		if err = v.BindFlagValue(flag.Name(), flag); err != nil {
 			return
@@ -998,6 +1034,7 @@ func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
 // BindFlagValue binds a specific key to a FlagValue.
 func BindFlagValue(key string, flag FlagValue) error { return v.BindFlagValue(key, flag) }
 func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
+	v.cache.Clear()
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
@@ -1011,6 +1048,7 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
+	v.cache.Clear()
 	var key, envkey string
 	if len(input) == 0 {
 		return fmt.Errorf("missing key to bind to")
@@ -1027,6 +1065,19 @@ func (v *Viper) BindEnv(input ...string) error {
 	v.env[key] = envkey
 
 	return nil
+}
+
+// cachedFind uses Viper's cache to find a key's value and `v.find` if it is not available
+// in the cache.
+func (v *Viper) cachedFind(lcaseKey string, flagDefault bool) interface{} {
+	realKey := v.realKey(lcaseKey)
+	if value, found := v.cache.Get(realKey); found {
+		return value
+	}
+
+	value := v.find(lcaseKey, flagDefault)
+	v.cache.Set(realKey, value, 0)
+	return value
 }
 
 // Given a key, find the value.
@@ -1182,7 +1233,7 @@ func readAsCSV(val string) ([]string, error) {
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey, false)
+	val := v.cachedFind(lcaseKey, false)
 	return val != nil
 }
 
@@ -1190,6 +1241,7 @@ func (v *Viper) IsSet(key string) bool {
 // keys set in config, default & flags
 func AutomaticEnv() { v.AutomaticEnv() }
 func (v *Viper) AutomaticEnv() {
+	v.cache.Clear()
 	v.automaticEnvApplied = true
 }
 
@@ -1198,6 +1250,7 @@ func (v *Viper) AutomaticEnv() {
 // not match it.
 func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
 func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
+	v.cache.Clear()
 	v.envKeyReplacer = r
 }
 
@@ -1264,6 +1317,9 @@ func (v *Viper) InConfig(key string) bool {
 // Default only used when no value is provided by the user via flag, config or ENV.
 func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 func (v *Viper) SetDefault(key string, value interface{}) {
+	// We're clearing the whole cache because nested keys may cause issues if only the key is evicted.
+	v.cache.Clear()
+
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
@@ -1282,6 +1338,9 @@ func (v *Viper) SetDefault(key string, value interface{}) {
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) { v.Set(key, value) }
 func (v *Viper) Set(key string, value interface{}) {
+	// We're clearing the whole cache because nested keys may cause issues if only the key is evicted.
+	v.cache.Clear()
+
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
@@ -1298,6 +1357,7 @@ func (v *Viper) Set(key string, value interface{}) {
 // and key/value stores, searching in one of the defined paths.
 func ReadInConfig() error { return v.ReadInConfig() }
 func (v *Viper) ReadInConfig() error {
+	v.cache.Clear()
 	jww.INFO.Println("Attempting to read in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
@@ -1328,6 +1388,7 @@ func (v *Viper) ReadInConfig() error {
 // MergeInConfig merges a new configuration with an existing config.
 func MergeInConfig() error { return v.MergeInConfig() }
 func (v *Viper) MergeInConfig() error {
+	v.cache.Clear()
 	jww.INFO.Println("Attempting to merge in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
@@ -1350,6 +1411,7 @@ func (v *Viper) MergeInConfig() error {
 // key does not exist in the file.
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 func (v *Viper) ReadConfig(in io.Reader) error {
+	v.cache.Clear()
 	v.config = make(map[string]interface{})
 	return v.unmarshalReader(in, v.config)
 }
@@ -1357,6 +1419,7 @@ func (v *Viper) ReadConfig(in io.Reader) error {
 // MergeConfig merges a new configuration with an existing config.
 func MergeConfig(in io.Reader) error { return v.MergeConfig(in) }
 func (v *Viper) MergeConfig(in io.Reader) error {
+	v.cache.Clear()
 	cfg := make(map[string]interface{})
 	if err := v.unmarshalReader(in, cfg); err != nil {
 		return err
@@ -1368,6 +1431,7 @@ func (v *Viper) MergeConfig(in io.Reader) error {
 // Note that the map given may be modified.
 func MergeConfigMap(cfg map[string]interface{}) error { return v.MergeConfigMap(cfg) }
 func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
+	v.cache.Clear()
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
@@ -1910,6 +1974,7 @@ func (v *Viper) AllSettings() map[string]interface{} {
 // SetFs sets the filesystem to use to read configuration.
 func SetFs(fs afero.Fs) { v.SetFs(fs) }
 func (v *Viper) SetFs(fs afero.Fs) {
+	v.cache.Clear()
 	v.fs = fs
 }
 
@@ -1917,6 +1982,7 @@ func (v *Viper) SetFs(fs afero.Fs) {
 // Does not include extension.
 func SetConfigName(in string) { v.SetConfigName(in) }
 func (v *Viper) SetConfigName(in string) {
+	v.cache.Clear()
 	if in != "" {
 		v.configName = in
 		v.configFile = ""
@@ -1927,6 +1993,7 @@ func (v *Viper) SetConfigName(in string) {
 // remote source, e.g. "json".
 func SetConfigType(in string) { v.SetConfigType(in) }
 func (v *Viper) SetConfigType(in string) {
+	v.cache.Clear()
 	if in != "" {
 		v.configType = in
 	}

@@ -1,0 +1,248 @@
+{
+    "log": {
+        "level": "debug",
+        "format": "json"
+    },
+    "profiling": "cpu",
+    "serve": {
+        "proxy": {
+            "port": 1234,
+            "host": "127.0.0.1",
+            "timeout": {
+                "read": "1s",
+                "write": "2s",
+                "idle": "3s"
+            },
+            "cors": {
+                "enabled": true,
+                "allowed_origins": [
+                    "https://example.com",
+                    "https://*.example.com"
+                ],
+                "allowed_methods": [
+                    "POST",
+                    "GET",
+                    "PUT",
+                    "PATCH",
+                    "DELETE"
+                ],
+                "allowed_headers": [
+                    "Authorization",
+                    "Content-Type"
+                ],
+                "exposed_headers": [
+                    "Content-Type"
+                ],
+                "allow_credentials": true,
+                "max_age": 10,
+                "debug": true
+            },
+            "tls": {
+                "key": {
+                    "path": "/path/to/key.pem",
+                    "base64": "LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLVxuTUlJRkRqQkFCZ2txaGtpRzl3MEJCUTB3..."
+                },
+                "cert": {
+                    "path": "/path/to/cert.pem",
+                    "base64": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tXG5NSUlEWlRDQ0FrMmdBd0lCQWdJRVY1eE90REFOQmdr..."
+                }
+            }
+        },
+        "api": {
+            "port": 1235,
+            "host": "127.0.0.2",
+            "cors": {
+                "enabled": true,
+                "allowed_origins": [
+                    "https://example.org",
+                    "https://*.example.org"
+                ],
+                "allowed_methods": [
+                    "GET",
+                    "PUT",
+                    "PATCH",
+                    "DELETE"
+                ],
+                "allowed_headers": [
+                    "Authorization",
+                    "Content-Type"
+                ],
+                "exposed_headers": [
+                    "Content-Type"
+                ],
+                "allow_credentials": true,
+                "max_age": 10,
+                "debug": true
+            },
+            "tls": {
+                "key": {
+                    "path": "/path/to/key.pem",
+                    "base64": "LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLVxuTUlJRkRqQkFCZ2txaGtpRzl3MEJCUTB3..."
+                },
+                "cert": {
+                    "path": "/path/to/cert.pem",
+                    "base64": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tXG5NSUlEWlRDQ0FrMmdBd0lCQWdJRVY1eE90REFOQmdr..."
+                }
+            }
+        }
+    },
+    "access_rules": {
+        "repositories": [
+            "file://path/to/rules.json",
+            "inline://W3siaWQiOiJmb28tcnVsZSIsImF1dGhlbnRpY2F0b3JzIjpbXX1d",
+            "https://path-to-my-rules/rules.json"
+        ],
+        "matching_strategy": "glob"
+    },
+    "errors": {
+        "fallback": [
+            "json"
+        ],
+        "handlers": {
+            "redirect": {
+                "enabled": true,
+                "config": {
+                    "to": "http://path-to/redirect"
+                }
+            },
+            "json": {
+                "enabled": true,
+                "config": {
+                    "verbose": true,
+                    "when": [
+                    {
+                        "error": [
+                            "unauthorized",
+                            "forbidden",
+                            "internal_server_error"
+                        ],
+                        "request": {
+                            "header": {
+                                "content_type": [
+                                    "application/json"
+                                ],
+                                "accept": [
+                                    "application/json"
+                                ]
+                            },
+                            "cidr": [
+                                "127.0.0.0/24"
+                            ]
+                        }
+                    }
+                    ]
+                }
+            }
+        }
+    },
+    "authenticators": {
+        "anonymous": {
+            "enabled": true,
+            "config": {
+                "subject": "guest"
+            }
+        },
+        "cookie_session": {
+            "enabled": true,
+            "config": {
+                "check_session_url": "https://session-store-host",
+                "only": [
+                    "sessionid"
+                ]
+            }
+        },
+        "jwt": {
+            "enabled": true,
+            "config": {
+                "jwks_urls": [
+                    "https://my-website.com/.well-known/jwks.json",
+                    "https://my-other-website.com/.well-known/jwks.json",
+                    "file://path/to/local/jwks.json"
+                ],
+                "scope_strategy": "wildcard"
+            }
+        },
+        "noop": {
+            "enabled": true
+        },
+        "oauth2_client_credentials": {
+            "enabled": true,
+            "config": {
+                "token_url": "https://my-website.com/oauth2/token"
+            }
+        },
+        "oauth2_introspection": {
+            "enabled": true,
+            "config": {
+                "introspection_url": "https://my-website.com/oauth2/introspection",
+                "scope_strategy": "exact",
+                "pre_authorization": {
+                    "enabled": true,
+                    "client_id": "some_id",
+                    "client_secret": "some_secret",
+                    "scope": [
+                        "foo",
+                        "bar"
+                    ],
+                    "token_url": "https://my-website.com/oauth2/token"
+                }
+            }
+        },
+        "unauthorized": {
+            "enabled": true
+        }
+    },
+    "authorizers": {
+        "allow": {
+            "enabled": true
+        },
+        "deny": {
+            "enabled": true
+        },
+        "keto_engine_acp_ory": {
+            "enabled": true,
+            "config": {
+                "base_url": "http://my-keto/",
+                "required_action": "unknown",
+                "required_resource": "unknown"
+            }
+        }
+    },
+    "mutators": {
+        "header": {
+            "enabled": false,
+            "config": {
+                "headers": {
+                    "foo": "bar"
+                }
+            }
+        },
+        "cookie": {
+            "enabled": true,
+            "config": {
+                "cookies": {
+                    "foo": "bar"
+                }
+            }
+        },
+        "hydrator": {
+            "enabled": true,
+            "config": {
+                "api": {
+                    "url": "https://some-url/"
+                }
+            }
+        },
+        "id_token": {
+            "enabled": true,
+            "config": {
+                "issuer_url": "https://my-oathkeeper/",
+                "jwks_url": "https://fetch-keys/from/this/location.json",
+                "ttl": "1h"
+            }
+        },
+        "noop": {
+            "enabled": true
+        }
+    }
+}

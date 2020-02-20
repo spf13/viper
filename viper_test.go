@@ -245,13 +245,16 @@ func initDirs(t *testing.T) (string, string, func()) {
 		testDirs = append(testDirs, `d\d`)
 	}
 
+	wd, err := os.Getwd()
+	require.NoError(t, err, "Unable to get working directory")
+
 	root, err := ioutil.TempDir("", "")
 	require.NoError(t, err, "Failed to create temporary directory")
 
 	cleanup := true
 	defer func() {
 		if cleanup {
-			os.Chdir("..")
+			os.Chdir(wd)
 			os.RemoveAll(root)
 		}
 	}()
@@ -274,7 +277,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 
 	cleanup = false
 	return root, config, func() {
-		os.Chdir("..")
+		os.Chdir(wd)
 		os.RemoveAll(root)
 	}
 }
@@ -2217,6 +2220,43 @@ func BenchmarkGetBool(b *testing.B) {
 			b.Fatal("GetBool returned false")
 		}
 	}
+}
+
+func BenchmarkFind(b *testing.B) {
+	os.Setenv("MUTATORS_HEADER_ENABLED", "true")
+
+	v = New()
+	v.SetConfigFile("stub/benchmark.json")
+	if err := v.ReadInConfig(); err != nil {
+		b.Fatal(err)
+	}
+
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	keys := v.AllKeys()
+	numKeys := len(keys)
+
+	b.ResetTimer()
+	b.Run("cache=false", func(b *testing.B) {
+		var key string
+		for i := 0; i < b.N; i++ {
+			key = keys[i%numKeys]
+			if v.find(key, true) == nil {
+				b.Fatalf("cachedFind returned a nil value for key: %s", key)
+			}
+		}
+	})
+
+	b.Run("cache=true", func(b *testing.B) {
+		var key string
+		for i := 0; i < b.N; i++ {
+			key = keys[i%numKeys]
+			if v.cachedFind(key, true) == nil {
+				b.Fatalf("cachedFind returned a nil value for key: %s", key)
+			}
+		}
+	})
 }
 
 func BenchmarkGet(b *testing.B) {
