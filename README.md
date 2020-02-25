@@ -282,6 +282,16 @@ os.Setenv("SPF_ID", "13") // typically done outside of the app
 id := Get("id") // 13
 ```
 
+#### When working with *required flags with Cobra+Viper*, you must set the flag values after binding to them. Otherwise Cobra won't be aware of the value from any source other tha the CLI itself.
+
+```go
+serverCmd.Flags().VisitAll(func(f *pflag.Flag) {
+    if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
+        serverCmd.Flags().Set(f.Name, viper.GetString(f.Name))
+    }
+})
+```
+
 ### Working with Flags
 
 Viper has the ability to bind to flags. Specifically, Viper supports `Pflags`
