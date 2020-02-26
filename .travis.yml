@@ -17,14 +17,12 @@ matrix:
     - go: tip
   fast_finish: true
 
-install:
-  - gimme 1.14.x
-  - go mod vendor
+install: true
 
 script:
   - go mod tidy
   - diff -u <(echo -n) <(gofmt -d .)
-  - go test -v ./
+  - go test -v -mod=vendor ./...
 
 after_success:
   - go get -u -d github.com/spf13/hugo
