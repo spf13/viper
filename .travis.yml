@@ -7,7 +7,7 @@ env:
   - GO111MODULE="on"
 
 go:
-  - 1.11.x
+  - 1.14.x
   - tip
 
 os:
@@ -20,9 +20,9 @@ matrix:
   fast_finish: true
 
 script:
-  - go install ./...
+  - go mod tidy
   - diff -u <(echo -n) <(gofmt -d .)
-  - go test -v ./...
+  - go test -v ./
 
 after_success:
   - go get -u -d github.com/spf13/hugo
