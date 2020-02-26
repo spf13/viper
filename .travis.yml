@@ -20,7 +20,7 @@ matrix:
 install: true
 
 script:
-  - go mod tidy
+  - go mod vendor
   - diff -u <(echo -n) <(gofmt -d .)
   - go test -v -mod=vendor ./...
 
