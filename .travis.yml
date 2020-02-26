@@ -1,5 +1,3 @@
-go_import_path: github.com/spf13/viper
-
 language: go
 
 env:
@@ -18,6 +16,10 @@ matrix:
   allow_failures:
     - go: tip
   fast_finish: true
+
+install:
+  - gimme 1.14.x
+  - go mod vendor
 
 script:
   - go mod tidy
