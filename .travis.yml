@@ -22,7 +22,7 @@ install: true
 script:
   - go mod vendor
   - diff -u <(echo -n) <(gofmt -d .)
-  - go test -v -mod=vendor ./...
+  - go test -v -mod=readonly ./...
 
 after_success:
   - go get -u -d github.com/spf13/hugo
