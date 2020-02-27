@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6 // indirect
 	github.com/coreos/bbolt v1.3.3 // indirect
-	github.com/coreos/etcd v3.3.10+incompatible // indirect
+	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
@@ -26,7 +26,7 @@ require (
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc // indirect
-	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
+	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77
 	go.uber.org/zap v1.14.0 // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
