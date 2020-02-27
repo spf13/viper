@@ -21,7 +21,7 @@ install: true
 
 script:
   - go mod vendor
-  - diff -u <(echo -n) <(gofmt -d .)
+  - diff -u <(echo -n) <(gofmt -d $(go list ./... | grep -v /vendor/))
   - go test -v -mod=readonly ./...
 
 after_success:
