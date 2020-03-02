@@ -2334,6 +2334,76 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	}
 }
 
+func TestCaseSensitive(t *testing.T) {
+	for _, config := range []struct {
+		typ     string
+		content string
+	}{
+		{"yaml", `
+aBcD: 1
+eF:
+  gH: 2
+  iJk: 3
+  Lm:
+    nO: 4
+    P:
+      Q: 5
+      R: 6
+`},
+		{"json", `{
+  "aBcD": 1,
+  "eF": {
+    "iJk": 3,
+    "Lm": {
+      "P": {
+        "Q": 5,
+        "R": 6
+      },
+      "nO": 4
+    },
+    "gH": 2
+  }
+}`},
+		{"toml", `aBcD = 1
+[eF]
+gH = 2
+iJk = 3
+[eF.Lm]
+nO = 4
+[eF.Lm.P]
+Q = 5
+R = 6
+`},
+	} {
+		doTestCaseSensitive(t, config.typ, config.content)
+	}
+}
+
+func doTestCaseSensitive(t *testing.T, typ, config string) {
+	// Create case-sensitive instance
+	v := NewWithOptions(KeyPreserveCase())
+	v.SetConfigType(typ)
+
+	r := strings.NewReader(config)
+	if err := v.unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	v.Set("RfD", true)
+	assert.Equal(t, nil, v.Get("rfd"))
+	assert.Equal(t, true, v.Get("RfD"))
+	assert.Equal(t, 0, cast.ToInt(v.Get("abcd")))
+	assert.Equal(t, 1, cast.ToInt(v.Get("aBcD")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.gh")))
+	assert.Equal(t, 2, cast.ToInt(v.Get("eF.gH")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.ijk")))
+	assert.Equal(t, 3, cast.ToInt(v.Get("eF.iJk")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.lm.no")))
+	assert.Equal(t, 4, cast.ToInt(v.Get("eF.Lm.nO")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.lm.p.q")))
+	assert.Equal(t, 5, cast.ToInt(v.Get("eF.Lm.P.Q")))
+}
+
 func TestParseNested(t *testing.T) {
 	type duration struct {
 		Delay time.Duration

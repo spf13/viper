@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/viper/internal/testutil"
@@ -37,7 +38,7 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 		}
 	)
 
-	got := copyAndInsensitiviseMap(given)
+	got := copyAndInsensitiviseMap(given, strings.ToLower)
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Fatalf("Got %q\nexpected\n%q", got, expected)
