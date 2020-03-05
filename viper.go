@@ -602,9 +602,7 @@ func (v *Viper) searchMapWithPathPrefixes(source interface{}, path []string) int
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
-
 		if sourceSlice, ok := source.([]interface{}); ok {
-
 			//if the prefixKey is a number which is not out of bounds of the slice
 			if index, err := strconv.Atoi(prefixKey); err == nil && len(sourceSlice) > index {
 				next := sourceSlice[index]
