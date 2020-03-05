@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -582,9 +583,9 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 	return nil
 }
 
-// searchMapWithPathPrefixes recursively searches for a value for path in source map.
+// searchMapWithPathPrefixes recursively searches for a value for path in source map/slice.
 //
-// While searchMap() considers each path element as a single map key, this
+// While searchMap() considers each path element as a single map key or slice index, this
 // function searches for, and prioritizes, merged path elements.
 // e.g., if in the source, "foo" is defined with a sub-key "bar", and "foo.bar"
 // is also defined, this latter value is returned for path ["foo", "bar"].
@@ -593,7 +594,7 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 // in their keys).
 //
 // Note: This assumes that the path entries and map keys are lower cased.
-func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []string) interface{} {
+func (v *Viper) searchMapWithPathPrefixes(source interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
 	}
@@ -602,27 +603,51 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
 
-		next, ok := source[prefixKey]
-		if ok {
-			// Fast path
-			if i == len(path) {
-				return next
-			}
+		if sourceSlice, ok := source.([]interface{}); ok {
 
-			// Nested case
-			var val interface{}
-			switch next.(type) {
-			case map[interface{}]interface{}:
-				val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
-			case map[string]interface{}:
-				// Type assertion is safe here since it is only reached
-				// if the type of `next` is the same as the type being asserted
-				val = v.searchMapWithPathPrefixes(next.(map[string]interface{}), path[i:])
-			default:
-				// got a value but nested key expected, do nothing and look for next prefix
+			//if the prefixKey is a number which is not out of bounds of the slice
+			if index, err := strconv.Atoi(prefixKey); err == nil && len(sourceSlice) > index {
+				next := sourceSlice[index]
+
+				// Fast path
+				if i == len(path) {
+					return next
+				}
+
+				var val interface{}
+				switch n := next.(type) {
+				case map[interface{}]interface{}:
+					val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
+				case map[string]interface{}, []interface{}:
+					val = v.searchMapWithPathPrefixes(n, path[i:])
+				default:
+					// got a value but nested key expected, do nothing and look for next prefix
+				}
+				if val != nil {
+					return val
+				}
 			}
-			if val != nil {
-				return val
+		} else if sourceMap, ok := source.(map[string]interface{}); ok {
+			next, ok := sourceMap[prefixKey]
+			if ok {
+				// Fast path
+				if i == len(path) {
+					return next
+				}
+
+				// Nested case
+				var val interface{}
+				switch n := next.(type) {
+				case map[interface{}]interface{}:
+					val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
+				case map[string]interface{}, []interface{}:
+					val = v.searchMapWithPathPrefixes(n, path[i:])
+				default:
+					// got a value but nested key expected, do nothing and look for next prefix
+				}
+				if val != nil {
+					return val
+				}
 			}
 		}
 	}
