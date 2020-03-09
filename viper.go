@@ -1616,6 +1616,10 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		for i := 0; i < len(keys); i++ {
 			key := keys[i]
 			lastSep := strings.LastIndex(key, ".")
+			if lastSep < 0 {
+				err := fmt.Errorf("missing key for %s", key)
+				return ConfigMarshalError{err}
+			}
 			sectionName := key[:(lastSep)]
 			keyName := key[(lastSep + 1):]
 			if sectionName == "default" {
