@@ -1558,6 +1558,22 @@ func TestWriteConfigDotEnv(t *testing.T) {
 	}
 }
 
+func TestWriteConfigInvalidIni(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("ini")
+	v.Set("x", "y")
+	err := v.WriteConfigAs("c.ini")
+	require.NotNil(t, err, "invalid ini is expected to return an error")
+	_, ok := err.(ConfigMarshalError)
+	if !ok {
+		t.Fatalf("ConfigMarshalError type is expected, but got %T type",
+			err)
+	}
+}
+
 func TestSafeWriteConfig(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
