@@ -1253,6 +1253,32 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 }
 
+func TestSubWithBoundedFlags(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	overridenValue := "notSoLarge"
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("clothing.pants.size", "", "")
+	assert.NoError(t, flags.Parse([]string{"--clothing.pants.size=" + overridenValue}))
+
+	v.BindPFlags(flags)
+	subv := v.Sub("clothing")
+	assert.Equal(t, overridenValue, v.Get("clothing.pants.size"))
+	assert.Equal(t, overridenValue, subv.Get("pants.size"))
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+
+	subv = v.Sub("clothing.pants")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("missing.key")
+	assert.Equal(t, (*Viper)(nil), subv)
+}
+
 var hclWriteExpected = []byte(`"foos" = {
   "foo" = {
     "key" = 1

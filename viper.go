@@ -780,11 +780,21 @@ func (v *Viper) Sub(key string) *Viper {
 		return nil
 	}
 
-	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.config = cast.ToStringMap(data)
-		return subv
+	if !(reflect.TypeOf(data).Kind() == reflect.Map) {
+		return nil
 	}
-	return nil
+	subv.config = cast.ToStringMap(data)
+	subPFlags := make(map[string]FlagValue)
+	for flagName, flagValue := range v.pflags {
+		keyPrefix := key + "."
+		if !strings.HasPrefix(flagName, keyPrefix) {
+			continue
+		}
+		newFlagName := flagName[len(keyPrefix):]
+		subPFlags[newFlagName] = flagValue
+	}
+	subv.pflags = subPFlags
+	return subv
 }
 
 // GetString returns the value associated with the key as a string.
