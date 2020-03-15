@@ -1621,7 +1621,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 			if sectionName == "default" {
 				sectionName = ""
 			}
-			cfg.Section(sectionName).Key(keyName).SetValue(Get(key).(string))
+			cfg.Section(sectionName).Key(keyName).SetValue(v.Get(key).(string))
 		}
 		cfg.WriteTo(f)
 	}
