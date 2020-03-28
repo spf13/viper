@@ -1083,6 +1083,16 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
+		case "stringToString":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			elements := strings.Split(s, ",")
+			result := make(map[string]string, len(elements))
+			for _, element := range elements {
+				pair := strings.SplitN(element, "=", 2)
+				result[pair[0]] = pair[1]
+			}
+			return result
 		default:
 			return flag.ValueString()
 		}
