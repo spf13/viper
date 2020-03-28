@@ -1084,18 +1084,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
 		case "stringToString":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			if s == "" {
-				return nil
-			}
-			elements := strings.Split(s, ",")
-			result := make(map[string]string, len(elements))
-			for _, element := range elements {
-				pair := strings.SplitN(element, "=", 2)
-				result[pair[0]] = pair[1]
-			}
-			return result
+			return parseStringToStringFlagValue(flag.ValueString())
 		default:
 			return flag.ValueString()
 		}
@@ -1172,18 +1161,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
 			case "stringToString":
-				s := strings.TrimPrefix(flag.ValueString(), "[")
-				s = strings.TrimSuffix(s, "]")
-				if s == "" {
-					return nil
-				}
-				elements := strings.Split(s, ",")
-				result := make(map[string]string, len(elements))
-				for _, element := range elements {
-					pair := strings.SplitN(element, "=", 2)
-					result[pair[0]] = pair[1]
-				}
-				return result
+				return parseStringToStringFlagValue(flag.ValueString())
 			default:
 				return flag.ValueString()
 			}
@@ -1201,6 +1179,21 @@ func readAsCSV(val string) ([]string, error) {
 	stringReader := strings.NewReader(val)
 	csvReader := csv.NewReader(stringReader)
 	return csvReader.Read()
+}
+
+func parseStringToStringFlagValue(val string) map[string]string {
+	s := strings.TrimPrefix(val, "[")
+	s = strings.TrimSuffix(s, "]")
+	if s == "" {
+		return nil
+	}
+	elements := strings.Split(s, ",")
+	result := make(map[string]string, len(elements))
+	for _, element := range elements {
+		pair := strings.SplitN(element, "=", 2)
+		result[pair[0]] = pair[1]
+	}
+	return result
 }
 
 // IsSet checks to see if the key has been set in any of the data locations.
