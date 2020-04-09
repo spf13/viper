@@ -1,10 +1,12 @@
-![viper logo](https://cloud.githubusercontent.com/assets/173412/10886745/998df88a-8151-11e5-9448-4736db51020d.png)
+![Viper](.github/logo.png?raw=true)
 
-Go configuration with fangs!
-
-[![Actions](https://github.com/spf13/viper/workflows/CI/badge.svg)](https://github.com/spf13/viper)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/spf13/viper/CI?style=flat-square)](https://github.com/spf13/viper/actions?query=workflow%3ACI)
 [![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![GoDoc](https://godoc.org/github.com/spf13/viper?status.svg)](https://godoc.org/github.com/spf13/viper)
+[![Go Report Card](https://goreportcard.com/badge/github.com/spf13/viper?style=flat-square)](https://goreportcard.com/report/github.com/spf13/viper)
+![Go Version](https://img.shields.io/badge/go%20version-%3E=1.13-61CFDD.svg?style=flat-square)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/mod/github.com/spf13/viper)
+
+**Go configuration with fangs!**
 
 Many Go projects are built using Viper including:
 
@@ -435,7 +437,7 @@ err := viper.ReadRemoteConfig()
 ```
 
 #### Consul
-You need to set a key to Consul key/value storage with JSON value containing your desired config.  
+You need to set a key to Consul key/value storage with JSON value containing your desired config.
 For example, create a Consul key/value store key `MY_CONSUL_KEY` with value:
 
 ```json
@@ -738,14 +740,14 @@ Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/maps
 
 ### Marshalling to string
 
-You may need to marshal all the settings held in viper into a string rather than write them to a file. 
+You may need to marshal all the settings held in viper into a string rather than write them to a file.
 You can use your favorite format's marshaller with the config returned by `AllSettings()`.
 
 ```go
 import (
     yaml "gopkg.in/yaml.v2"
     // ...
-) 
+)
 
 func yamlStringSettings() string {
     c := viper.AllSettings()
