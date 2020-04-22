@@ -300,6 +300,25 @@ func (s *stringValue) String() string {
 	return string(*s)
 }
 
+func TestConfigFileUsed(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	err := fs.Mkdir("/tmp/config", 0777)
+	require.NoError(t, err)
+
+	_, err = fs.Create("/tmp/config/myconfig.yaml")
+	require.NoError(t, err)
+
+	v := New()
+
+	v.SetFs(fs)
+	v.SetConfigName("myconfig")
+	v.AddConfigPath("/tmp/config")
+
+	filename := v.ConfigFileUsed()
+	assert.Equal(t, "/tmp/config/myconfig.yaml", filename)
+}
+
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
 	filename, err := v.getConfigFile()

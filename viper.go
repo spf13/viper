@@ -459,8 +459,11 @@ func (v *Viper) getEnv(key string) (string, bool) {
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
-func ConfigFileUsed() string            { return v.ConfigFileUsed() }
-func (v *Viper) ConfigFileUsed() string { return v.configFile }
+func ConfigFileUsed() string { return v.ConfigFileUsed() }
+func (v *Viper) ConfigFileUsed() string {
+	f, _ := v.getConfigFile()
+	return f
+}
 
 // AddConfigPath adds a path for Viper to search for the config file in.
 // Can be called multiple times to define multiple search paths.
