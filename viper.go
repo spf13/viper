@@ -1181,14 +1181,14 @@ func readAsCSV(val string) ([]string, error) {
 	return csvReader.Read()
 }
 
-func parseStringToStringFlagValue(val string) map[string]string {
+func parseStringToStringFlagValue(val string) map[string]interface{} {
 	s := strings.TrimPrefix(val, "[")
 	s = strings.TrimSuffix(s, "]")
 	if s == "" {
 		return nil
 	}
 	elements := strings.Split(s, ",")
-	result := make(map[string]string, len(elements))
+	result := make(map[string]interface{}, len(elements))
 	for _, element := range elements {
 		pair := strings.SplitN(element, "=", 2)
 		if len(pair) != 2 {
