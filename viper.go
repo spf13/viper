@@ -1084,7 +1084,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
 		case "stringToString":
-			return parseStringToStringFlagValue(flag.ValueString())
+			return stringToStringConv(flag.ValueString())
 		default:
 			return flag.ValueString()
 		}
@@ -1161,7 +1161,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
 			case "stringToString":
-				return parseStringToStringFlagValue(flag.ValueString())
+				return stringToStringConv(flag.ValueString())
 			default:
 				return flag.ValueString()
 			}
@@ -1181,22 +1181,28 @@ func readAsCSV(val string) ([]string, error) {
 	return csvReader.Read()
 }
 
-func parseStringToStringFlagValue(val string) map[string]interface{} {
-	s := strings.TrimPrefix(val, "[")
-	s = strings.TrimSuffix(s, "]")
-	if s == "" {
+// mostly copied from pflag's implementation of this operation here https://github.com/spf13/pflag/blob/master/string_to_string.go#L79
+// alterations are: errors are swallowed, map[string]interface{} is returned in order to enable cast.ToStringMap
+func stringToStringConv(val string) interface{} {
+	val = strings.Trim(val, "[]")
+	// An empty string would cause an empty map
+	if len(val) == 0 {
+		return map[string]interface{}{}
+	}
+	r := csv.NewReader(strings.NewReader(val))
+	ss, err := r.Read()
+	if err != nil {
 		return nil
 	}
-	elements := strings.Split(s, ",")
-	result := make(map[string]interface{}, len(elements))
-	for _, element := range elements {
-		pair := strings.SplitN(element, "=", 2)
-		if len(pair) != 2 {
+	out := make(map[string]interface{}, len(ss))
+	for _, pair := range ss {
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) != 2 {
 			return nil
 		}
-		result[pair[0]] = pair[1]
+		out[kv[0]] = kv[1]
 	}
-	return result
+	return out
 }
 
 // IsSet checks to see if the key has been set in any of the data locations.

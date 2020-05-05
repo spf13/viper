@@ -975,7 +975,7 @@ func TestBindPFlagStringToString(t *testing.T) {
 		Expected map[string]string
 		Value    string
 	}{
-		{nil, ""},
+		{map[string]string{}, ""},
 		{map[string]string{"yo": "hi"}, "yo=hi"},
 		{map[string]string{"yo": "hi", "oh": "hi=there"}, "yo=hi,oh=hi=there"},
 		{map[string]string{"yo": ""}, "yo="},
