@@ -1775,7 +1775,9 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
+				kvstore := make(map[string]interface{}, len(v.kvstore))
+				v.unmarshalReader(reader, kvstore)
+				v.kvstore = kvstore
 			}
 		}(respc)
 		return nil
@@ -1801,8 +1803,9 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	kvstore := make(map[string]interface{}, len(v.kvstore))
+	err = v.unmarshalReader(reader, kvstore)
+	return kvstore, err
 }
 
 // AllKeys returns all keys holding a value, regardless of where they are set.
