@@ -1775,7 +1775,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
-				kvstore := make(map[string]interface{},len(v.kvstore))
+				kvstore := make(map[string]interface{}, len(v.kvstore))
 				v.unmarshalReader(reader, kvstore)
 				v.kvstore = kvstore
 			}
@@ -1803,7 +1803,7 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 	if err != nil {
 		return nil, err
 	}
-	kvstore := make(map[string]interface{},len(v.kvstore))
+	kvstore := make(map[string]interface{}, len(v.kvstore))
 	err = v.unmarshalReader(reader, kvstore)
 	return kvstore, err
 }
