@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.11', '1.12', '1.13']
+        go: ['1.11', '1.12', '1.13', '1.14']
     env:
       VERBOSE: 1
       GOFLAGS: -mod=readonly
@@ -20,15 +20,15 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
 
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Run tests
-        run: make test
-
-      - name: Run linter
+      - name: Lint
         run: make lint
+
+      - name: Test
+        run: make test
