@@ -286,7 +286,7 @@ func NewWithOptions(opts ...Option) *Viper {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
 }
 
@@ -325,7 +325,7 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
@@ -1496,7 +1496,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 			return ConfigParseError{err}
 		}
 
-	case "hcl":
+	case "hcl", "tfvars":
 		obj, err := hcl.Parse(buf.String())
 		if err != nil {
 			return ConfigParseError{err}
@@ -1576,7 +1576,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 			return ConfigMarshalError{err}
 		}
 
-	case "hcl":
+	case "hcl", "tfvars":
 		b, err := json.Marshal(c)
 		if err != nil {
 			return ConfigMarshalError{err}
