@@ -466,6 +466,8 @@ func TestHCL(t *testing.T) {
 func TestIni(t *testing.T) {
 	initIni()
 	assert.Equal(t, "ini", Get("default.name"))
+	Set("set.boolKey", true)
+	assert.Equal(t, true, Get("set.boolKey"))
 }
 
 func TestRemotePrecedence(t *testing.T) {
