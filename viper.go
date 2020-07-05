@@ -1443,11 +1443,10 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	jww.INFO.Println("Attempting to write configuration to file.")
 	var configType string
 
-	ext := filepath.Ext(filename)
-	if ext != "" {
-		configType = ext[1:]
-	} else {
+	if v.configType != "" {
 		configType = v.configType
+	} else {
+		configType = strings.TrimPrefix(filepath.Ext(filename), ".")
 	}
 	if configType == "" {
 		return fmt.Errorf("config type could not be determined for %s", filename)

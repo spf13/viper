@@ -1326,6 +1326,32 @@ var hclWriteExpected = []byte(`"foos" = {
 
 "type" = "donut"`)
 
+var hclWriteExpectedFromJsonExample = []byte(`"batters" = {
+  "batter" = {
+    "type" = "Regular"
+  }
+
+  "batter" = {
+    "type" = "Chocolate"
+  }
+
+  "batter" = {
+    "type" = "Blueberry"
+  }
+
+  "batter" = {
+    "type" = "Devil's Food"
+  }
+}
+
+"id" = "0001"
+
+"name" = "Cake"
+
+"ppu" = 0.55
+
+"type" = "donut"`)
+
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
@@ -1343,6 +1369,31 @@ var jsonWriteExpected = []byte(`{
       }
     ]
   },
+  "id": "0001",
+  "name": "Cake",
+  "ppu": 0.55,
+  "type": "donut"
+}`)
+
+var jsonWriteExpectedFromHclExample = []byte(`{
+  "foos": [
+    {
+      "foo": [
+        {
+          "key": 1
+        },
+        {
+          "key": 2
+        },
+        {
+          "key": 3
+        },
+        {
+          "key": 4
+        }
+      ]
+    }
+  ],
   "id": "0001",
   "name": "Cake",
   "ppu": 0.55,
@@ -1371,6 +1422,26 @@ hobbies:
 - go
 name: steve
 `)
+
+var jsonWriteExpectedFromYamlExample = []byte(`{
+  "age": 35,
+  "beard": true,
+  "clothing": {
+    "jacket": "leather",
+    "pants": {
+      "size": "large"
+    },
+    "trousers": "denim"
+  },
+  "eyes": "brown",
+  "hacker": true,
+  "hobbies": [
+    "skateboarding",
+    "snowboarding",
+    "go"
+  ],
+  "name": "steve"
+}`)
 
 func TestWriteConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
@@ -1404,7 +1475,7 @@ func TestWriteConfig(t *testing.T) {
 			outConfigType:   "json",
 			fileName:        "c.hcl",
 			input:           hclExample,
-			expectedContent: hclWriteExpected,
+			expectedContent: jsonWriteExpectedFromHclExample,
 		},
 		"json with file extension": {
 			configName:      "c",
@@ -1428,7 +1499,7 @@ func TestWriteConfig(t *testing.T) {
 			outConfigType:   "hcl",
 			fileName:        "c.json",
 			input:           jsonExample,
-			expectedContent: jsonWriteExpected,
+			expectedContent: hclWriteExpectedFromJsonExample,
 		},
 		"properties with file extension": {
 			configName:      "c",
@@ -1468,7 +1539,7 @@ func TestWriteConfig(t *testing.T) {
 			outConfigType:   "json",
 			fileName:        "c.yaml",
 			input:           yamlExample,
-			expectedContent: yamlWriteExpected,
+			expectedContent: jsonWriteExpectedFromYamlExample,
 		},
 	}
 	for name, tc := range testCases {
