@@ -1326,7 +1326,7 @@ var hclWriteExpected = []byte(`"foos" = {
 
 "type" = "donut"`)
 
-var hclWriteExpectedFromJsonExample = []byte(`"batters" = {
+var hclWriteExpectedFromJSONExample = []byte(`"batters" = {
   "batter" = {
     "type" = "Regular"
   }
@@ -1499,7 +1499,7 @@ func TestWriteConfig(t *testing.T) {
 			outConfigType:   "hcl",
 			fileName:        "c.json",
 			input:           jsonExample,
-			expectedContent: hclWriteExpectedFromJsonExample,
+			expectedContent: hclWriteExpectedFromJSONExample,
 		},
 		"properties with file extension": {
 			configName:      "c",
