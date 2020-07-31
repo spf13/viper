@@ -91,8 +91,7 @@ func insensitiviseMap(m map[string]interface{}) {
 func absPathify(inPath string) string {
 	jww.INFO.Println("Trying to resolve absolute path to", inPath)
 
-	if strings.HasPrefix(inPath, "$HOME") &&
-		(len(inPath) == 5 || inPath[5] == os.PathSeparator) {
+	if inPath == "$HOME" || strings.HasPrefix(inPath, "$HOME"+string(os.PathSeparator)) {
 		inPath = userHomeDir() + inPath[5:]
 	}
 
