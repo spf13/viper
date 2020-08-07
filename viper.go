@@ -113,7 +113,12 @@ type ConfigFileNotFoundError struct {
 
 // Error returns the formatted configuration error.
 func (fnfe ConfigFileNotFoundError) Error() string {
-	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
+	configFiles := make([]string, 0, len(SupportedExts))
+	for _, ext := range SupportedExts {
+		configFiles = append(configFiles, fmt.Sprintf("%s.%s", fnfe.name, ext))
+	}
+
+	return fmt.Sprintf("Config Not Found in %q, ConfigFiles:\n %q", fnfe.locations, configFiles)
 }
 
 // ConfigFileAlreadyExistsError denotes failure to write new configuration file.
