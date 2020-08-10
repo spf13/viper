@@ -206,6 +206,7 @@ type Viper struct {
 	kvstore        map[string]interface{}
 	pflags         map[string]FlagValue
 	env            map[string]string
+	envSliceValues map[string]bool
 	aliases        map[string]string
 	typeByDefValue bool
 
@@ -229,6 +230,7 @@ func New() *Viper {
 	v.kvstore = make(map[string]interface{})
 	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string]string)
+	v.envSliceValues = make(map[string]bool)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
 
@@ -991,6 +993,7 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // ENV variables are case sensitive.
 // If only a key is provided, it will use the env key matching the key, uppercased.
 // EnvPrefix will be used when set when env name is not provided.
+// Use BindEnvSliceValue() for binding slice variables.
 func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
 	var key, envkey string
@@ -1008,6 +1011,20 @@ func (v *Viper) BindEnv(input ...string) error {
 
 	v.env[key] = envkey
 
+	return nil
+}
+
+// BindEnvSliceValue is identical to BindEnv but converts the value of the environment variable into
+// a slice using strings.Fields(), e. g. variable with value " a b" is converted into ["a", "b"].
+func BindEnvSliceValue(input ...string) error { return v.BindEnvSliceValue(input...) }
+func (v *Viper) BindEnvSliceValue(input ...string) error {
+	if len(input) == 0 {
+		return fmt.Errorf("missing key to bind to")
+	}
+
+	key := strings.ToLower(input[0])
+	_ = v.BindEnv(input...)
+	v.envSliceValues[key] = true
 	return nil
 }
 
@@ -1080,6 +1097,9 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
 		if val, ok := v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); ok {
+			if v.envSliceValues[lcaseKey] {
+				return strings.Fields(val)
+			}
 			return val
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
@@ -1089,6 +1109,9 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 	envkey, exists := v.env[lcaseKey]
 	if exists {
 		if val, ok := v.getEnv(envkey); ok {
+			if v.envSliceValues[lcaseKey] {
+				return strings.Fields(val)
+			}
 			return val
 		}
 	}
@@ -2019,6 +2042,7 @@ func (v *Viper) Debug() {
 	fmt.Printf("Override:\n%#v\n", v.override)
 	fmt.Printf("PFlags:\n%#v\n", v.pflags)
 	fmt.Printf("Env:\n%#v\n", v.env)
+	fmt.Printf("Env Slice Values:\n%#v\n", v.envSliceValues)
 	fmt.Printf("Key/Value Store:\n%#v\n", v.kvstore)
 	fmt.Printf("Config:\n%#v\n", v.config)
 	fmt.Printf("Defaults:\n%#v\n", v.defaults)
