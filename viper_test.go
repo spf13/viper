@@ -970,6 +970,11 @@ func TestBindPFlag(t *testing.T) {
 	assert.Equal(t, "testing_mutate", Get("testvalue"))
 }
 
+func TestBindPFlagDetectNilFlag(t *testing.T) {
+	result := BindPFlag("testvalue", nil)
+	assert.Error(t, result)
+}
+
 func TestBindPFlagStringToString(t *testing.T) {
 	tests := []struct {
 		Expected map[string]string
