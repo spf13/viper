@@ -38,3 +38,6 @@ require (
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.2.4
 )
+
+// fix vulnerability: CVE-2020-15114 in etcd v3.3.13+incompatible
+replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
