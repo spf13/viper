@@ -896,7 +896,6 @@ func Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error {
 	return v.Unmarshal(rawVal, opts...)
 }
 func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error {
-	fmt.Println(v.AllSettings())
 	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
 }
 
