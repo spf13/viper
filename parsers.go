@@ -32,13 +32,13 @@ func AddParser(parser Parser, names ...string) {
 
 func parserInit() {
 	SupportedParsers = make(map[string]Parser, 32)
-	AddParser(&JsonParser{}, "json")
-	AddParser(&TomlParser{}, "toml")
-	AddParser(&YamlParser{}, "yaml", "yml")
-	AddParser(&PropsParser{}, "properties", "props", "prop")
-	AddParser(&HclParser{}, "hcl")
-	AddParser(&DotenvParser{}, "dotenv", "env")
-	AddParser(&IniParser{}, "ini")
+	AddParser(&JSONParser{}, "json")
+	AddParser(&TOMLParser{}, "toml")
+	AddParser(&YAMLParser{}, "yaml", "yml")
+	AddParser(&PROPSParser{}, "properties", "props", "prop")
+	AddParser(&HCLParser{}, "hcl")
+	AddParser(&DOTENVParser{}, "dotenv", "env")
+	AddParser(&INIParser{}, "ini")
 }
 
 func parserReset() {
@@ -46,15 +46,15 @@ func parserReset() {
 }
 
 // json parser
-type JsonParser struct {
+type JSONParser struct {
 }
 
-func (pp *JsonParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *JSONParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 	return json.Unmarshal(buf.Bytes(), &c)
 }
-func (pp *JsonParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *JSONParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
@@ -64,10 +64,10 @@ func (pp *JsonParser) MarshalWriter(v *Viper, f afero.File, c map[string]interfa
 }
 
 // toml parser
-type TomlParser struct {
+type TOMLParser struct {
 }
 
-func (pp *TomlParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *TOMLParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 	tree, err := toml.LoadReader(buf)
@@ -80,7 +80,7 @@ func (pp *TomlParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]inter
 	}
 	return nil
 }
-func (pp *TomlParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *TOMLParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	t, err := toml.TreeFromMap(c)
 	if err != nil {
 		return err
@@ -93,15 +93,15 @@ func (pp *TomlParser) MarshalWriter(v *Viper, f afero.File, c map[string]interfa
 }
 
 // yaml parser
-type YamlParser struct {
+type YAMLParser struct {
 }
 
-func (pp *YamlParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *YAMLParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 	return yaml.Unmarshal(buf.Bytes(), &c)
 }
-func (pp *YamlParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *YAMLParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	b, err := yaml.Marshal(c)
 	if err != nil {
 		return err
@@ -113,10 +113,10 @@ func (pp *YamlParser) MarshalWriter(v *Viper, f afero.File, c map[string]interfa
 }
 
 // ini parser
-type IniParser struct {
+type INIParser struct {
 }
 
-func (pp *IniParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *INIParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 	cfg := ini.Empty()
@@ -136,7 +136,7 @@ func (pp *IniParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interf
 	}
 	return nil
 }
-func (pp *IniParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *INIParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	keys := v.AllKeys()
 	cfg := ini.Empty()
 	ini.PrettyFormat = false
@@ -155,10 +155,10 @@ func (pp *IniParser) MarshalWriter(v *Viper, f afero.File, c map[string]interfac
 }
 
 // hcl parser
-type HclParser struct {
+type HCLParser struct {
 }
 
-func (pp *HclParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *HCLParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
@@ -171,7 +171,7 @@ func (pp *HclParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interf
 	}
 	return nil
 }
-func (pp *HclParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *HCLParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 
 	b, err := json.Marshal(c)
 	if err != nil {
@@ -189,10 +189,10 @@ func (pp *HclParser) MarshalWriter(v *Viper, f afero.File, c map[string]interfac
 }
 
 // dot env parser
-type DotenvParser struct {
+type DOTENVParser struct {
 }
 
-func (pp *DotenvParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *DOTENVParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
@@ -206,7 +206,7 @@ func (pp *DotenvParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]int
 
 	return nil
 }
-func (pp *DotenvParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *DOTENVParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	lines := []string{}
 	for _, key := range v.AllKeys() {
 		envName := strings.ToUpper(strings.Replace(key, ".", "_", -1))
@@ -221,10 +221,10 @@ func (pp *DotenvParser) MarshalWriter(v *Viper, f afero.File, c map[string]inter
 }
 
 // props parser
-type PropsParser struct {
+type PROPSParser struct {
 }
 
-func (pp *PropsParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
+func (pp *PROPSParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
@@ -244,7 +244,7 @@ func (pp *PropsParser) UnmarshalReader(v *Viper, in io.Reader, c map[string]inte
 	}
 	return nil
 }
-func (pp *PropsParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
+func (pp *PROPSParser) MarshalWriter(v *Viper, f afero.File, c map[string]interface{}) error {
 	if v.properties == nil {
 		v.properties = properties.NewProperties()
 	}
