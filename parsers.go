@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 	"github.com/magiconair/properties"
@@ -12,8 +15,6 @@ import (
 	"github.com/subosito/gotenv"
 	"gopkg.in/ini.v1"
 	"gopkg.in/yaml.v2"
-	"io"
-	"strings"
 )
 
 var SupportedParsers map[string]Parser
