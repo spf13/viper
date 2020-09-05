@@ -9,9 +9,10 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         go: ['1.11', '1.12', '1.13', '1.14']
     env:
       VERBOSE: 1
