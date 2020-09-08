@@ -58,7 +58,7 @@ There are ongoing discussions about making that optional.
 
 A good configuration system will support default values. A default value is not
 required for a key, but it’s useful in the event that a key hasn't been set via
-config file, environment variable, remote configuration or flag.
+config file, environment variable or flag.
 
 Examples:
 
@@ -153,7 +153,7 @@ viper.OnConfigChange(func(e fsnotify.Event) {
 ### Reading Config from io.Reader
 
 Viper predefines many configuration sources such as files, environment
-variables, flags, and remote K/V store, but you are not bound to them. You can
+variables, and flags, but you are not bound to them. You can
 also implement your own required configuration source and feed it to viper.
 
 ```go
