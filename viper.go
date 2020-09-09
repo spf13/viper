@@ -1759,9 +1759,13 @@ func (v *Viper) getKeyValueConfig() error {
 	for _, rp := range v.remoteProviders {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
+			jww.ERROR.Printf("get remote config: %s", err)
+
 			continue
 		}
+
 		v.kvstore = val
+
 		return nil
 	}
 	return RemoteConfigError("No Files Found")
