@@ -487,10 +487,11 @@ func TestEnv(t *testing.T) {
 	initJSON()
 
 	BindEnv("id")
-	BindEnv("f", "FOOD")
+	BindEnv("f", "FOOD", "OLD_FOOD")
 
 	os.Setenv("ID", "13")
 	os.Setenv("FOOD", "apple")
+	os.Setenv("OLD_FOOD", "banana")
 	os.Setenv("NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
@@ -500,6 +501,17 @@ func TestEnv(t *testing.T) {
 	AutomaticEnv()
 
 	assert.Equal(t, "crunk", Get("name"))
+}
+
+func TestMultipleEnv(t *testing.T) {
+	initJSON()
+
+	BindEnv("f", "FOOD", "OLD_FOOD")
+
+	os.Unsetenv("FOOD")
+	os.Setenv("OLD_FOOD", "banana")
+
+	assert.Equal(t, "banana", Get("f"))
 }
 
 func TestEmptyEnv(t *testing.T) {
