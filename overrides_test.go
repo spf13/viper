@@ -78,6 +78,7 @@ func TestNestedOverrides(t *testing.T) {
 func overrideDefault(assert *assert.Assertions, firstPath string, firstValue interface{}, secondPath string, secondValue interface{}) *Viper {
 	return overrideFromLayer(defaultLayer, assert, firstPath, firstValue, secondPath, secondValue)
 }
+
 func override(assert *assert.Assertions, firstPath string, firstValue interface{}, secondPath string, secondValue interface{}) *Viper {
 	return overrideFromLayer(overrideLayer, assert, firstPath, firstValue, secondPath, secondValue)
 }
