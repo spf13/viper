@@ -1,6 +1,8 @@
 linters-settings:
+    gci:
+        local-prefixes: github.com/spf13/viper
     golint:
-        min-confidence: 0.1
+        min-confidence: 0
     goimports:
         local-prefixes: github.com/spf13/viper
 
@@ -13,8 +15,10 @@ linters:
         - dupl
         - exhaustive
         - exportloopref
+        - gci
         - goconst
         - gofmt
+        - gofumpt
         - goimports
         - golint
         - goprintffuncname
@@ -39,14 +43,12 @@ linters:
 
         # fixme
         # - errcheck
-        # - gci
         # - gochecknoglobals
         # - gochecknoinits
         # - gocognit
         # - gocritic
         # - gocyclo
         # - godot
-        # - gofumpt
         # - gosec
         # - gosimple
         # - lll

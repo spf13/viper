@@ -26,7 +26,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
-
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -694,7 +693,8 @@ func TestAllKeys(t *testing.T) {
 					{"key": 1},
 					{"key": 2},
 					{"key": 3},
-					{"key": 4}},
+					{"key": 4},
+				},
 			},
 		},
 		"title_dotenv": "DotEnv Example",
@@ -828,13 +828,13 @@ func TestBindPFlags(t *testing.T) {
 	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
-	var testValues = map[string]*string{
+	testValues := map[string]*string{
 		"host":     nil,
 		"port":     nil,
 		"endpoint": nil,
 	}
 
-	var mutatedTestValues = map[string]string{
+	mutatedTestValues := map[string]string{
 		"host":     "localhost",
 		"port":     "6060",
 		"endpoint": "/public",
@@ -951,8 +951,8 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 }
 
 func TestBindPFlag(t *testing.T) {
-	var testString = "testing"
-	var testValue = newStringValue(testString, &testString)
+	testString := "testing"
+	testValue := newStringValue(testString, &testString)
 
 	flag := &pflag.Flag{
 		Name:    "testflag",
@@ -1025,8 +1025,8 @@ func TestBoundCaseSensitivity(t *testing.T) {
 
 	assert.Equal(t, "blue", Get("eyes"))
 
-	var testString = "green"
-	var testValue = newStringValue(testString, &testString)
+	testString := "green"
+	testValue := newStringValue(testString, &testString)
 
 	flag := &pflag.Flag{
 		Name:    "eyeballs",
@@ -1105,9 +1105,11 @@ func TestFindsNestedKeys(t *testing.T) {
 				},
 				map[string]interface{}{
 					"type": "Chocolate",
-				}, map[string]interface{}{
+				},
+				map[string]interface{}{
 					"type": "Blueberry",
-				}, map[string]interface{}{
+				},
+				map[string]interface{}{
 					"type": "Devil's Food",
 				},
 			},
@@ -1972,7 +1974,8 @@ func TestCaseInsensitiveSet(t *testing.T) {
 		"Bar": map[interface{}]interface {
 		}{
 			"ABc": "A",
-			"cDE": "B"},
+			"cDE": "B",
+		},
 	}
 
 	m2 := map[string]interface{}{
@@ -1980,7 +1983,8 @@ func TestCaseInsensitiveSet(t *testing.T) {
 		"Bar": map[interface{}]interface {
 		}{
 			"bCd": "A",
-			"eFG": "B"},
+			"eFG": "B",
+		},
 	}
 
 	Set("Given1", m1)

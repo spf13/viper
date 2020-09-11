@@ -24,14 +24,16 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 			"Bar": map[interface{}]interface {
 			}{
 				"ABc": "A",
-				"cDE": "B"},
+				"cDE": "B",
+			},
 		}
 		expected = map[string]interface{}{
 			"foo": 32,
 			"bar": map[string]interface {
 			}{
 				"abc": "A",
-				"cde": "B"},
+				"cde": "B",
+			},
 		}
 	)
 
