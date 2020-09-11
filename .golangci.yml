@@ -5,23 +5,67 @@ linters-settings:
         local-prefixes: github.com/spf13/viper
 
 linters:
-    enable-all: true
-    disable:
-        - funlen
-        - maligned
+    disable-all: true
+    enable:
+        - bodyclose
+        - deadcode
+        - dogsled
+        - dupl
+        - exhaustive
+        - exportloopref
+        - goconst
+        - gofmt
+        - goimports
+        - golint
+        - goprintffuncname
+        - govet
+        - ineffassign
+        - misspell
+        - nakedret
+        - noctx
+        - nolintlint
+        - prealloc
+        - rowserrcheck
+        - sqlclosecheck
+        - staticcheck
+        - structcheck
+        - stylecheck
+        - typecheck
+        - unconvert
+        - unparam
+        - unused
+        - varcheck
+        - whitespace
 
-        # TODO: fix me
-        - wsl
-        - gochecknoinits
-        - gosimple
-        - gochecknoglobals
-        - errcheck
-        - lll
-        - godox
-        - scopelint
-        - gocyclo
-        - gocognit
-        - gocritic
+        # fixme
+        # - errcheck
+        # - gci
+        # - gochecknoglobals
+        # - gochecknoinits
+        # - gocognit
+        # - gocritic
+        # - gocyclo
+        # - godot
+        # - gofumpt
+        # - gosec
+        # - gosimple
+        # - lll
+        # - nlreturn
+        # - scopelint
 
-service:
-    golangci-lint-version: 1.21.x
+        # unused
+        # - depguard
+        # - goheader
+        # - gomodguard
+
+        # don't enable:
+        # - asciicheck
+        # - funlen
+        # - godox
+        # - goerr113
+        # - gomnd
+        # - interfacer
+        # - maligned
+        # - nestif
+        # - testpackage
+        # - wsl
