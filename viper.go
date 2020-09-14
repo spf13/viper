@@ -1447,13 +1447,13 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 		flags |= os.O_EXCL
 	}
 
-	q,_:=ioutil.ReadFile(filename)
+	q, _ := ioutil.ReadFile(filename)
 	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	if err := v.marshalWriter(f, configType,q); err != nil {
+	if err := v.marshalWriter(f, configType, q); err != nil {
 		return err
 	}
 
@@ -1547,18 +1547,18 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 
 // Marshal a map into Writer.
-func (v *Viper) marshalWriter(f afero.File, configType string,q []byte) error {
+func (v *Viper) marshalWriter(f afero.File, configType string, q []byte) error {
 	c := v.AllSettings()
 	switch configType {
 	case "json":
-		d:= map[string]interface{}{}
+		d := map[string]interface{}{}
 		// unmarshal old file data
-		_ = json.Unmarshal(q,&d)
-		if reflect.DeepEqual(c,d){
-			return  nil
+		_ = json.Unmarshal(q, &d)
+		if reflect.DeepEqual(c, d) {
+			return nil
 		}
 		// decode to settings , use old file data
-		_ = mapstructure.Decode(d,&c)
+		_ = mapstructure.Decode(d, &c)
 		b, err := json.MarshalIndent(c, "", "  ")
 		if err != nil {
 			return ConfigMarshalError{err}
@@ -1611,15 +1611,15 @@ func (v *Viper) marshalWriter(f afero.File, configType string,q []byte) error {
 		}
 
 	case "toml":
-		d:= map[string]interface{}{}
+		d := map[string]interface{}{}
 		// unmarshal old file data
-		_ = toml.Unmarshal(q,&d)
+		_ = toml.Unmarshal(q, &d)
 
-		if reflect.DeepEqual(c,d){
-			return  nil
+		if reflect.DeepEqual(c, d) {
+			return nil
 		}
 		// decode to settings , use old file data
-		_ = mapstructure.Decode(d,&c)
+		_ = mapstructure.Decode(d, &c)
 		t, err := toml.Marshal(c)
 		if err != nil {
 			return ConfigMarshalError{err}
@@ -1630,14 +1630,14 @@ func (v *Viper) marshalWriter(f afero.File, configType string,q []byte) error {
 		}
 
 	case "yaml", "yml":
-		d:= map[string]interface{}{}
+		d := map[string]interface{}{}
 		// unmarshal old file data
-		_ = yaml.Unmarshal(q,&d)
-		if reflect.DeepEqual(c,d){
-			return  nil
+		_ = yaml.Unmarshal(q, &d)
+		if reflect.DeepEqual(c, d) {
+			return nil
 		}
 		// decode to settings , use old file data
-		_ = mapstructure.Decode(d,&c)
+		_ = mapstructure.Decode(d, &c)
 		b, err := yaml.Marshal(c)
 		if err != nil {
 			return ConfigMarshalError{err}
