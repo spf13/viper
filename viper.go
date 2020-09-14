@@ -194,7 +194,8 @@ type Viper struct {
 	defaults       map[string]interface{}
 	kvstore        map[string]interface{}
 	pflags         map[string]FlagValue
-	env            map[string]string
+	env            map[string][]string
+	envTransform   map[string]func(string) interface{}
 	aliases        map[string]string
 	knownKeys      map[string]interface{}
 	typeByDefValue bool
@@ -217,7 +218,8 @@ func New() *Viper {
 	v.defaults = make(map[string]interface{})
 	v.kvstore = make(map[string]interface{})
 	v.pflags = make(map[string]FlagValue)
-	v.env = make(map[string]string)
+	v.env = make(map[string][]string)
+	v.envTransform = make(map[string]func(string) interface{})
 	v.aliases = make(map[string]string)
 	v.knownKeys = make(map[string]interface{})
 	v.typeByDefValue = false
@@ -366,6 +368,13 @@ func (v *Viper) SetEnvPrefix(in string) {
 	if in != "" {
 		v.envPrefix = in
 	}
+}
+
+// SetEnvKeyTransformer allows defining a transformer function which decides
+// how an environment variables value gets assigned to key.
+func SetEnvKeyTransformer(key string, fn func(string) interface{}) { v.SetEnvKeyTransformer(key, fn) }
+func (v *Viper) SetEnvKeyTransformer(key string, fn func(string) interface{}) {
+	v.envTransform[strings.ToLower(key)] = fn
 }
 
 func (v *Viper) mergeWithEnvPrefix(in string) string {
@@ -1023,21 +1032,20 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {
-	var key, envkey string
 	if len(input) == 0 {
 		return fmt.Errorf("BindEnv missing key to bind to")
 	}
 
-	key = strings.ToLower(input[0])
+	key := strings.ToLower(input[0])
+	var envkeys []string
 
 	if len(input) == 1 {
-		envkey = v.mergeWithEnvPrefix(key)
+		envkeys = []string{v.mergeWithEnvPrefix(key)}
 	} else {
-		envkey = input[1]
+		envkeys = input[1:]
 	}
 
-	v.env[key] = envkey
-
+	v.env[key] = append(v.env[key], envkeys...)
 	v.SetKnown(key)
 
 	return nil
@@ -1108,10 +1116,15 @@ func (v *Viper) find(lcaseKey string) interface{} {
 			return nil
 		}
 	}
-	envkey, exists := v.env[lcaseKey]
+	envkeys, exists := v.env[lcaseKey]
 	if exists {
-		if val, ok := v.getEnv(envkey); ok {
-			return val
+		for _, key := range envkeys {
+			if val, ok := v.getEnv(key); ok {
+				if fn, ok := v.envTransform[lcaseKey]; ok {
+					return fn(val)
+				}
+				return val
+			}
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
@@ -1629,6 +1642,14 @@ func castToMapStringInterface(
 	return tgt
 }
 
+func castMapStringSliceToMapInterface(src map[string][]string) map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for k, v := range src {
+		tgt[k] = v
+	}
+	return tgt
+}
+
 func castMapStringToMapInterface(src map[string]string) map[string]interface{} {
 	tgt := map[string]interface{}{}
 	for k, v := range src {
@@ -1795,7 +1816,7 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
 	m = v.flattenAndMergeMap(m, v.override, "")
 	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
-	m = v.mergeFlatMap(m, castMapStringToMapInterface(v.env))
+	m = v.mergeFlatMap(m, castMapStringSliceToMapInterface(v.env))
 	m = v.flattenAndMergeMap(m, v.config, "")
 	m = v.flattenAndMergeMap(m, v.kvstore, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
@@ -1850,7 +1871,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]interface{}) map[string]bool {
 	// scan keys
 outer:
-	for k, _ := range m {
+	for k := range m {
 		path := strings.Split(k, v.keyDelim)
 		// scan intermediate paths
 		var parentKey string

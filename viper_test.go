@@ -383,10 +383,11 @@ func TestEnv(t *testing.T) {
 	initJSON(v)
 
 	v.BindEnv("id")
-	v.BindEnv("f", "FOOD")
+	v.BindEnv("f", "FOOD", "DEPRECATED_FOOD")
 
 	os.Setenv("ID", "13")
 	os.Setenv("FOOD", "apple")
+	os.Setenv("DEPRECATED_FOOD", "banana")
 	os.Setenv("NAME", "crunk")
 
 	assert.Equal(t, "13", v.Get("id"))
@@ -396,7 +397,38 @@ func TestEnv(t *testing.T) {
 	v.AutomaticEnv()
 
 	assert.Equal(t, "crunk", v.Get("name"))
+}
 
+func TestEnvTransformer(t *testing.T) {
+	v := New()
+	initJSON(v)
+
+	v.BindEnv("id", "MY_ID")
+	v.SetEnvKeyTransformer("id", func(in string) interface{} { return "transformed" })
+	os.Setenv("MY_ID", "14")
+
+	assert.Equal(t, "transformed", v.Get("id"))
+}
+
+func TestMultipleEnv(t *testing.T) {
+	v := New()
+	initJSON(v)
+
+	v.BindEnv("id")
+	v.BindEnv("f", "FOOD", "DEPRECATED_FOOD")
+
+	os.Setenv("ID", "13")
+	os.Unsetenv("FOOD")
+	os.Setenv("DEPRECATED_FOOD", "banana")
+	os.Setenv("NAME", "crunk")
+
+	assert.Equal(t, "13", v.Get("id"))
+	assert.Equal(t, "banana", v.Get("f"))
+	assert.Equal(t, "Cake", v.Get("name"))
+
+	v.AutomaticEnv()
+
+	assert.Equal(t, "crunk", v.Get("name"))
 }
 
 func TestEmptyEnv(t *testing.T) {
