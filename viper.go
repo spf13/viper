@@ -1490,17 +1490,27 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if v.config == nil {
 		v.config = make(map[string]interface{})
 	}
-	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
-	if !force {
-		flags |= os.O_EXCL
-	}
-	f, err := v.fs.OpenFile(filename, flags, v.configPermissions)
+
+	exists, err := afero.Exists(v.fs, filename)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	if exists && !force {
+		return fmt.Errorf("file already exists: %s", filename)
+	}
+	f, err := afero.TempFile(v.fs, filepath.Dir(filename), filepath.Base(filename)+"-")
+	if err != nil {
+		return err
+	}
 
 	if err := v.marshalWriter(f, configType); err != nil {
+		f.Close()
+		return err
+	}
+	f.Close()
+
+	err = v.fs.Rename(f.Name(), filename)
+	if err != nil {
 		return err
 	}
 
