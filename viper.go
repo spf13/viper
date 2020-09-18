@@ -199,6 +199,7 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
+	allowNilValues      bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -254,6 +255,14 @@ func (fn optionFunc) apply(v *Viper) {
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
 		v.keyDelim = d
+	})
+}
+
+// AllowNilValues tells Viper to not ignore keys with nil values.
+// For backward compatibility reasons this is false by default.
+func AllowNilValues(allowNilValues bool) Option {
+	return optionFunc(func(v *Viper) {
+		v.allowNilValues = allowNilValues
 	})
 }
 
@@ -1960,9 +1969,8 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range v.AllKeys() {
 		value := v.Get(k)
-		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+		// Default behavior is to not allow nil values, but users can enable this via config.
+		if value == nil && !v.allowNilValues {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)

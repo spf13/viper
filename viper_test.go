@@ -2258,6 +2258,37 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+var yamlExampleWithNilValues = []byte(`Hacker: true
+name: steve
+hobbies:
+clothing:
+  jacket:
+`)
+
+func TestNilValues(t *testing.T) {
+	vNil := NewWithOptions(AllowNilValues(true))
+	vNil.SetConfigType("yaml")
+	require.NoError(t, vNil.ReadConfig(strings.NewReader(string(yamlExampleWithNilValues))))
+	expectedNil := map[string]interface{}{
+		"hacker":  true,
+		"name":    "steve",
+		"hobbies": nil,
+		"clothing": map[string]interface{}{
+			"jacket": nil,
+		},
+	}
+	assert.EqualValues(t, expectedNil, vNil.AllSettings())
+
+	vNotNil := NewWithOptions(AllowNilValues(false))
+	vNotNil.SetConfigType("yaml")
+	require.NoError(t, vNotNil.ReadConfig(strings.NewReader(string(yamlExampleWithNilValues))))
+	expectedNotNil := map[string]interface{}{
+		"hacker": true,
+		"name":   "steve",
+	}
+	assert.EqualValues(t, expectedNotNil, vNotNil.AllSettings())
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
