@@ -10,13 +10,13 @@ import (
 func TestBindFlagValueSet(t *testing.T) {
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
-	var testValues = map[string]*string{
+	testValues := map[string]*string{
 		"host":     nil,
 		"port":     nil,
 		"endpoint": nil,
 	}
 
-	var mutatedTestValues = map[string]string{
+	mutatedTestValues := map[string]string{
 		"host":     "localhost",
 		"port":     "6060",
 		"endpoint": "/public",
@@ -44,8 +44,8 @@ func TestBindFlagValueSet(t *testing.T) {
 }
 
 func TestBindFlagValue(t *testing.T) {
-	var testString = "testing"
-	var testValue = newStringValue(testString, &testString)
+	testString := "testing"
+	testValue := newStringValue(testString, &testString)
 
 	flag := &pflag.Flag{
 		Name:    "testflag",
@@ -59,7 +59,7 @@ func TestBindFlagValue(t *testing.T) {
 	assert.Equal(t, testString, Get("testvalue"))
 
 	flag.Value.Set("testing_mutate")
-	flag.Changed = true //hack for pflag usage
+	flag.Changed = true // hack for pflag usage
 
 	assert.Equal(t, "testing_mutate", Get("testvalue"))
 }
