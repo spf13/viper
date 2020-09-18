@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/ristretto"
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
@@ -244,13 +245,16 @@ func initDirs(t *testing.T) (string, string, func()) {
 		testDirs = append(testDirs, `d\d`)
 	}
 
+	wd, err := os.Getwd()
+	require.NoError(t, err, "Unable to get working directory")
+
 	root, err := ioutil.TempDir("", "")
 	require.NoError(t, err, "Failed to create temporary directory")
 
 	cleanup := true
 	defer func() {
 		if cleanup {
-			os.Chdir("..")
+			os.Chdir(wd)
 			os.RemoveAll(root)
 		}
 	}()
@@ -273,7 +277,7 @@ func initDirs(t *testing.T) (string, string, func()) {
 
 	cleanup = false
 	return root, config, func() {
-		os.Chdir("..")
+		os.Chdir(wd)
 		os.RemoveAll(root)
 	}
 }
@@ -2266,6 +2270,60 @@ func BenchmarkGetBool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if !v.GetBool(key) {
 			b.Fatal("GetBool returned false")
+		}
+	}
+}
+
+func BenchmarkFindCacheDisabled(b *testing.B) {
+	os.Setenv("MUTATORS_HEADER_ENABLED", "true")
+
+	v = New()
+	v.SetConfigFile("stub/benchmark.json")
+	if err := v.ReadInConfig(); err != nil {
+		b.Fatal(err)
+	}
+
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	keys := v.AllKeys()
+	numKeys := len(keys)
+	var key string
+	for i := 0; i < b.N; i++ {
+		key = keys[i%numKeys]
+		if v.find(key, true) == nil {
+			b.Fatalf("cachedFind returned a nil value for key: %s", key)
+		}
+	}
+}
+
+func BenchmarkFindCacheEnabled(b *testing.B) {
+	os.Setenv("MUTATORS_HEADER_ENABLED", "true")
+
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1000,
+		MaxCost:     1 << 20, // 1MB max cache
+		BufferItems: 64,
+	})
+	require.NoError(b, err)
+
+	v = NewWithOptions(Cache(cache))
+	v.SetConfigFile("stub/benchmark.json")
+	if err := v.ReadInConfig(); err != nil {
+		b.Fatal(err)
+	}
+
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	keys := v.AllKeys()
+	numKeys := len(keys)
+
+	var key string
+	for i := 0; i < b.N; i++ {
+		key = keys[i%numKeys]
+		if v.cachedFind(key, true) == nil {
+			b.Fatalf("cachedFind returned a nil value for key: %s", key)
 		}
 	}
 }
