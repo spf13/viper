@@ -73,6 +73,8 @@ Viper uses the following precedence order. Each item takes precedence over the i
 **Important:** Viper configuration keys are case insensitive.
 There are ongoing discussions about making that optional.
 
+Viper configuration keys are case insensitive by default. They can be made case
+sensitive with `viper.SetKeysCaseSensitive(true)`.
 
 ## Putting Values into Viper
 
