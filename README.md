@@ -1,3 +1,8 @@
+> ## Viper v2 feedback
+> Viper is heading towards v2 and needs _**your**_ input. Please take some giving us some feedback: https://forms.gle/R6faU74qPRPAzchZ9
+>
+> **Thank you!**
+
 ![Viper](.github/logo.png?raw=true)
 
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#configuration)
