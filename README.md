@@ -653,6 +653,9 @@ cfg2 := viper.Sub("app.cache2")
 cache2 := NewCache(cfg2)
 ```
 
+Notice `Sub` will return `nil` when key does not exist.
+And you should check new viper instance return by `Sub` to avoid invalid memory address error.
+
 ### Unmarshaling
 
 You also have the option of Unmarshaling all or a specific value to a struct, map,
