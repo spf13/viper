@@ -1,5 +1,5 @@
 > ## Viper v2 feedback
-> Viper is heading towards v2 and needs _**your**_ input. Please take some giving us some feedback: https://forms.gle/R6faU74qPRPAzchZ9
+> Viper is heading towards v2 and we would love to hear what _**you**_ would like to see in it. Share your thoughts here: https://forms.gle/R6faU74qPRPAzchZ9
 >
 > **Thank you!**
 
