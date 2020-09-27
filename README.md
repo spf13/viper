@@ -612,14 +612,15 @@ will be returned instead. E.g.
 GetString("datastore.metric.host") // returns "0.0.0.0"
 ```
 
-### Extract sub-tree
+### Extracting a sub-tree
 
-Extract sub-tree from Viper.
+When developing reusable modules, it's often useful to extract a subset of the configuration
+and pass it to a module. This way the module can be instantiated more than once, with different configurations.
 
-For example, `viper` represents:
+For example, an application might use multiple different cache stores for different purposes:
 
-```json
-app:
+```yaml
+cache:
   cache1:
     max-items: 100
     item-size: 64
@@ -628,35 +629,36 @@ app:
     item-size: 80
 ```
 
-After executing:
+We could pass the cache name to a module (eg. `NewCache("cache1")`),
+but it would require weird concatenation for accessing config keys and would be less separated from the global config.
+
+So instead of doing that let's pass a Viper instance to the constructor that represents a subset of the configuration:
 
 ```go
-subv := viper.Sub("app.cache1")
+cache1Config := viper.Sub("cache.cache1")
+if cache1Config == nil { // Sub returns nil if the key cannot be found
+    panic("cache configuration not found")
+}
+
+cache1 := NewCache(cache1Config)
 ```
 
-`subv` represents:
+**Note:** Always check the return value of `Sub`. It returns `nil` if a key cannot be found.
 
-```json
-max-items: 100
-item-size: 64
-```
-
-Suppose we have:
+Internally, the `NewCache` function can address `max-items` and `item-size` keys directly:
 
 ```go
-func NewCache(cfg *Viper) *Cache {...}
+func NewCache(v *Viper) *Cache {
+    return &Cache{
+        MaxItems: c.GetInt("max-items"),
+        ItemSize: c.GetInt("item-size"),
+    }
+}
 ```
 
-which creates a cache based on config information formatted as `subv`.
-Now it’s easy to create these 2 caches separately as:
+The resulting code is easy to test, since it's decoupled from the main config structure,
+and easier to reuse (for the same reason).
 
-```go
-cfg1 := viper.Sub("app.cache1")
-cache1 := NewCache(cfg1)
-
-cfg2 := viper.Sub("app.cache2")
-cache2 := NewCache(cfg2)
-```
 
 ### Unmarshaling
 
