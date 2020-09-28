@@ -2038,6 +2038,10 @@ func (v *Viper) getConfigFile() (string, error) {
 			return "", err
 		}
 		v.configFile = cf
+	} else {
+		if b, _ := exists(v.fs, v.configFile); !b {
+			return "", ConfigFileNotFoundError{"", v.configFile}
+		}
 	}
 	return v.configFile, nil
 }

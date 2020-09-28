@@ -301,9 +301,11 @@ func (s *stringValue) String() string {
 
 func TestBasics(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
-	filename, err := v.getConfigFile()
-	assert.Equal(t, "/tmp/config.yaml", filename)
-	assert.NoError(t, err)
+	_, err := v.getConfigFile()
+	assert.Error(t, err)
+	err = ReadInConfig()
+	_, ok := err.(ConfigFileNotFoundError)
+	assert.True(t, ok)
 }
 
 func TestSearchInPath_WithoutConfigTypeSet(t *testing.T) {
