@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -37,7 +38,7 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 		}
 	)
 
-	got := copyAndInsensitiviseMap(given)
+	got := copyAndNormalizeMap(given, strings.ToLower)
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Fatalf("Got %q\nexpected\n%q", got, expected)
