@@ -60,7 +60,7 @@ func (e ConfigMarshalError) Error() string {
 }
 
 var v *Viper
-
+var mutex sync.RWMutex
 type RemoteResponse struct {
 	Value []byte
 	Error error
@@ -559,7 +559,9 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 		return source
 	}
 
+	mutex.RLock()
 	next, ok := source[path[0]]
+	mutex.RUnlock()
 	if ok {
 		// Fast path
 		if len(path) == 1 {
@@ -602,7 +604,9 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
 
+		mutex.RLock()
 		next, ok := source[prefixKey]
+		mutex.RUnlock()
 		if ok {
 			// Fast path
 			if i == len(path) {
@@ -1344,7 +1348,9 @@ func (v *Viper) Set(key string, value interface{}) {
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
 	// set innermost value
+	mutex.Lock()
 	deepestMap[lastKey] = value
+	mutex.Unlock()
 }
 
 // ReadInConfig will discover and load the configuration file from disk
@@ -1572,7 +1578,9 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 			lastKey := strings.ToLower(path[len(path)-1])
 			deepestMap := deepSearch(c, path[0:len(path)-1])
 			// set innermost value
+			mutex.Lock()
 			deepestMap[lastKey] = value
+			mutex.Unlock()
 		}
 
 	case "ini":
@@ -1972,7 +1980,9 @@ func (v *Viper) AllSettings() map[string]interface{} {
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
+		mutex.Lock()
 		deepestMap[lastKey] = value
+		mutex.Unlock()
 	}
 	return m
 }
