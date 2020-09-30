@@ -27,7 +27,7 @@ Many Go projects are built using Viper including:
 * [Mercure](https://mercure.rocks)
 
 
-## Install
+## Installl
 
 ```console
 go get github.com/spf13/viper
