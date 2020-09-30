@@ -990,6 +990,8 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // BindEnv binds a Viper key to a ENV variable.
 // ENV variables are case sensitive.
 // If only a key is provided, it will use the env key matching the key, uppercased.
+// If more arguments are provided, they will represent the env variable names that
+// should bind to this key and will be taken in the specified order.
 // EnvPrefix will be used when set when env name is not provided.
 func BindEnv(input ...string) error { return v.BindEnv(input...) }
 func (v *Viper) BindEnv(input ...string) error {

@@ -245,9 +245,10 @@ using `SetEnvPrefix`, you can tell Viper to use a prefix while reading from
 the environment variables. Both `BindEnv` and `AutomaticEnv` will use this
 prefix.
 
-`BindEnv` takes one or two parameters. The first parameter is the key name, the
-second is the name of the environment variable. The name of the environment
-variable is case sensitive. If the ENV variable name is not provided, then
+`BindEnv` takes one or more parameters. The first parameter is the key name, the
+rest are the name of the environment variables to bind to this key. If more than
+one are provided, they will take precedence in the specified order. The name of
+the environment variable is case sensitive. If the ENV variable name is not provided, then
 Viper will automatically assume that the ENV variable matches the following format: prefix + "_" + the key name in ALL CAPS. When you explicitly provide the ENV variable name (the second parameter),
 it **does not** automatically add the prefix. For example if the second parameter is "id",
 Viper will look for the ENV variable "ID".
