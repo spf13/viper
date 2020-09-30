@@ -869,12 +869,13 @@ func TestBindPFlags(t *testing.T) {
 	}
 }
 
+// nolint: dupl
 func TestBindPFlagsStringSlice(t *testing.T) {
 	tests := []struct {
 		Expected []string
 		Value    string
 	}{
-		{nil, ""},
+		{[]string{}, ""},
 		{[]string{"jeden"}, "jeden"},
 		{[]string{"dwa", "trzy"}, "dwa,trzy"},
 		{[]string{"cztery", "piec , szesc"}, "cztery,\"piec , szesc\""},
@@ -908,6 +909,7 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 			}
 			if changed {
 				assert.Equal(t, testValue.Expected, val.StringSlice)
+				assert.Equal(t, testValue.Expected, v.Get("stringslice"))
 			} else {
 				assert.Equal(t, defaultVal, val.StringSlice)
 			}
@@ -915,12 +917,13 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 	}
 }
 
+// nolint: dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
 		Expected []int
 		Value    string
 	}{
-		{nil, ""},
+		{[]int{}, ""},
 		{[]int{1}, "1"},
 		{[]int{2, 3}, "2,3"},
 	}
@@ -953,6 +956,7 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 			}
 			if changed {
 				assert.Equal(t, testValue.Expected, val.IntSlice)
+				assert.Equal(t, testValue.Expected, v.Get("intslice"))
 			} else {
 				assert.Equal(t, defaultVal, val.IntSlice)
 			}
