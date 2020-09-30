@@ -29,6 +29,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/spf13/viper/internal/testutil"
 )
 
 var yamlExample = []byte(`Hacker: true
@@ -488,10 +490,10 @@ func TestEnv(t *testing.T) {
 	BindEnv("id")
 	BindEnv("f", "FOOD", "OLD_FOOD")
 
-	os.Setenv("ID", "13")
-	os.Setenv("FOOD", "apple")
-	os.Setenv("OLD_FOOD", "banana")
-	os.Setenv("NAME", "crunk")
+	testutil.Setenv(t, "ID", "13")
+	testutil.Setenv(t, "FOOD", "apple")
+	testutil.Setenv(t, "OLD_FOOD", "banana")
+	testutil.Setenv(t, "NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
@@ -507,8 +509,7 @@ func TestMultipleEnv(t *testing.T) {
 
 	BindEnv("f", "FOOD", "OLD_FOOD")
 
-	os.Unsetenv("FOOD")
-	os.Setenv("OLD_FOOD", "banana")
+	testutil.Setenv(t, "OLD_FOOD", "banana")
 
 	assert.Equal(t, "banana", Get("f"))
 }
@@ -519,12 +520,7 @@ func TestEmptyEnv(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Unsetenv("type")
-	os.Unsetenv("TYPE")
-	os.Unsetenv("name")
-	os.Unsetenv("NAME")
-
-	os.Setenv("TYPE", "")
+	testutil.Setenv(t, "TYPE", "")
 
 	assert.Equal(t, "donut", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
@@ -538,12 +534,7 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	os.Unsetenv("type")
-	os.Unsetenv("TYPE")
-	os.Unsetenv("name")
-	os.Unsetenv("NAME")
-
-	os.Setenv("TYPE", "")
+	testutil.Setenv(t, "TYPE", "")
 
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
@@ -556,9 +547,9 @@ func TestEnvPrefix(t *testing.T) {
 	BindEnv("id")
 	BindEnv("f", "FOOD") // not using prefix
 
-	os.Setenv("FOO_ID", "13")
-	os.Setenv("FOOD", "apple")
-	os.Setenv("FOO_NAME", "crunk")
+	testutil.Setenv(t, "FOO_ID", "13")
+	testutil.Setenv(t, "FOOD", "apple")
+	testutil.Setenv(t, "FOO_NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
@@ -573,7 +564,9 @@ func TestAutoEnv(t *testing.T) {
 	Reset()
 
 	AutomaticEnv()
-	os.Setenv("FOO_BAR", "13")
+
+	testutil.Setenv(t, "FOO_BAR", "13")
+
 	assert.Equal(t, "13", Get("foo_bar"))
 }
 
@@ -582,7 +575,9 @@ func TestAutoEnvWithPrefix(t *testing.T) {
 
 	AutomaticEnv()
 	SetEnvPrefix("Baz")
-	os.Setenv("BAZ_BAR", "13")
+
+	testutil.Setenv(t, "BAZ_BAR", "13")
+
 	assert.Equal(t, "13", Get("bar"))
 }
 
@@ -590,7 +585,8 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 	Reset()
 
 	AutomaticEnv()
-	os.Setenv("REFRESH_INTERVAL", "30s")
+
+	testutil.Setenv(t, "REFRESH_INTERVAL", "30s")
 
 	replacer := strings.NewReplacer("-", "_")
 	SetEnvKeyReplacer(replacer)
@@ -602,7 +598,8 @@ func TestEnvKeyReplacer(t *testing.T) {
 	v := NewWithOptions(EnvKeyReplacer(strings.NewReplacer("-", "_")))
 
 	v.AutomaticEnv()
-	_ = os.Setenv("REFRESH_INTERVAL", "30s")
+
+	testutil.Setenv(t, "REFRESH_INTERVAL", "30s")
 
 	assert.Equal(t, "30s", v.Get("refresh-interval"))
 }
@@ -729,8 +726,9 @@ func TestAllKeysWithEnv(t *testing.T) {
 	v.BindEnv("id")
 	v.BindEnv("foo.bar")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	os.Setenv("ID", "13")
-	os.Setenv("FOO_BAR", "baz")
+
+	testutil.Setenv(t, "ID", "13")
+	testutil.Setenv(t, "FOO_BAR", "baz")
 
 	expectedKeys := sort.StringSlice{"id", "foo.bar"}
 	expectedKeys.Sort()
@@ -1038,7 +1036,8 @@ func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "brown", Get("eyes"))
 
 	BindEnv("eYEs", "TURTLE_EYES")
-	os.Setenv("TURTLE_EYES", "blue")
+
+	testutil.Setenv(t, "TURTLE_EYES", "blue")
 
 	assert.Equal(t, "blue", Get("eyes"))
 
@@ -1219,8 +1218,9 @@ func TestIsSet(t *testing.T) {
 	v.BindEnv("foo")
 	v.BindEnv("clothing.hat")
 	v.BindEnv("clothing.hats")
-	os.Setenv("FOO", "bar")
-	os.Setenv("CLOTHING_HAT", "bowler")
+
+	testutil.Setenv(t, "FOO", "bar")
+	testutil.Setenv(t, "CLOTHING_HAT", "bowler")
 
 	assert.True(t, v.IsSet("eyes"))           // in the config file
 	assert.True(t, v.IsSet("foo"))            // in the environment
