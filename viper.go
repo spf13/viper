@@ -1528,8 +1528,19 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		}
 
 	case "json":
-		if err := json.Unmarshal(buf.Bytes(), &c); err != nil {
-			return ConfigParseError{err}
+		type cl []map[string]interface{}
+
+		err := json.Unmarshal(buf.Bytes(), &c)
+		if err != nil {
+			cc := make(cl, 0)
+			if err := json.Unmarshal(buf.Bytes(), &cc); err != nil {
+				return ConfigParseError{err}
+			}
+			for _, item := range cc {
+				for k, v := range item {
+					c[k] = v
+				}
+			}
 		}
 
 	case "hcl":
