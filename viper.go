@@ -642,17 +642,13 @@ func (v *Viper) searchSliceWithPathPrefixes(
 		return next
 	}
 
-	var val interface{}
 	switch n := next.(type) {
 	case map[interface{}]interface{}:
-		val = v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
+		return v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
 	case map[string]interface{}, []interface{}:
-		val = v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
+		return v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
 	default:
 		// got a value but nested key expected, do nothing and look for next prefix
-	}
-	if val != nil {
-		return val
 	}
 
 	// not found
@@ -680,17 +676,13 @@ func (v *Viper) searchMapWithPathPrefixes(
 	}
 
 	// Nested case
-	var val interface{}
 	switch n := next.(type) {
 	case map[interface{}]interface{}:
-		val = v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
+		return v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
 	case map[string]interface{}, []interface{}:
-		val = v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
+		return v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
 	default:
 		// got a value but nested key expected, do nothing and look for next prefix
-	}
-	if val != nil {
-		return val
 	}
 
 	// not found
