@@ -589,6 +589,33 @@ the `Set()` method, …) with an immediate value, then all sub-keys of
 `datastore.metric` become undefined, they are “shadowed” by the higher-priority
 configuration level.
 
+Viper can access array indices by using numbers in the path. For example:
+
+```json
+{
+    "host": {
+        "address": "localhost",
+        "ports": [
+            5799,
+            6029
+        ]
+    },
+    "datastore": {
+        "metric": {
+            "host": "127.0.0.1",
+            "port": 3099
+        },
+        "warehouse": {
+            "host": "198.0.0.1",
+            "port": 2112
+        }
+    }
+}
+
+GetInt("host.ports.1") // returns 6029
+
+```
+
 Lastly, if there exists a key that matches the delimited key path, its value
 will be returned instead. E.g.
 

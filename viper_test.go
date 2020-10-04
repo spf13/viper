@@ -2279,6 +2279,49 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+var yamlDeepNestedSlices = []byte(`TV:
+- title: "The expanse"
+  seasons:
+  - first_released: "December 14, 2015"
+    episodes:
+    - title: "Dulcinea"
+      air_date: "December 14, 2015"
+    - title: "The Big Empty"
+      air_date: "December 15, 2015"
+    - title: "Remember the Cant"
+      air_date: "December 22, 2015"
+  - first_released: "February 1, 2017"
+    episodes:
+    - title: "Safe"
+      air_date: "February 1, 2017"
+    - title: "Doors & Corners"
+      air_date: "February 1, 2017"
+    - title: "Static"
+      air_date: "February 8, 2017"
+  episodes:
+    - ["Dulcinea", "The Big Empty", "Remember the Cant"]
+    - ["Safe", "Doors & Corners", "Static"]
+`)
+
+func TestSliceIndexAccess(t *testing.T) {
+	v.SetConfigType("yaml")
+	r := strings.NewReader(string(yamlDeepNestedSlices))
+
+	err := v.unmarshalReader(r, v.config)
+	require.NoError(t, err)
+
+	assert.Equal(t, "The expanse", v.GetString("tv.0.title"))
+	assert.Equal(t, "February 1, 2017", v.GetString("tv.0.seasons.1.first_released"))
+	assert.Equal(t, "Static", v.GetString("tv.0.seasons.1.episodes.2.title"))
+	assert.Equal(t, "December 15, 2015", v.GetString("tv.0.seasons.0.episodes.1.air_date"))
+
+	// Test for index out of bounds
+	assert.Equal(t, "", v.GetString("tv.0.seasons.2.first_released"))
+
+	// Accessing multidimensional arrays
+	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
