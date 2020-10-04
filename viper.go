@@ -583,7 +583,7 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 	return nil
 }
 
-// searchMapWithPathPrefixes recursively searches for a value for path in source map/slice.
+// searchIndexableWithPathPrefixes recursively searches for a value for path in source map/slice.
 //
 // While searchMap() considers each path element as a single map key or slice index, this
 // function searches for, and prioritizes, merged path elements.
@@ -594,7 +594,7 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 // in their keys).
 //
 // Note: This assumes that the path entries and map keys are lower cased.
-func (v *Viper) searchMapWithPathPrefixes(source interface{}, path []string) interface{} {
+func (v *Viper) searchIndexableWithPathPrefixes(source interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return source
 	}
@@ -602,52 +602,95 @@ func (v *Viper) searchMapWithPathPrefixes(source interface{}, path []string) int
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
-		if sourceSlice, ok := source.([]interface{}); ok {
-			//if the prefixKey is a number which is not out of bounds of the slice
-			if index, err := strconv.Atoi(prefixKey); err == nil && len(sourceSlice) > index {
-				next := sourceSlice[index]
 
-				// Fast path
-				if i == len(path) {
-					return next
-				}
-
-				var val interface{}
-				switch n := next.(type) {
-				case map[interface{}]interface{}:
-					val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
-				case map[string]interface{}, []interface{}:
-					val = v.searchMapWithPathPrefixes(n, path[i:])
-				default:
-					// got a value but nested key expected, do nothing and look for next prefix
-				}
-				if val != nil {
-					return val
-				}
-			}
-		} else if sourceMap, ok := source.(map[string]interface{}); ok {
-			next, ok := sourceMap[prefixKey]
-			if ok {
-				// Fast path
-				if i == len(path) {
-					return next
-				}
-
-				// Nested case
-				var val interface{}
-				switch n := next.(type) {
-				case map[interface{}]interface{}:
-					val = v.searchMapWithPathPrefixes(cast.ToStringMap(next), path[i:])
-				case map[string]interface{}, []interface{}:
-					val = v.searchMapWithPathPrefixes(n, path[i:])
-				default:
-					// got a value but nested key expected, do nothing and look for next prefix
-				}
-				if val != nil {
-					return val
-				}
-			}
+		var val interface{}
+		switch sourceIndexable := source.(type) {
+		case []interface{}:
+			val = v.searchSliceWithPathPrefixes(sourceIndexable, prefixKey, i, path)
+		case map[string]interface{}:
+			val = v.searchMapWithPathPrefixes(sourceIndexable, prefixKey, i, path)
 		}
+		if val != nil {
+			return val
+		}
+	}
+
+	// not found
+	return nil
+}
+
+// searchSliceWithPathPrefixes searches for a value for path in sourceSlice
+//
+// This function is part of the searchIndexableWithPathPrefixes recurring search and
+// should not be called directly from functions other than searchIndexableWithPathPrefixes.
+func (v *Viper) searchSliceWithPathPrefixes(
+	sourceSlice []interface{},
+	prefixKey string,
+	pathIndex int,
+	path []string,
+) interface{} {
+	// if the prefixKey is not a number or it is out of bounds of the slice
+	index, err := strconv.Atoi(prefixKey)
+	if err != nil || len(sourceSlice) <= index {
+		return nil
+	}
+
+	next := sourceSlice[index]
+
+	// Fast path
+	if pathIndex == len(path) {
+		return next
+	}
+
+	var val interface{}
+	switch n := next.(type) {
+	case map[interface{}]interface{}:
+		val = v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
+	case map[string]interface{}, []interface{}:
+		val = v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
+	default:
+		// got a value but nested key expected, do nothing and look for next prefix
+	}
+	if val != nil {
+		return val
+	}
+
+	// not found
+	return nil
+}
+
+// searchMapWithPathPrefixes searches for a value for path in sourceMap
+//
+// This function is part of the searchIndexableWithPathPrefixes recurring search and
+// should not be called directly from functions other than searchIndexableWithPathPrefixes.
+func (v *Viper) searchMapWithPathPrefixes(
+	sourceMap map[string]interface{},
+	prefixKey string,
+	pathIndex int,
+	path []string,
+) interface{} {
+	next, ok := sourceMap[prefixKey]
+	if !ok {
+		return nil
+	}
+
+	// Fast path
+	if pathIndex == len(path) {
+		return next
+	}
+
+	// Nested case
+	var val interface{}
+	switch n := next.(type) {
+	case map[interface{}]interface{}:
+		val = v.searchIndexableWithPathPrefixes(cast.ToStringMap(n), path[pathIndex:])
+	case map[string]interface{}, []interface{}:
+		val = v.searchIndexableWithPathPrefixes(n, path[pathIndex:])
+	default:
+		// got a value but nested key expected, do nothing and look for next prefix
+	}
+	if val != nil {
+		return val
 	}
 
 	// not found
@@ -1157,7 +1200,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 	}
 
 	// Config file next
-	val = v.searchMapWithPathPrefixes(v.config, path)
+	val = v.searchIndexableWithPathPrefixes(v.config, path)
 	if val != nil {
 		return val
 	}

@@ -2315,7 +2315,7 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.seasons.1.episodes.2.title"))
 	assert.Equal(t, "December 15, 2015", v.GetString("tv.0.seasons.0.episodes.1.air_date"))
 
-	//Test for index out of bounds
+	// Test for index out of bounds
 	assert.Equal(t, "", v.GetString("tv.0.seasons.2.first_released"))
 
 	// Accessing multidimensional arrays
