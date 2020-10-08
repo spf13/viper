@@ -1292,8 +1292,8 @@ func (v *Viper) IsSet(key string) bool {
 	return val != nil
 }
 
-// AutomaticEnv has Viper check ENV variables for all.
-// keys set in config, default & flags
+// AutomaticEnv makes Viper check if environment variables match any of the existing keys
+// (config, default or flags). If matching env vars are found, they are loaded into Viper.
 func AutomaticEnv() { v.AutomaticEnv() }
 
 func (v *Viper) AutomaticEnv() {
