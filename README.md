@@ -679,8 +679,8 @@ Internally, the `NewCache` function can address `max-items` and `item-size` keys
 ```go
 func NewCache(v *Viper) *Cache {
     return &Cache{
-        MaxItems: c.GetInt("max-items"),
-        ItemSize: c.GetInt("item-size"),
+        MaxItems: v.GetInt("max-items"),
+        ItemSize: v.GetInt("item-size"),
     }
 }
 ```
