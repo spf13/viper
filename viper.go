@@ -428,6 +428,15 @@ func (v *Viper) SetEnvPrefix(in string) {
 	}
 }
 
+// EnvPrefix returns the ENV prefix set with SetEnvPrefix for the global
+// Viper instance.
+func EnvPrefix() string { return v.envPrefix }
+
+// EnvPrefix returns the env prefix set with SetEnvPrefix.
+func (v *Viper) EnvPrefix() string {
+	return v.envPrefix
+}
+
 func (v *Viper) mergeWithEnvPrefix(in string) string {
 	if v.envPrefix != "" {
 		return strings.ToUpper(v.envPrefix + "_" + in)
