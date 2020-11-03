@@ -830,13 +830,25 @@ different vipers.
 
 ## Q & A
 
-Q: Why is it called “Viper”?
+### Why is it called “Viper”?
 
 A: Viper is designed to be a [companion](http://en.wikipedia.org/wiki/Viper_(G.I._Joe))
 to [Cobra](https://github.com/spf13/cobra). While both can operate completely
 independently, together they make a powerful pair to handle much of your
 application foundation needs.
 
-Q: Why is it called “Cobra”?
+### Why is it called “Cobra”?
 
-A: Is there a better name for a [commander](http://en.wikipedia.org/wiki/Cobra_Commander)?
+Is there a better name for a [commander](http://en.wikipedia.org/wiki/Cobra_Commander)?
+
+### Does Viper support case sensitive keys?
+
+**tl;dr:** No.
+
+Viper merges configuration from various sources, many of which are either case insensitive or uses different casing than the rest of the sources (eg. env vars).
+In order to provide the best experience when using multiple sources, the decision has been made to make all keys case insensitive.
+
+There has been several attempts to implement case sensitivity, but unfortunately it's not that trivial. We might take a stab at implementing it in [Viper v2](https://github.com/spf13/viper/issues/772), but despite the initial noise, it does not seem to be requested that much.
+
+You can vote for case sensitivity by filling out this feedback form: https://forms.gle/R6faU74qPRPAzchZ9
+
