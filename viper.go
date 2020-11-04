@@ -1884,7 +1884,9 @@ func (v *Viper) getKeyValueConfig() error {
 
 			continue
 		}
-
+		if len(val) == 0 {
+			continue
+		}
 		v.kvstore = val
 
 		return nil
