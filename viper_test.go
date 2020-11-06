@@ -494,6 +494,7 @@ func TestEnv(t *testing.T) {
 	testutil.Setenv(t, "FOOD", "apple")
 	testutil.Setenv(t, "OLD_FOOD", "banana")
 	testutil.Setenv(t, "NAME", "crunk")
+	testutil.Setenv(t, "NEW_FOOD", "pear")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
@@ -501,6 +502,7 @@ func TestEnv(t *testing.T) {
 
 	AutomaticEnv()
 
+	assert.Equal(t, "pear", Get("new-food"))
 	assert.Equal(t, "crunk", Get("name"))
 }
 
