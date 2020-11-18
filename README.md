@@ -828,6 +828,9 @@ y.SetDefault("ContentDir", "foobar")
 When working with multiple vipers, it is up to the user to keep track of the
 different vipers.
 
+## Live examples
+[Try it on Repl.it](https://repl.it/@DarlanD/Viper-Examples#main.go)
+
 ## Q & A
 
 ### Why is it called “Viper”?
