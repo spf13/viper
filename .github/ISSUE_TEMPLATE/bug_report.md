@@ -1,6 +1,7 @@
 ---
 name: 🐛 Bug report
 about: Report a bug to help us improve Viper
+labels: kind/bug
 ---
 <!--
 Thank you for sending a bug report! Here are some tips:

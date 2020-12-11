@@ -1,6 +1,7 @@
 ---
 name: 🚀 Feature request
 about: Suggest an idea for Viper
+labels: kind/enhancement
 ---
 <!--
  Thank you for sending a feature request!
