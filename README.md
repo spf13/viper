@@ -829,6 +829,7 @@ y.SetDefault("ContentDir", "foobar")
 When working with multiple vipers, it is up to the user to keep track of the
 different vipers.
 
+
 ## Q & A
 
 ### Why is it called “Viper”?
@@ -853,3 +854,9 @@ There has been several attempts to implement case sensitivity, but unfortunately
 
 You can vote for case sensitivity by filling out this feedback form: https://forms.gle/R6faU74qPRPAzchZ9
 
+
+## Troubleshooting
+
+### Unmarshaling doesn't work
+
+The most common reason for this issue is improper use of struct tags (eg. `yaml` or `json`). Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default. Please refer to the library's documentation for using other struct tags.
