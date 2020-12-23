@@ -1780,17 +1780,6 @@ func mergeMaps(
 
 		svType := reflect.TypeOf(sv)
 		tvType := reflect.TypeOf(tv)
-		if tvType != nil && svType != tvType { // Allow for the target to be nil
-			v.logger.Error(
-				"svType != tvType",
-				"key", sk,
-				"st", svType,
-				"tt", tvType,
-				"sv", sv,
-				"tv", tv,
-			)
-			continue
-		}
 
 		v.logger.Trace(
 			"processing",
@@ -1804,13 +1793,27 @@ func mergeMaps(
 		switch ttv := tv.(type) {
 		case map[interface{}]interface{}:
 			v.logger.Trace("merging maps (must convert)")
-			tsv := sv.(map[interface{}]interface{})
+			tsv, ok := sv.(map[interface{}]interface{})
+			if !ok {
+				v.logger.Error(
+					"Could not cast sv to map[interface{}]interface{}; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
+					sk, svType, tvType, sv, tv)
+				continue
+			}
+
 			ssv := castToMapStringInterface(tsv)
 			stv := castToMapStringInterface(ttv)
 			mergeMaps(ssv, stv, ttv)
 		case map[string]interface{}:
 			v.logger.Trace("merging maps")
-			mergeMaps(sv.(map[string]interface{}), ttv, nil)
+			tsv, ok := sv.(map[string]interface{})
+			if !ok {
+				jww.ERROR.Printf(
+					"Could not cast sv to map[string]interface{}; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
+					sk, svType, tvType, sv, tv)
+				continue
+			}
+			mergeMaps(tsv, ttv, nil)
 		default:
 			v.logger.Trace("setting value")
 			tgt[tk] = sv

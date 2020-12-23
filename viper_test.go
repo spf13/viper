@@ -1912,6 +1912,22 @@ hello:
 fu: bar
 `)
 
+var jsonMergeExampleTgt = []byte(`
+{
+	"hello": {
+		"pop": 123456
+	}
+}
+`)
+
+var jsonMergeExampleSrc = []byte(`
+{
+	"hello": {
+		"pop": "pop str"
+	}
+}
+`)
+
 func TestMergeConfig(t *testing.T) {
 	v := New()
 	v.SetConfigType("yml")
@@ -1981,6 +1997,22 @@ func TestMergeConfig(t *testing.T) {
 
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
+	}
+}
+
+func TestMergeConfigOverrideType(t *testing.T) {
+	v := New()
+	v.SetConfigType("json")
+	if err := v.ReadConfig(bytes.NewBuffer(jsonMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := v.MergeConfig(bytes.NewBuffer(jsonMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetString("hello.pop"); pop != "pop str" {
+		t.Fatalf("pop != \"pop str\", = %s", pop)
 	}
 }
 
