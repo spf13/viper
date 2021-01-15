@@ -1581,7 +1581,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	var configType string
 
 	ext := filepath.Ext(filename)
-	if ext != "" {
+	if ext != "" && ext != filepath.Base(filename) {
 		configType = ext[1:]
 	} else {
 		configType = v.configType
