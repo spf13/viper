@@ -753,7 +753,10 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}) error {
 		return err
 	}
 
-	v.insensitiviseMaps()
+	err = v.insensitiviseMaps()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -768,7 +771,10 @@ func (v *Viper) Unmarshal(rawVal interface{}) error {
 		return err
 	}
 
-	v.insensitiviseMaps()
+	err = v.insensitiviseMaps()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -808,7 +814,10 @@ func (v *Viper) UnmarshalExact(rawVal interface{}) error {
 		return err
 	}
 
-	v.insensitiviseMaps()
+	err = v.insensitiviseMaps()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -1332,7 +1341,10 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		}
 	}
 
-	insensitiviseMap(c)
+	err := insensitiviseMap(c)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -1514,11 +1526,20 @@ func (v *Viper) WatchRemoteConfigOnChannel() error {
 	return v.watchKeyValueConfigOnChannel()
 }
 
-func (v *Viper) insensitiviseMaps() {
-	insensitiviseMap(v.config)
-	insensitiviseMap(v.defaults)
-	insensitiviseMap(v.override)
-	insensitiviseMap(v.kvstore)
+func (v *Viper) insensitiviseMaps() error {
+	if err := insensitiviseMap(v.config); err != nil {
+		return err
+	}
+	if err := insensitiviseMap(v.defaults); err != nil {
+		return err
+	}
+	if err := insensitiviseMap(v.override); err != nil {
+		return err
+	}
+	if err := insensitiviseMap(v.kvstore); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Retrieve the first found remote configuration.

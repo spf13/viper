@@ -66,21 +66,30 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 	return nm
 }
 
-func insensitiviseMap(m map[string]interface{}) {
+func insensitiviseMap(m map[string]interface{}) error {
 	for key, val := range m {
 		switch val.(type) {
 		case map[interface{}]interface{}:
 			// nested map: cast and recursively insensitivise
 			val = cast.ToStringMap(val)
-			insensitiviseMap(val.(map[string]interface{}))
+			err := insensitiviseMap(val.(map[string]interface{}))
+			if err != nil {
+				return err
+			}
 		case map[string]interface{}:
 			// nested map: recursively insensitivise
-			insensitiviseMap(val.(map[string]interface{}))
+			err := insensitiviseMap(val.(map[string]interface{}))
+			if err != nil {
+				return err
+			}
 		case []interface{}:
 			for _, x := range val.([]interface{}) {
 				y, ok := x.(map[string]interface{})
 				if ok {
-					insensitiviseMap(y)
+					err := insensitiviseMap(y)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -90,9 +99,17 @@ func insensitiviseMap(m map[string]interface{}) {
 			// remove old key (not lower-cased)
 			delete(m, key)
 		}
+
+		_, exists := m[lower]
+		if key != lower && exists {
+			return fmt.Errorf("Name clash bewteen keys: %s and %s", key, lower)
+		}
+
 		// update map
 		m[lower] = val
 	}
+
+	return nil
 }
 
 func absPathify(inPath string) string {
