@@ -31,9 +31,11 @@ Many Go projects are built using Viper including:
 
 ## Install
 
-```console
+```shell
 go get github.com/spf13/viper
 ```
+
+**Note:** Viper uses [Go Modules](https://github.com/golang/go/wiki/Modules) to manage dependencies.
 
 
 ## What is Viper?
