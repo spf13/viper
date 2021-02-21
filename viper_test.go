@@ -406,6 +406,17 @@ func TestOverrides(t *testing.T) {
 	assert.Equal(t, 40, Get("age"))
 }
 
+func TestUnset(t *testing.T) {
+	SetDefault("unset", 20)
+	Set("unset", 10)
+	RegisterAlias("unset_alias", "unset")
+
+	Unset("unset")
+
+	assert.Equal(t, nil, Get("unset"))
+	assert.Equal(t, nil, Get("unset_alias"))
+}
+
 func TestDefaultPost(t *testing.T) {
 	assert.NotEqual(t, "NYC", Get("state"))
 	SetDefault("state", "NYC")

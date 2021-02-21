@@ -1416,9 +1416,16 @@ func (v *Viper) Unset(key string) {
 
 	path := strings.Split(key, v.keyDelim)
 	lastKey := strings.ToLower(path[len(path)-1])
-	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
-	delete(deepestMap, lastKey)
+	for _, cfgMap := range []map[string]interface{}{
+		v.override, v.config, v.defaults,
+		v.kvstore,
+	} {
+		cfg := deepSearch(cfgMap, path[0:len(path)-1])
+		delete(cfg, lastKey)
+	}
+
+	delete(v.aliases, key)
 }
 
 // ReadInConfig will discover and load the configuration file from disk
