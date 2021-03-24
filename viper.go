@@ -851,6 +851,7 @@ func (v *Viper) Sub(key string) *Viper {
 	if reflect.TypeOf(data).Kind() == reflect.Map {
 		subv.parents = append(v.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
+		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
 		subv.config = cast.ToStringMap(data)
 		return subv
