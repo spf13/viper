@@ -604,6 +604,19 @@ func TestEnvKeyReplacer(t *testing.T) {
 	assert.Equal(t, "30s", v.Get("refresh-interval"))
 }
 
+func TestEnvSubConfig(t *testing.T) {
+	initYAML()
+
+	v.AutomaticEnv()
+
+	replacer := strings.NewReplacer(".", "_")
+	v.SetEnvKeyReplacer(replacer)
+
+	testutil.Setenv(t, "CLOTHING_PANTS_SIZE", "small")
+	subv := v.Sub("clothing").Sub("pants")
+	assert.Equal(t, "small", subv.Get("size"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
@@ -1321,6 +1334,14 @@ func TestSub(t *testing.T) {
 
 	subv = v.Sub("missing.key")
 	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("clothing")
+	assert.Equal(t, subv.parents[0], "clothing")
+
+	subv = v.Sub("clothing").Sub("pants")
+	assert.Equal(t, len(subv.parents), 2)
+	assert.Equal(t, subv.parents[0], "clothing")
+	assert.Equal(t, subv.parents[1], "pants")
 }
 
 var hclWriteExpected = []byte(`"foos" = {
