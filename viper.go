@@ -860,6 +860,16 @@ func (v *Viper) GetString(key string) string {
 	return cast.ToString(v.Get(key))
 }
 
+// GetStringElseDefault returns the value associated with the key as a string,
+// else if the string is empty it will return the default value
+func (v *Viper) GetStringElseDefault(key string, defaultValue string) string {
+	value := v.GetString(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 // GetBool returns the value associated with the key as a boolean.
 func GetBool(key string) bool { return v.GetBool(key) }
 
