@@ -176,6 +176,8 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 //		"user": "root",
 //		"endpoint": "https://localhost"
 //	}
+//
+// Note: Vipers are not safe for concurrent Get() and Set() operations.
 type Viper struct {
 	// Delimiter that separates a list of keys
 	// used to access a nested value in one go
