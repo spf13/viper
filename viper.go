@@ -216,7 +216,8 @@ type Viper struct {
 	// This will only be used if the configuration read is a properties file.
 	properties *properties.Properties
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChange    func(fsnotify.Event)
+	cancelWatchConfig func()
 }
 
 // New returns an initialized Viper instance.
@@ -333,80 +334,87 @@ var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
 
+// OnConfigChange is used to set the handler to run for catching the event
+// when the configFile have been externally modified by the filesystem.
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 	v.onConfigChange = run
 }
 
+// CancelWatchConfig finishes the current configFile watch if it runs.
+// When this function returns the configFile changes are not more looked after.
+func CancelWatchConfig() { v.cancelWatchConfig() }
+func (v *Viper) CancelWatchConfig() {
+	if v.cancelWatchConfig != nil {
+		v.cancelWatchConfig()
+		v.cancelWatchConfig = nil
+	}
+}
+
+// WatchConfig watches and notifies changes on the file configFile.
 func WatchConfig() { v.WatchConfig() }
-
 func (v *Viper) WatchConfig() {
-	initWG := sync.WaitGroup{}
-	initWG.Add(1)
+	// Make sure not to run twice this routine
+	v.CancelWatchConfig()
+
+	// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
+	filename, err := v.getConfigFile()
+	if err != nil {
+		log.Printf("error: %v\n", err)
+		return
+	}
+
+	configFile := filepath.Clean(filename)
+	configDir, _ := filepath.Split(configFile)
+	realConfigFile, _ := filepath.EvalSymlinks(filename)
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	watcher.Add(configDir)
+
+	// cancellation and waiting point
+	var watcherGroup sync.WaitGroup
+	v.cancelWatchConfig = func() {
+		watcher.Close()
+		watcherGroup.Wait()
+	}
+	// Process watcher events
+	watcherGroup.Add(1)
 	go func() {
-		watcher, err := fsnotify.NewWatcher()
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer watcher.Close()
-		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
-		filename, err := v.getConfigFile()
-		if err != nil {
-			log.Printf("error: %v\n", err)
-			initWG.Done()
-			return
-		}
-
-		configFile := filepath.Clean(filename)
-		configDir, _ := filepath.Split(configFile)
-		realConfigFile, _ := filepath.EvalSymlinks(filename)
-
-		eventsWG := sync.WaitGroup{}
-		eventsWG.Add(1)
-		go func() {
-			for {
-				select {
-				case event, ok := <-watcher.Events:
-					if !ok { // 'Events' channel is closed
-						eventsWG.Done()
-						return
-					}
-					currentConfigFile, _ := filepath.EvalSymlinks(filename)
-					// we only care about the config file with the following cases:
-					// 1 - if the config file was modified or created
-					// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
-					const writeOrCreateMask = fsnotify.Write | fsnotify.Create
-					if (filepath.Clean(event.Name) == configFile &&
-						event.Op&writeOrCreateMask != 0) ||
-						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
-						realConfigFile = currentConfigFile
-						err := v.ReadInConfig()
-						if err != nil {
-							log.Printf("error reading config file: %v\n", err)
-						}
-						if v.onConfigChange != nil {
-							v.onConfigChange(event)
-						}
-					} else if filepath.Clean(event.Name) == configFile &&
-						event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
-						eventsWG.Done()
-						return
-					}
-
-				case err, ok := <-watcher.Errors:
-					if ok { // 'Errors' channel is not closed
-						log.Printf("watcher error: %v\n", err)
-					}
-					eventsWG.Done()
-					return
+		defer watcherGroup.Done()
+		for event := range watcher.Events {
+			currentConfigFile, _ := filepath.EvalSymlinks(filename)
+			// we only care about the config file with the following cases:
+			// 1 - if the config file was modified or created
+			// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
+			const writeOrCreateMask = fsnotify.Write | fsnotify.Create
+			if (filepath.Clean(event.Name) == configFile &&
+				event.Op&writeOrCreateMask != 0) ||
+				(currentConfigFile != "" && currentConfigFile != realConfigFile) {
+				realConfigFile = currentConfigFile
+				err := v.ReadInConfig()
+				if err != nil {
+					log.Printf("error reading config file: %v\n", err)
 				}
+				if v.onConfigChange != nil {
+					v.onConfigChange(event)
+				}
+			} else if filepath.Clean(event.Name) == configFile &&
+				event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
+				return
 			}
-		}()
-		watcher.Add(configDir)
-		initWG.Done()   // done initializing the watch in this go routine, so the parent routine can move on...
-		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
+		}
 	}()
-	initWG.Wait() // make sure that the go routine above fully ended before returning
+	// Process watcher errors
+	watcherGroup.Add(1)
+	go func() {
+		defer watcherGroup.Done()
+		for err := range watcher.Errors {
+			log.Printf("watcher error: %v\n", err)
+		}
+	}()
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
@@ -1499,6 +1507,10 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 func WriteConfig() error { return v.WriteConfig() }
 
 func (v *Viper) WriteConfig() error {
+	if v.cancelWatchConfig != nil {
+		v.cancelWatchConfig()
+		defer v.WatchConfig()
+	}
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err

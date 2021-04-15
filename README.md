@@ -176,10 +176,14 @@ Optionally you can provide a function for Viper to run each time a change occurs
 
 ```go
 viper.WatchConfig()
+defer CancelWatchConfig()
 viper.OnConfigChange(func(e fsnotify.Event) {
 	fmt.Println("Config file changed:", e.Name)
 })
 ```
+
+If you wish to stop watching the configPaths, simply call viper.CancelWatchConfig().
+Note: This might be necessary if your tests involve trying out various config files.
 
 ### Reading Config from io.Reader
 
