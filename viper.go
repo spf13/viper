@@ -344,7 +344,7 @@ func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
 	go func() {
-		watcher, err := fsnotify.NewWatcher()
+		watcher, err := newWatcher()
 		if err != nil {
 			log.Fatal(err)
 		}
