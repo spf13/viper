@@ -1,0 +1,26 @@
+name: WASM
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=readonly
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Ensure Viper compiles for WASM
+        run: GOOS=js GOARCH=wasm go build .
