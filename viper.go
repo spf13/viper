@@ -388,7 +388,7 @@ func (v *Viper) WatchConfig() {
 							v.onConfigChange(event)
 						}
 					} else if filepath.Clean(event.Name) == configFile &&
-						event.Op&fsnotify.Remove&fsnotify.Remove != 0 {
+						event.Op&fsnotify.Remove != 0 {
 						eventsWG.Done()
 						return
 					}
