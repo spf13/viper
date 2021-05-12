@@ -1826,7 +1826,7 @@ func mergeMaps(
 
 		svType := reflect.TypeOf(sv)
 		tvType := reflect.TypeOf(tv)
-		if svType != tvType {
+		if tvType != nil && svType != tvType { // Allow for the target to be nil
 			jww.ERROR.Printf(
 				"svType != tvType; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
 				sk, svType, tvType, sv, tv)
