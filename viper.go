@@ -1364,11 +1364,13 @@ func (v *Viper) realKey(key string) string {
 func InConfig(key string) bool { return v.InConfig(key) }
 
 func (v *Viper) InConfig(key string) bool {
-	// if the requested key is an alias, then return the proper key
-	key = v.realKey(key)
+	lcaseKey := strings.ToLower(key)
 
-	_, exists := v.config[key]
-	return exists
+	// if the requested key is an alias, then return the proper key
+	lcaseKey = v.realKey(lcaseKey)
+	path := strings.Split(lcaseKey, v.keyDelim)
+
+	return v.searchIndexableWithPathPrefixes(v.config, path) != nil
 }
 
 // SetDefault sets the default value for this key.
