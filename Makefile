@@ -15,7 +15,7 @@ TEST_FORMAT = short-verbose
 endif
 
 # Dependency versions
-GOTESTSUM_VERSION = 0.5.3
+GOTESTSUM_VERSION = 1.6.4
 GOLANGCI_VERSION = 1.40.1
 
 # Add the ability to override some variables
