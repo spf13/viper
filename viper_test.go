@@ -1993,8 +1993,7 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	Reset()
 	m1 := map[string]interface{}{
 		"Foo": 32,
-		"Bar": map[interface{}]interface {
-		}{
+		"Bar": map[interface{}]interface{}{
 			"ABc": "A",
 			"cDE": "B",
 		},
@@ -2002,8 +2001,7 @@ func TestCaseInsensitiveSet(t *testing.T) {
 
 	m2 := map[string]interface{}{
 		"Foo": 52,
-		"Bar": map[interface{}]interface {
-		}{
+		"Bar": map[interface{}]interface{}{
 			"bCd": "A",
 			"eFG": "B",
 		},
