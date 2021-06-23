@@ -918,6 +918,54 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 }
 
 // nolint: dupl
+func TestBindPFlagsStringArray(t *testing.T) {
+	tests := []struct {
+		Expected []string
+		Value    string
+	}{
+		{[]string{}, ""},
+		{[]string{"jeden"}, "jeden"},
+		{[]string{"dwa,trzy"}, "dwa,trzy"},
+		{[]string{"cztery,\"piec , szesc\""}, "cztery,\"piec , szesc\""},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []string{"default"}
+	v.SetDefault("stringarray", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.StringArray("stringarray", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestStr struct {
+				StringArray []string
+			}
+			val := &TestStr{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			if changed {
+				assert.Equal(t, testValue.Expected, val.StringArray)
+				assert.Equal(t, testValue.Expected, v.Get("stringarray"))
+			} else {
+				assert.Equal(t, defaultVal, val.StringArray)
+			}
+		}
+	}
+}
+
+// nolint: dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
 		Expected []int
