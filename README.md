@@ -778,6 +778,15 @@ if err != nil {
 
 Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
 
+### Decoding custom formats
+
+A frequently requested feature for Viper is adding more value formats and decoders.
+For example, parsing character (dot, comma, semicolon, etc) separated strings into slices.
+
+This is already available in Viper using mapstructure decode hooks.
+
+Read more about the details in [this blog post](https://sagikazarmark.hu/blog/decoding-custom-formats-with-viper/).
+
 ### Marshalling to string
 
 You may need to marshal all the settings held in viper into a string rather than write them to a file.
