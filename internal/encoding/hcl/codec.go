@@ -35,6 +35,6 @@ func (Codec) Encode(v interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (Codec) Decode(b []byte, v interface{}) error {
-	return hcl.Unmarshal(b, v)
+func (Codec) Decode(b []byte, v map[string]interface{}) error {
+	return hcl.Unmarshal(b, &v)
 }

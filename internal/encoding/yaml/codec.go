@@ -9,6 +9,6 @@ func (Codec) Encode(v interface{}) ([]byte, error) {
 	return yaml.Marshal(v)
 }
 
-func (Codec) Decode(b []byte, v interface{}) error {
-	return yaml.Unmarshal(b, v)
+func (Codec) Decode(b []byte, v map[string]interface{}) error {
+	return yaml.Unmarshal(b, &v)
 }
