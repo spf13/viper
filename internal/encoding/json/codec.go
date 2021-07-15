@@ -12,6 +12,6 @@ func (Codec) Encode(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(v, "", "  ")
 }
 
-func (Codec) Decode(b []byte, v interface{}) error {
-	return json.Unmarshal(b, v)
+func (Codec) Decode(b []byte, v map[string]interface{}) error {
+	return json.Unmarshal(b, &v)
 }

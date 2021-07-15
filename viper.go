@@ -1635,7 +1635,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 
 	switch format := strings.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars":
-		err := decoderRegistry.Decode(format, buf.Bytes(), &c)
+		err := decoderRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
 		}
