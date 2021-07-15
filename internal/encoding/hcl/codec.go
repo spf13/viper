@@ -12,7 +12,7 @@ import (
 // TODO: add printer config to the codec?
 type Codec struct{}
 
-func (Codec) Encode(v interface{}) ([]byte, error) {
+func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

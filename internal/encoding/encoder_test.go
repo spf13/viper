@@ -8,7 +8,7 @@ type encoder struct {
 	b []byte
 }
 
-func (e encoder) Encode(_ interface{}) ([]byte, error) {
+func (e encoder) Encode(_ map[string]interface{}) ([]byte, error) {
 	return e.b, nil
 }
 
@@ -41,7 +41,7 @@ func TestEncoderRegistry_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		registry := NewEncoderRegistry()
 		encoder := encoder{
-			b: []byte("encoded value"),
+			b: []byte("key: value"),
 		}
 
 		err := registry.RegisterEncoder("myformat", encoder)
@@ -49,20 +49,20 @@ func TestEncoderRegistry_Decode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		b, err := registry.Encode("myformat", "some value")
+		b, err := registry.Encode("myformat", map[string]interface{}{"key": "value"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if string(b) != "encoded value" {
-			t.Fatalf("expected 'encoded value', got: %#v", string(b))
+		if string(b) != "key: value" {
+			t.Fatalf("expected 'key: value', got: %#v", string(b))
 		}
 	})
 
 	t.Run("EncoderNotFound", func(t *testing.T) {
 		registry := NewEncoderRegistry()
 
-		_, err := registry.Encode("myformat", "some value")
+		_, err := registry.Encode("myformat", map[string]interface{}{"key": "value"})
 		if err != ErrEncoderNotFound {
 			t.Fatalf("expected ErrEncoderNotFound, got: %v", err)
 		}

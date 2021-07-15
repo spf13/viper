@@ -7,22 +7,18 @@ import (
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for TOML encoding.
 type Codec struct{}
 
-func (Codec) Encode(v interface{}) ([]byte, error) {
-	if m, ok := v.(map[string]interface{}); ok {
-		t, err := toml.TreeFromMap(m)
-		if err != nil {
-			return nil, err
-		}
-
-		s, err := t.ToTomlString()
-		if err != nil {
-			return nil, err
-		}
-
-		return []byte(s), nil
+func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
+	t, err := toml.TreeFromMap(v)
+	if err != nil {
+		return nil, err
 	}
 
-	return toml.Marshal(v)
+	s, err := t.ToTomlString()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(s), nil
 }
 
 func (Codec) Decode(b []byte, v map[string]interface{}) error {
