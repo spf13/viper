@@ -230,8 +230,11 @@ type Viper struct {
 	remoteProviders []*defaultRemoteProvider
 
 	// Name of file to look for inside the path
-	configName        string
-	configFile        string
+	configName string
+	configFile struct {
+		path          string
+		explicitlySet bool
+	}
 	configType        string
 	configPermissions os.FileMode
 	envPrefix         string
@@ -455,7 +458,8 @@ func SetConfigFile(in string) { v.SetConfigFile(in) }
 
 func (v *Viper) SetConfigFile(in string) {
 	if in != "" {
-		v.configFile = in
+		v.configFile.path = in
+		v.configFile.explicitlySet = true
 	}
 }
 
@@ -506,7 +510,7 @@ func (v *Viper) getEnv(key string) (string, bool) {
 
 // ConfigFileUsed returns the file used to populate the config registry.
 func ConfigFileUsed() string            { return v.ConfigFileUsed() }
-func (v *Viper) ConfigFileUsed() string { return v.configFile }
+func (v *Viper) ConfigFileUsed() string { return v.configFile.path }
 
 // AddConfigPath adds a path for Viper to search for the config file in.
 // Can be called multiple times to define multiple search paths.
@@ -1539,21 +1543,33 @@ func (v *Viper) MergeConfigMap(cfg map[string]interface{}) error {
 func WriteConfig() error { return v.WriteConfig() }
 
 func (v *Viper) WriteConfig() error {
-	filename, err := v.getConfigFile()
-	if err != nil {
-		return err
+	if !v.configFile.explicitlySet {
+		_, err := v.getConfigFile()
+		if err != nil {
+			if _, ok := err.(ConfigFileNotFoundError); ok {
+				if len(v.configPaths) < 1 {
+					return errors.New("missing configuration for 'configPath'")
+				}
+				v.configFile.path = filepath.Join(v.configPaths[0], v.configName+"."+v.configType)
+			} else {
+				return err
+			}
+		}
 	}
-	return v.writeConfig(filename, true)
+	return v.WriteConfigAs(v.configFile.path)
 }
 
 // SafeWriteConfig writes current configuration to file only if the file does not exist.
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 
 func (v *Viper) SafeWriteConfig() error {
-	if len(v.configPaths) < 1 {
-		return errors.New("missing configuration for 'configPath'")
+	if !v.configFile.explicitlySet {
+		if len(v.configPaths) < 1 {
+			return errors.New("missing configuration for 'configPath'")
+		}
+		v.configFile.path = filepath.Join(v.configPaths[0], v.configName+"."+v.configType)
 	}
-	return v.SafeWriteConfigAs(filepath.Join(v.configPaths[0], v.configName+"."+v.configType))
+	return v.SafeWriteConfigAs(v.configFile.path)
 }
 
 // WriteConfigAs writes current configuration to a given filename.
@@ -2045,7 +2061,8 @@ func SetConfigName(in string) { v.SetConfigName(in) }
 func (v *Viper) SetConfigName(in string) {
 	if in != "" {
 		v.configName = in
-		v.configFile = ""
+		v.configFile.path = ""
+		v.configFile.explicitlySet = false
 	}
 }
 
@@ -2093,14 +2110,14 @@ func (v *Viper) getConfigType() string {
 }
 
 func (v *Viper) getConfigFile() (string, error) {
-	if v.configFile == "" {
+	if v.configFile.path == "" {
 		cf, err := v.findConfigFile()
 		if err != nil {
 			return "", err
 		}
-		v.configFile = cf
+		v.configFile.path = cf
 	}
-	return v.configFile, nil
+	return v.configFile.path, nil
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
