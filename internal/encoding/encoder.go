@@ -7,7 +7,7 @@ import (
 // Encoder encodes the contents of v into a byte representation.
 // It's primarily used for encoding a map[string]interface{} into a file format.
 type Encoder interface {
-	Encode(v interface{}) ([]byte, error)
+	Encode(v map[string]interface{}) ([]byte, error)
 }
 
 const (
@@ -47,7 +47,7 @@ func (e *EncoderRegistry) RegisterEncoder(format string, enc Encoder) error {
 	return nil
 }
 
-func (e *EncoderRegistry) Encode(format string, v interface{}) ([]byte, error) {
+func (e *EncoderRegistry) Encode(format string, v map[string]interface{}) ([]byte, error) {
 	e.mu.RLock()
 	encoder, ok := e.encoders[format]
 	e.mu.RUnlock()
