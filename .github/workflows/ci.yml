@@ -33,3 +33,9 @@ jobs:
 
       - name: Test
         run: make test
+
+      - name: WriteGoList
+        run: go list -json -m all > go.list
+
+      - name: Nancy scan
+        uses: sonatype-nexus-community/nancy-github-action@main
