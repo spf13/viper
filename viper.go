@@ -1392,12 +1392,27 @@ func (v *Viper) registerAlias(alias string, key string) {
 }
 
 func (v *Viper) realKey(key string) string {
-	newkey, exists := v.aliases[key]
+	newKey, exists := v.aliases[key]
 	if exists {
-		jww.DEBUG.Println("Alias", key, "to", newkey)
-		return v.realKey(newkey)
+		jww.DEBUG.Println("Alias", key, "to", newKey)
+		return v.realKey(newKey)
 	}
 	return key
+}
+
+// This enables one to remove a registered alias.
+func UnregisterAlias(alias string) { v.UnregisterAlias(alias) }
+func (v *Viper) UnregisterAlias(alias string) {
+	v.unregisterAlias(alias)
+}
+
+func (v *Viper) unregisterAlias(alias string) {
+	alias = strings.ToLower(alias)
+	if _, exists := v.aliases[alias]; exists {
+		delete(v.aliases, alias)
+	} else {
+		jww.DEBUG.Println("Trying to unregister a non-existent alias", alias)
+	}
 }
 
 // InConfig checks to see if the given key (or an alias) is in the config file.
