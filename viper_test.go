@@ -2405,3 +2405,14 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 		}
 	}
 }
+
+func TestGetStringPtr(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+
+	/* config and defaults */
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	assert.Equal(t, "leather", *v.GetStringPtr("clothing.jacket"))
+	assert.Nil(t, v.GetStringPtr("motorcycle"))
+}
