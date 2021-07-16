@@ -467,6 +467,8 @@ func TestHCL(t *testing.T) {
 func TestIni(t *testing.T) {
 	initIni()
 	assert.Equal(t, "ini", Get("default.name"))
+	Set("set.boolKey", true)
+	assert.Equal(t, true, Get("set.boolKey"))
 }
 
 func TestRemotePrecedence(t *testing.T) {
@@ -1618,6 +1620,62 @@ func TestWriteConfigTOML(t *testing.T) {
 			assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
 			assert.Equal(t, v.GetString("owner.dob"), v2.GetString("owner.dob"))
 			assert.Equal(t, v.GetString("owner.organization"), v2.GetString("owner.organization"))
+		})
+	}
+}
+
+func TestWriteConfigINI(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	testCases := map[string]struct {
+		configName string
+		configType string
+		fileName   string
+		input      []byte
+	}{
+		"with file extension": {
+			configName: "c",
+			configType: "ini",
+			fileName:   "c.ini",
+			input:      iniExample,
+		},
+		"without file extension": {
+			configName: "c",
+			configType: "ini",
+			fileName:   "c",
+			input:      iniExample,
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigName(tc.configName)
+			v.SetConfigType(tc.configType)
+			err := v.ReadConfig(bytes.NewBuffer(tc.input))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := v.WriteConfigAs(tc.fileName); err != nil {
+				t.Fatal(err)
+			}
+
+			// The TOML String method does not order the contents.
+			// Therefore, we must read the generated file and compare the data.
+			v2 := New()
+			v2.SetFs(fs)
+			v2.SetConfigName(tc.configName)
+			v2.SetConfigType(tc.configType)
+			v2.SetConfigFile(tc.fileName)
+			err = v2.ReadInConfig()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, v.GetString("NAME"), v2.GetString("NAME"))
+			assert.Equal(t, v.GetString("author.NAME"), v2.GetString("author.NAME"))
+			assert.Equal(t, v.GetString("author.E-MAIL"), v2.GetString("author.E-MAIL"))
+			assert.Equal(t, v.GetString("author.GITHUB"), v2.GetString("author.GITHUB"))
 		})
 	}
 }
