@@ -12,10 +12,18 @@ import (
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for Java properties encoding.
 type Codec struct {
 	KeyDelimiter string
+
+	// Store read properties on the object so that we can write back in order with comments.
+	// This will only be used if the configuration read is a properties file.
+	// TODO: drop this feature in v2
+	// TODO: make use of the global properties object optional
+	Properties *properties.Properties
 }
 
-func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
-	p := properties.NewProperties()
+func (c *Codec) Encode(v map[string]interface{}) ([]byte, error) {
+	if c.Properties == nil {
+		c.Properties = properties.NewProperties()
+	}
 
 	flattened := map[string]interface{}{}
 
@@ -30,7 +38,7 @@ func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		_, _, err := p.Set(key, cast.ToString(flattened[key]))
+		_, _, err := c.Properties.Set(key, cast.ToString(flattened[key]))
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +46,7 @@ func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
 
 	var buf bytes.Buffer
 
-	_, err := p.WriteComment(&buf, "#", properties.UTF8)
+	_, err := c.Properties.WriteComment(&buf, "#", properties.UTF8)
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +54,16 @@ func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (c Codec) Decode(b []byte, v map[string]interface{}) error {
-	p, err := properties.Load(b, properties.UTF8)
+func (c *Codec) Decode(b []byte, v map[string]interface{}) error {
+	var err error
+	c.Properties, err = properties.Load(b, properties.UTF8)
 	if err != nil {
 		return err
 	}
 
-	for _, key := range p.Keys() {
+	for _, key := range c.Properties.Keys() {
 		// ignore existence check: we know it's there
-		value, _ := p.Get(key)
+		value, _ := c.Properties.Get(key)
 
 		// recursively build nested maps
 		path := strings.Split(key, c.keyDelimiter())
