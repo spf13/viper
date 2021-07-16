@@ -2369,6 +2369,61 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
 }
 
+var yamlIncludeRoot = []byte(`
+hello:
+    pop: 37890
+    largenum: 765432101234567
+`)
+
+var yamlIncludeIntermediate = []byte(`
+includes:
+- root
+
+hello:
+    pop: 45000
+    ints:
+    - 1
+    - 2
+fu: bar
+`)
+
+var yamlIncludeOther = []byte(`
+foo: bar
+`)
+
+var yamlIncludeLeaf = []byte(`
+includes:
+- intermediate
+- other
+
+fu: baz
+`)
+
+func TestSetConfigIncludeKey(t *testing.T) {
+	root, _, cleanup := initDirs(t)
+	defer cleanup()
+
+	configFile := filepath.Join(root, "leaf.yaml")
+
+	ioutil.WriteFile(filepath.Join(root, "root.yaml"), yamlIncludeRoot, 0640)
+	ioutil.WriteFile(filepath.Join(root, "intermediate.yaml"), yamlIncludeIntermediate, 0640)
+	ioutil.WriteFile(filepath.Join(root, "other.yaml"), yamlIncludeOther, 0640)
+	ioutil.WriteFile(configFile, yamlIncludeLeaf, 0640)
+
+	v := New()
+	v.SetConfigIncludeKey("includes")
+	v.SetConfigFile(configFile)
+	v.AddConfigPath(root)
+
+	assert.NoError(t, v.ReadInConfig())
+	assert.Equal(t, "baz", v.GetString("fu"))
+	assert.Equal(t, "bar", v.GetString("foo"))
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
+	assert.Equal(t, 765432101234567, v.GetInt("hello.largenum"))
+	assert.Equal(t, []int{1, 2}, v.GetIntSlice("hello.ints"))
+	assert.False(t, v.InConfig("includes"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
