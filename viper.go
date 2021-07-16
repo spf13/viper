@@ -35,7 +35,6 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/magiconair/properties"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
@@ -45,6 +44,7 @@ import (
 	"github.com/spf13/viper/internal/encoding"
 	"github.com/spf13/viper/internal/encoding/hcl"
 	"github.com/spf13/viper/internal/encoding/ini"
+	"github.com/spf13/viper/internal/encoding/javaproperties"
 	"github.com/spf13/viper/internal/encoding/json"
 	"github.com/spf13/viper/internal/encoding/toml"
 	"github.com/spf13/viper/internal/encoding/yaml"
@@ -215,10 +215,6 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
-	// Store read properties on the object so that we can write back in order with comments.
-	// This will only be used if the configuration read is a properties file.
-	properties *properties.Properties
-
 	onConfigChange func(fsnotify.Event)
 
 	logger Logger
@@ -354,6 +350,21 @@ func (v *Viper) resetEncoding() {
 
 		encoderRegistry.RegisterEncoder("ini", codec)
 		decoderRegistry.RegisterDecoder("ini", codec)
+	}
+
+	{
+		codec := &javaproperties.Codec{
+			KeyDelimiter: v.keyDelim,
+		}
+
+		encoderRegistry.RegisterEncoder("properties", codec)
+		decoderRegistry.RegisterDecoder("properties", codec)
+
+		encoderRegistry.RegisterEncoder("props", codec)
+		decoderRegistry.RegisterDecoder("props", codec)
+
+		encoderRegistry.RegisterEncoder("prop", codec)
+		decoderRegistry.RegisterDecoder("prop", codec)
 	}
 
 	v.encoderRegistry = encoderRegistry
@@ -1656,7 +1667,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini":
+	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop":
 		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
@@ -1670,22 +1681,6 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 		for k, v := range env {
 			c[k] = v
 		}
-
-	case "properties", "props", "prop":
-		v.properties = properties.NewProperties()
-		var err error
-		if v.properties, err = properties.Load(buf.Bytes(), properties.UTF8); err != nil {
-			return ConfigParseError{err}
-		}
-		for _, key := range v.properties.Keys() {
-			value, _ := v.properties.Get(key)
-			// recursively build nested maps
-			path := strings.Split(key, ".")
-			lastKey := strings.ToLower(path[len(path)-1])
-			deepestMap := deepSearch(c, path[0:len(path)-1])
-			// set innermost value
-			deepestMap[lastKey] = value
-		}
 	}
 
 	insensitiviseMap(c)
@@ -1696,29 +1691,13 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini":
+	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties":
 		b, err := v.encoderRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
 		}
 
 		_, err = f.WriteString(string(b))
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-
-	case "prop", "props", "properties":
-		if v.properties == nil {
-			v.properties = properties.NewProperties()
-		}
-		p := v.properties
-		for _, key := range v.AllKeys() {
-			_, _, err := p.Set(key, v.GetString(key))
-			if err != nil {
-				return ConfigMarshalError{err}
-			}
-		}
-		_, err := p.WriteComment(f, "#", properties.UTF8)
 		if err != nil {
 			return ConfigMarshalError{err}
 		}

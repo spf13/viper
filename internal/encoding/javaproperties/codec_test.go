@@ -6,7 +6,7 @@ import (
 )
 
 // original form of the data
-const original = `# key-value pair
+const original = `#key-value pair
 key = value
 map.key = value
 `
@@ -66,4 +66,24 @@ func TestCodec_Decode(t *testing.T) {
 			t.Fatalf("expected map to be empty when data is invalid\nactual: %#v", v)
 		}
 	})
+}
+
+func TestCodec_DecodeEncode(t *testing.T) {
+	codec := Codec{}
+
+	v := map[string]interface{}{}
+
+	err := codec.Decode([]byte(original), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := codec.Encode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if original != string(b) {
+		t.Fatalf("encoded value does not match the original\nactual:   %#v\nexpected: %#v", string(b), original)
+	}
 }
