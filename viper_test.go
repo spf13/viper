@@ -1293,6 +1293,17 @@ func TestIsSet(t *testing.T) {
 	assert.True(t, v.IsSet("barbaz"))
 }
 
+func TestInConfig(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	assert.True(t, v.InConfig("clothing.jacket"))
+	assert.False(t, v.InConfig("clothing.jackets"))
+	assert.False(t, v.InConfig("helloworld"))
+	v.Set("helloworld", "fubar")
+	assert.False(t, v.InConfig("helloworld"))
+}
+
 func TestDirsSearch(t *testing.T) {
 	root, config, cleanup := initDirs(t)
 	defer cleanup()
