@@ -4,10 +4,10 @@ import (
 	"sync"
 )
 
-// Decoder decodes the contents of b into a v representation.
+// Decoder decodes the contents of b into v.
 // It's primarily used for decoding contents of a file into a map[string]interface{}.
 type Decoder interface {
-	Decode(b []byte, v interface{}) error
+	Decode(b []byte, v map[string]interface{}) error
 }
 
 const (
@@ -48,7 +48,7 @@ func (e *DecoderRegistry) RegisterDecoder(format string, enc Decoder) error {
 }
 
 // Decode calls the underlying Decoder based on the format.
-func (e *DecoderRegistry) Decode(format string, b []byte, v interface{}) error {
+func (e *DecoderRegistry) Decode(format string, b []byte, v map[string]interface{}) error {
 	e.mu.RLock()
 	decoder, ok := e.decoders[format]
 	e.mu.RUnlock()
