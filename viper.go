@@ -45,6 +45,7 @@ import (
 	"gopkg.in/ini.v1"
 
 	"github.com/spf13/viper/internal/encoding"
+	"github.com/spf13/viper/internal/encoding/cue"
 	"github.com/spf13/viper/internal/encoding/hcl"
 	"github.com/spf13/viper/internal/encoding/json"
 	"github.com/spf13/viper/internal/encoding/toml"
@@ -91,6 +92,13 @@ func init() {
 
 		encoderRegistry.RegisterEncoder("json", codec)
 		decoderRegistry.RegisterDecoder("json", codec)
+	}
+
+	{
+		codec := cue.Codec{}
+
+		encoderRegistry.RegisterEncoder("cue", codec)
+		decoderRegistry.RegisterDecoder("cue", codec)
 	}
 
 	{
@@ -329,7 +337,7 @@ func NewWithOptions(opts ...Option) *Viper {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+	SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
 }
 
@@ -368,7 +376,7 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+var SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
 
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
@@ -1622,7 +1630,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
-	case "yaml", "yml", "json", "toml", "hcl":
+	case "yaml", "yml", "json", "cue", "toml", "hcl":
 		err := decoderRegistry.Decode(format, buf.Bytes(), &c)
 		if err != nil {
 			return ConfigParseError{err}
@@ -1679,7 +1687,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
-	case "yaml", "yml", "json", "toml", "hcl":
+	case "yaml", "yml", "json", "cue", "toml", "hcl":
 		b, err := encoderRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
