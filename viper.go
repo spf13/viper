@@ -1035,8 +1035,8 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
-// of time.Duration values & string slices
+// defaultDecoderConfig returns a default mapstructure.DecoderConfig with support
+// for time.Duration values & string slices
 func defaultDecoderConfig(output interface{}, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	c := &mapstructure.DecoderConfig{
 		Metadata:         nil,
@@ -1976,6 +1976,8 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			m2 = val.(map[string]interface{})
 		case map[interface{}]interface{}:
 			m2 = cast.ToStringMap(val)
+		case []interface{}:
+			m2 = castSliceToStringMap(val.([]interface{}))
 		default:
 			// immediate value
 			shadow[strings.ToLower(fullKey)] = true
@@ -1985,6 +1987,17 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
 	return shadow
+}
+
+// castSliceToStringMap converts a slice to a map where the keys are the indices.
+func castSliceToStringMap(v []interface{}) map[string]interface{} {
+	m := make(map[string]interface{}, len(v))
+
+	for i, val := range v {
+		m[strconv.Itoa(i)] = val
+	}
+
+	return m
 }
 
 // mergeFlatMap merges the given maps, excluding values of the second map
@@ -2028,7 +2041,44 @@ func (v *Viper) AllSettings() map[string]interface{} {
 		// set innermost value
 		deepestMap[lastKey] = value
 	}
+
+	// convert any maps of integer keys back to slices
+	i := convertMapsToSlices(m)
+	if m2, ok := i.(map[string]interface{}); ok {
+		m = m2
+	}
+
 	return m
+}
+
+// convertMapsToSlices will do a deep check for any maps where the keys are all integers (as strings)
+// as well as being contiguous from 0, and convert them to a slice.
+func convertMapsToSlices(m map[string]interface{}) interface{} {
+	allInts := true
+	for k, v := range m {
+		if _, ok := strconv.Atoi(k); ok != nil {
+			allInts = false
+		}
+
+		if m2, ok := v.(map[string]interface{}); ok {
+			m[k] = convertMapsToSlices(m2)
+		}
+	}
+
+	if !allInts {
+		return m
+	}
+
+	s := make([]interface{}, len(m))
+	for i := 0; i < len(m); i++ {
+		v, ok := m[strconv.Itoa(i)]
+		if !ok {
+			return m
+		}
+		s[i] = v
+	}
+
+	return s
 }
 
 // SetFs sets the filesystem to use to read configuration.
