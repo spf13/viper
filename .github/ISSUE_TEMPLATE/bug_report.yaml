@@ -21,9 +21,16 @@ body:
         required: true
 - type: input
   attributes:
-    label: Version
+    label: Viper Version
     description: What version of Viper are you using?
     placeholder: 1.8.1
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: Go Version
+    description: What version of Go are you using?
+    placeholder: "1.16"
   validations:
     required: true
 - type: dropdown
