@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/everactive/viper/internal/testutil"
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
@@ -29,8 +30,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/spf13/viper/internal/testutil"
 )
 
 // var yamlExample = []byte(`Hacker: true

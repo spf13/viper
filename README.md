@@ -1,7 +1,9 @@
-> ## Viper v2 feedback
-> Viper is heading towards v2 and we would love to hear what _**you**_ would like to see in it. Share your thoughts here: https://forms.gle/R6faU74qPRPAzchZ9
->
-> **Thank you!**
+> ## Thread Safe Viper Fork
+> This is a thread safe fork of viper. It uses a `sync.RWLock` to
+> implement basic thread synchronization. Priority was given to basic
+> `Get` and `Set` routines over features like configuration watching and remote
+> config sources, so not *every* feature is covered -- though it should
+> cover most simple use cases.
 
 ![Viper](.github/logo.png?raw=true)
 
