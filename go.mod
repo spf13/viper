@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/bketelsen/crypt v0.0.4
-	github.com/fsnotify/fsnotify v1.4.9
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.5
 	github.com/mitchellh/mapstructure v1.4.1
