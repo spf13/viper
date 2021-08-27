@@ -233,6 +233,7 @@ type Viper struct {
 	configName        string
 	configFile        string
 	configType        string
+	configExtension   string
 	configPermissions os.FileMode
 	envPrefix         string
 
@@ -2059,6 +2060,17 @@ func (v *Viper) SetConfigType(in string) {
 	}
 }
 
+// SetConfigExtension forces viper to look for a specific file extension
+// rather than checking all supported types
+func SetConfigExtension(in string) { v.SetConfigExtension(in) }
+
+func (v *Viper) SetConfigExtension(in string) {
+	if in != "" {
+		// normalize extensions, for example ".yml" and "yml"
+		v.configExtension = strings.TrimPrefix(in, ".")
+	}
+}
+
 // SetConfigPermissions sets the permissions for the config file.
 func SetConfigPermissions(perm os.FileMode) { v.SetConfigPermissions(perm) }
 
@@ -2104,18 +2116,32 @@ func (v *Viper) getConfigFile() (string, error) {
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
-	jww.DEBUG.Println("Searching for config in ", in)
-	for _, ext := range SupportedExts {
-		jww.DEBUG.Println("Checking for", filepath.Join(in, v.configName+"."+ext))
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
-			jww.DEBUG.Println("Found: ", filepath.Join(in, v.configName+"."+ext))
-			return filepath.Join(in, v.configName+"."+ext)
+	jww.DEBUG.Println("Searching for config in", in)
+
+	basePath := filepath.Join(in, v.configName)
+	if v.configType != "" {
+		jww.DEBUG.Println("configType specified; checking for", basePath)
+		if b, _ := exists(v.fs, basePath); b {
+			jww.DEBUG.Println("Found: ", basePath)
+			return basePath
 		}
 	}
 
-	if v.configType != "" {
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
-			return filepath.Join(in, v.configName)
+	if v.configExtension != "" {
+		path := basePath + "." + v.configExtension
+		jww.DEBUG.Println("configExtension specified; checking for", path)
+		if b, _ := exists(v.fs, path); b {
+			jww.DEBUG.Println("Found: ", path)
+			return path
+		}
+	}
+
+	for _, ext := range SupportedExts {
+		path := basePath + "." + ext
+		jww.DEBUG.Println("Checking for", path)
+		if b, _ := exists(v.fs, path); b {
+			jww.DEBUG.Println("Found: ", path)
+			return path
 		}
 	}
 
