@@ -16,6 +16,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/subosito/gotenv v1.2.0
-	gopkg.in/ini.v1 v1.62.0
+	gopkg.in/ini.v1 v1.63.0
 	gopkg.in/yaml.v2 v2.4.0
 )
