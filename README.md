@@ -735,7 +735,7 @@ v.SetDefault("chart::values", map[string]interface{}{
 })
 
 type config struct {
-	Chart struct{
+    Chart struct{
         Values map[string]interface{}
     }
 }
