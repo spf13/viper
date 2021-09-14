@@ -127,11 +127,11 @@ You can handle the specific case where no config file is found like this:
 
 ```go
 if err := viper.ReadInConfig(); err != nil {
-    if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-        // Config file not found; ignore error if desired
-    } else {
-        // Config file was found but another error was produced
-    }
+	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		// Config file not found; ignore error if desired
+	} else {
+		// Config file was found but another error was produced
+	}
 }
 
 // Config file found and successfully parsed
@@ -503,18 +503,18 @@ runtime_viper.Unmarshal(&runtime_conf)
 // open a goroutine to watch remote changes forever
 go func(){
 	for {
-	    time.Sleep(time.Second * 5) // delay after each request
+		time.Sleep(time.Second * 5) // delay after each request
 
-	    // currently, only tested with etcd support
-	    err := runtime_viper.WatchRemoteConfig()
-	    if err != nil {
-	        log.Errorf("unable to read remote config: %v", err)
-	        continue
-	    }
+		// currently, only tested with etcd support
+		err := runtime_viper.WatchRemoteConfig()
+		if err != nil {
+			log.Errorf("unable to read remote config: %v", err)
+			continue
+		}
 
-	    // unmarshal new config into our runtime config struct. you can also use channel
-	    // to implement a signal to notify the system of the changes
-	    runtime_viper.Unmarshal(&runtime_conf)
+		// unmarshal new config into our runtime config struct. you can also use channel
+		// to implement a signal to notify the system of the changes
+		runtime_viper.Unmarshal(&runtime_conf)
 	}
 }()
 ```
@@ -546,7 +546,7 @@ Example:
 ```go
 viper.GetString("logfile") // case-insensitive Setting & Getting
 if viper.GetBool("verbose") {
-    fmt.Println("verbose enabled")
+	fmt.Println("verbose enabled")
 }
 ```
 ### Accessing nested keys
@@ -669,7 +669,7 @@ So instead of doing that let's pass a Viper instance to the constructor that rep
 ```go
 cache1Config := viper.Sub("cache.cache1")
 if cache1Config == nil { // Sub returns nil if the key cannot be found
-    panic("cache configuration not found")
+	panic("cache configuration not found")
 }
 
 cache1 := NewCache(cache1Config)
@@ -681,10 +681,10 @@ Internally, the `NewCache` function can address `max-items` and `item-size` keys
 
 ```go
 func NewCache(v *Viper) *Cache {
-    return &Cache{
-        MaxItems: v.GetInt("max-items"),
-        ItemSize: v.GetInt("item-size"),
-    }
+	return &Cache{
+		MaxItems: v.GetInt("max-items"),
+		ItemSize: v.GetInt("item-size"),
+	}
 }
 ```
 
@@ -726,18 +726,18 @@ you have to change the delimiter:
 v := viper.NewWithOptions(viper.KeyDelimiter("::"))
 
 v.SetDefault("chart::values", map[string]interface{}{
-    "ingress": map[string]interface{}{
-        "annotations": map[string]interface{}{
-            "traefik.frontend.rule.type":                 "PathPrefix",
-            "traefik.ingress.kubernetes.io/ssl-redirect": "true",
-        },
-    },
+	"ingress": map[string]interface{}{
+		"annotations": map[string]interface{}{
+			"traefik.frontend.rule.type":                 "PathPrefix",
+			"traefik.ingress.kubernetes.io/ssl-redirect": "true",
+		},
+	},
 })
 
 type config struct {
-    Chart struct{
-        Values map[string]interface{}
-    }
+	Chart struct{
+		Values map[string]interface{}
+	}
 }
 
 var C config
@@ -794,17 +794,17 @@ You can use your favorite format's marshaller with the config returned by `AllSe
 
 ```go
 import (
-    yaml "gopkg.in/yaml.v2"
-    // ...
+	yaml "gopkg.in/yaml.v2"
+	// ...
 )
 
 func yamlStringSettings() string {
-    c := viper.AllSettings()
-    bs, err := yaml.Marshal(c)
-    if err != nil {
-        log.Fatalf("unable to marshal config to YAML: %v", err)
-    }
-    return string(bs)
+	c := viper.AllSettings()
+	bs, err := yaml.Marshal(c)
+	if err != nil {
+		log.Fatalf("unable to marshal config to YAML: %v", err)
+	}
+	return string(bs)
 }
 ```
 
