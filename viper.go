@@ -267,7 +267,7 @@ func New() *Viper {
 	v := new(Viper)
 	v.keyDelim = "."
 	v.configName = "config"
-	v.configPermissions = os.FileMode(0644)
+	v.configPermissions = os.FileMode(0o644)
 	v.fs = afero.NewOsFs()
 	v.config = make(map[string]interface{})
 	v.override = make(map[string]interface{})
