@@ -1405,9 +1405,13 @@ func InConfig(key string) bool { return v.InConfig(key) }
 
 func (v *Viper) InConfig(key string) bool {
 	// if the requested key is an alias, then return the proper key
-	key = v.realKey(key)
+	key = v.realKey(strings.ToLower(key))
 
-	_, exists := v.config[key]
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.config, path[0:len(path)-1])
+
+	_, exists := deepestMap[lastKey]
 	return exists
 }
 
