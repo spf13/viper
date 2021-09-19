@@ -1375,6 +1375,26 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 }
 
+func TestEmptyExtension(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("config")
+	v.SetConfigType("json")
+	v.AddConfigPath("/etc/app/")
+	SupportedExts = append(SupportedExts, "")
+
+	err := afero.WriteFile(fs, "/etc/app/config", jsonExample, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = v.ReadInConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 var hclWriteExpected = []byte(`"foos" = {
   "foo" = {
     "key" = 1

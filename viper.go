@@ -2108,10 +2108,16 @@ func (v *Viper) getConfigFile() (string, error) {
 func (v *Viper) searchInPath(in string) (filename string) {
 	jww.DEBUG.Println("Searching for config in ", in)
 	for _, ext := range SupportedExts {
-		jww.DEBUG.Println("Checking for", filepath.Join(in, v.configName+"."+ext))
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
-			jww.DEBUG.Println("Found: ", filepath.Join(in, v.configName+"."+ext))
-			return filepath.Join(in, v.configName+"."+ext)
+		var configFilePlusExt string
+		if ext != "" {
+			configFilePlusExt = v.configName + "." + ext
+		} else {
+			configFilePlusExt = v.configName
+		}
+		jww.DEBUG.Println("Checking for", filepath.Join(in, configFilePlusExt))
+		if b, _ := exists(v.fs, filepath.Join(in, configFilePlusExt)); b {
+			jww.DEBUG.Println("Found: ", filepath.Join(in, configFilePlusExt))
+			return filepath.Join(in, configFilePlusExt)
 		}
 	}
 
