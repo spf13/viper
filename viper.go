@@ -2105,6 +2105,11 @@ func (v *Viper) getConfigFile() (string, error) {
 	return v.configFile, nil
 }
 
+// GetConfigFilePath returns the path where Viper actually found the configfile it uses.
+func GetConfigFilePath() (string, error) {
+	return v.getConfigFile()
+}
+
 func (v *Viper) searchInPath(in string) (filename string) {
 	jww.DEBUG.Println("Searching for config in ", in)
 	for _, ext := range SupportedExts {
