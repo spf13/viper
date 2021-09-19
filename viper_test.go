@@ -342,6 +342,30 @@ func TestSearchInPath(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSearchInPath_extension(t *testing.T) {
+	filename := "config"
+	path := "/tmp"
+	file := filepath.Join(path, filename)
+	SetConfigName(filename)
+	SetConfigExtension("yaml")
+	AddConfigPath(path)
+	_, createErr := v.fs.Create(file+".yaml")
+	assert.NoError(t, createErr)
+
+	// also create a second file which we want to ignore
+	_, createErr2 := v.fs.Create(file+".json")
+	assert.NoError(t, createErr2)
+
+	defer func() {
+		_ = v.fs.Remove(file+".yaml")
+		_ = v.fs.Remove(file+".json")
+	}()
+
+	filename, err := v.getConfigFile()
+	assert.Equal(t, file+".yaml", filename)
+	assert.NoError(t, err)
+}
+
 func TestSearchInPath_FilesOnly(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
