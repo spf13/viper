@@ -1635,7 +1635,6 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
-
 	case "yaml", "yml", "json", "cue", "toml", "hcl", "tfvars":
 		err := decoderRegistry.Decode(format, buf.Bytes(), &c)
 		if err != nil {
@@ -1693,7 +1692,6 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
-    
 	case "yaml", "yml", "json", "cue", "toml", "hcl", "tfvars":
 		b, err := encoderRegistry.Encode(configType, c)
 		if err != nil {
