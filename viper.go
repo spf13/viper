@@ -379,11 +379,7 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
-<<<<<<< HEAD
-var SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
-=======
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
->>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
+var SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
@@ -1639,11 +1635,8 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
-<<<<<<< HEAD
-	case "yaml", "yml", "json", "cue", "toml", "hcl":
-=======
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars":
->>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
+
+	case "yaml", "yml", "json", "cue", "toml", "hcl", "tfvars":
 		err := decoderRegistry.Decode(format, buf.Bytes(), &c)
 		if err != nil {
 			return ConfigParseError{err}
@@ -1700,11 +1693,8 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
-<<<<<<< HEAD
-	case "yaml", "yml", "json", "cue", "toml", "hcl":
-=======
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars":
->>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
+    
+	case "yaml", "yml", "json", "cue", "toml", "hcl", "tfvars":
 		b, err := encoderRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
