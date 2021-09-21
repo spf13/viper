@@ -15,7 +15,7 @@ jobs:
       # that should be able to fail independently.
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.14', '1.15', '1.16', '1.17']
     env:
       VERBOSE: 1
