@@ -11,6 +11,9 @@ jobs:
     name: Build
     runs-on: ${{ matrix.os }}
     strategy:
+      # Fail fast is disabled because there are Go version specific features and tests
+      # that should be able to fail independently.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         go: ['1.14', '1.15', '1.16', '1.17']
