@@ -18,7 +18,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -109,18 +108,6 @@ func absPathify(inPath string) string {
 	jww.ERROR.Println("Couldn't discover absolute path")
 	jww.ERROR.Println(err)
 	return ""
-}
-
-// Check if file Exists
-func exists(fs afero.Fs, path string) (bool, error) {
-	stat, err := fs.Stat(path)
-	if err == nil {
-		return !stat.IsDir(), nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
 
 func stringInSlice(a string, list []string) bool {
