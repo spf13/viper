@@ -301,65 +301,140 @@ func (s *stringValue) String() string {
 	return string(*s)
 }
 
-func TestBasics(t *testing.T) {
-	SetConfigFile("/tmp/config.yaml")
-	filename, err := v.getConfigFile()
-	assert.Equal(t, "/tmp/config.yaml", filename)
-	assert.NoError(t, err)
-}
+func TestGetConfigFile(t *testing.T) {
+	t.Run("config file set", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
 
-func TestSearchInPath_WithoutConfigTypeSet(t *testing.T) {
-	filename := ".dotfilenoext"
-	path := "/tmp"
-	file := filepath.Join(path, filename)
-	SetConfigName(filename)
-	AddConfigPath(path)
-	_, createErr := v.fs.Create(file)
-	defer func() {
-		_ = v.fs.Remove(file)
-	}()
-	assert.NoError(t, createErr)
-	_, err := v.getConfigFile()
-	// unless config type is set, files without extension
-	// are not considered
-	assert.Error(t, err)
-}
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
 
-func TestSearchInPath(t *testing.T) {
-	filename := ".dotfilenoext"
-	path := "/tmp"
-	file := filepath.Join(path, filename)
-	SetConfigName(filename)
-	SetConfigType("yaml")
-	AddConfigPath(path)
-	_, createErr := v.fs.Create(file)
-	defer func() {
-		_ = v.fs.Remove(file)
-	}()
-	assert.NoError(t, createErr)
-	filename, err := v.getConfigFile()
-	assert.Equal(t, file, filename)
-	assert.NoError(t, err)
-}
+		_, err = fs.Create("/etc/viper/config.yaml")
+		require.NoError(t, err)
 
-func TestSearchInPath_FilesOnly(t *testing.T) {
-	fs := afero.NewMemMapFs()
+		v := New()
 
-	err := fs.Mkdir("/tmp/config", 0777)
-	require.NoError(t, err)
+		v.SetFs(fs)
+		v.AddConfigPath("/etc/viper")
+		v.SetConfigFile("/etc/viper/config.json")
 
-	_, err = fs.Create("/tmp/config/config.yaml")
-	require.NoError(t, err)
+		filename, err := v.getConfigFile()
+		assert.Equal(t, "/etc/viper/config.json", filename)
+		assert.NoError(t, err)
+	})
 
-	v := New()
+	t.Run("find file", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
 
-	v.SetFs(fs)
-	v.AddConfigPath("/tmp")
-	v.AddConfigPath("/tmp/config")
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
 
-	filename, err := v.getConfigFile()
-	assert.Equal(t, "/tmp/config/config.yaml", filename)
-	assert.NoError(t, err)
+		_, err = fs.Create("/etc/viper/config.yaml")
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/etc/viper")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, "/etc/viper/config.yaml", filename)
+		assert.NoError(t, err)
+	})
+
+	t.Run("find files only", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/etc/config", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/etc/config/config.yaml")
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/etc")
+		v.AddConfigPath("/etc/config")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, "/etc/config/config.yaml", filename)
+		assert.NoError(t, err)
+	})
+
+	t.Run("precedence", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/home/viper", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/home/viper/config.zml")
+		require.NoError(t, err)
+
+		err = fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/etc/viper/config.bml")
+		require.NoError(t, err)
+
+		err = fs.Mkdir("/var/viper", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/var/viper/config.yaml")
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/home/viper")
+		v.AddConfigPath("/etc/viper")
+		v.AddConfigPath("/var/viper")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, "/var/viper/config.yaml", filename)
+		assert.NoError(t, err)
+	})
+
+	t.Run("without extension", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/etc/viper/.dotfilenoext")
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/etc/viper")
+		v.SetConfigName(".dotfilenoext")
+		v.SetConfigType("yaml")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, "/etc/viper/.dotfilenoext", filename)
+		assert.NoError(t, err)
+	})
+
+	t.Run("without extension and config type", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
+
+		_, err = fs.Create("/etc/viper/.dotfilenoext")
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/etc/viper")
+		v.SetConfigName(".dotfilenoext")
+
+		_, err = v.getConfigFile()
+		// unless config type is set, files without extension
+		// are not considered
+		assert.Error(t, err)
+	})
 }
 
 func TestDefault(t *testing.T) {
