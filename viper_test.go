@@ -437,6 +437,58 @@ func TestGetConfigFile(t *testing.T) {
 	})
 }
 
+func TestReadInConfig(t *testing.T) {
+	t.Run("config file set", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
+
+		file, err := fs.Create("/etc/viper/config.yaml")
+		require.NoError(t, err)
+
+		_, err = file.Write([]byte(`key: value`))
+		require.NoError(t, err)
+
+		file.Close()
+
+		v := New()
+
+		v.SetFs(fs)
+		v.SetConfigFile("/etc/viper/config.yaml")
+
+		err = v.ReadInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
+	})
+
+	t.Run("find file", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir("/etc/viper", 0777)
+		require.NoError(t, err)
+
+		file, err := fs.Create("/etc/viper/config.yaml")
+		require.NoError(t, err)
+
+		_, err = file.Write([]byte(`key: value`))
+		require.NoError(t, err)
+
+		file.Close()
+
+		v := New()
+
+		v.SetFs(fs)
+		v.AddConfigPath("/etc/viper")
+
+		err = v.ReadInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
+	})
+}
+
 func TestDefault(t *testing.T) {
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))
