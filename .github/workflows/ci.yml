@@ -7,8 +7,8 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ${{ matrix.os }}
     strategy:
       # Fail fast is disabled because there are Go version specific features and tests
@@ -18,9 +18,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.14', '1.15', '1.16', '1.17']
     env:
-      VERBOSE: 1
       GOFLAGS: -mod=readonly
-      GOPROXY: https://proxy.golang.org
 
     steps:
       - name: Set up Go
@@ -31,10 +29,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Test
+        run: go test -race -v ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=readonly
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.40.1
-
-      - name: Test
-        run: go test -race -v ./...
