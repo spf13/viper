@@ -1,3 +1,6 @@
+//go:build !go1.17
+// +build !go1.17
+
 package testutil
 
 import (
@@ -16,11 +19,6 @@ import (
 // environment variable is returned to its original value.
 func Setenv(t *testing.T, name, val string) {
 	setenv(t, name, val, true)
-}
-
-// Unsetenv unsets an environment variable for the duration of a test.
-func Unsetenv(t *testing.T, name string) {
-	setenv(t, name, "", false)
 }
 
 // setenv sets or unsets an environment variable to a temporary value for the

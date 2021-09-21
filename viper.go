@@ -113,6 +113,9 @@ func init() {
 
 		encoderRegistry.RegisterEncoder("hcl", codec)
 		decoderRegistry.RegisterDecoder("hcl", codec)
+
+		encoderRegistry.RegisterEncoder("tfvars", codec)
+		decoderRegistry.RegisterDecoder("tfvars", codec)
 	}
 }
 
@@ -337,7 +340,7 @@ func NewWithOptions(opts ...Option) *Viper {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+	SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
 }
 
@@ -376,7 +379,11 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
+<<<<<<< HEAD
 var SupportedExts = []string{"json", "cue", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "dotenv", "env", "ini"}
+=======
+var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
+>>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
 
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "consul", "firestore"}
@@ -1412,11 +1419,13 @@ func (v *Viper) realKey(key string) string {
 func InConfig(key string) bool { return v.InConfig(key) }
 
 func (v *Viper) InConfig(key string) bool {
-	// if the requested key is an alias, then return the proper key
-	key = v.realKey(key)
+	lcaseKey := strings.ToLower(key)
 
-	_, exists := v.config[key]
-	return exists
+	// if the requested key is an alias, then return the proper key
+	lcaseKey = v.realKey(lcaseKey)
+	path := strings.Split(lcaseKey, v.keyDelim)
+
+	return v.searchIndexableWithPathPrefixes(v.config, path) != nil
 }
 
 // SetDefault sets the default value for this key.
@@ -1587,7 +1596,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	var configType string
 
 	ext := filepath.Ext(filename)
-	if ext != "" {
+	if ext != "" && ext != filepath.Base(filename) {
 		configType = ext[1:]
 	} else {
 		configType = v.configType
@@ -1630,7 +1639,11 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
+<<<<<<< HEAD
 	case "yaml", "yml", "json", "cue", "toml", "hcl":
+=======
+	case "yaml", "yml", "json", "toml", "hcl", "tfvars":
+>>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
 		err := decoderRegistry.Decode(format, buf.Bytes(), &c)
 		if err != nil {
 			return ConfigParseError{err}
@@ -1687,7 +1700,11 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
+<<<<<<< HEAD
 	case "yaml", "yml", "json", "cue", "toml", "hcl":
+=======
+	case "yaml", "yml", "json", "toml", "hcl", "tfvars":
+>>>>>>> ce82267a111f9e5711bfbb03acf954188dcd38fb
 		b, err := encoderRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
