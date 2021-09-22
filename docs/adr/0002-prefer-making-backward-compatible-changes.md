@@ -10,6 +10,8 @@ Referenced by [3. Extract components with heavy dependencies from the core](0003
 
 Referenced by [4. Use separate GitHub organization for new packages](0004-use-separate-github-organization-for-new-packages.md)
 
+Referenced by [7. Drop writing support](0007-drop-writing-support.md)
+
 ## Context
 
 Architecturally speaking Viper became a giant over the years: it hides a lot of complexity behind a simple interface.
