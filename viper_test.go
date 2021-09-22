@@ -2346,9 +2346,12 @@ func TestWatchFile(t *testing.T) {
 		t.Logf("test config file: %s\n", configFile)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
+		var wgDoneOnce sync.Once // OnConfigChange is called twice on Windows
 		v.OnConfigChange(func(in fsnotify.Event) {
 			t.Logf("config file changed")
-			wg.Done()
+			wgDoneOnce.Do(func() {
+				wg.Done()
+			})
 		})
 		v.WatchConfig()
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
