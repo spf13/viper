@@ -20,7 +20,6 @@ linters:
         - exhaustive
         - exportloopref
         - gci
-        - goconst
         - gofmt
         - gofumpt
         - goimports
@@ -62,6 +61,7 @@ linters:
         # - gochecknoglobals
         # - gochecknoinits
         # - gocognit
+        # - goconst
         # - gocritic
         # - gocyclo
         # - godot
