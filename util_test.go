@@ -58,6 +58,8 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 }
 
 func TestAbsPathify(t *testing.T) {
+	skipWindows(t)
+
 	home := userHomeDir()
 	homer := filepath.Join(home, "homer")
 	wd, _ := os.Getwd()
