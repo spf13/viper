@@ -1808,8 +1808,6 @@ func TestWriteConfigDotEnv(t *testing.T) {
 }
 
 func TestSafeWriteConfig(t *testing.T) {
-	skipWindows(t)
-
 	v := New()
 	fs := afero.NewMemMapFs()
 	v.SetFs(fs)
@@ -1818,7 +1816,7 @@ func TestSafeWriteConfig(t *testing.T) {
 	v.SetConfigType("yaml")
 	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
 	require.NoError(t, v.SafeWriteConfig())
-	read, err := afero.ReadFile(fs, "/test/c.yaml")
+	read, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/test/c.yaml"))
 	require.NoError(t, err)
 	assert.Equal(t, yamlWriteExpected, read)
 }
@@ -1833,11 +1831,9 @@ func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
 }
 
 func TestSafeWriteConfigWithExistingFile(t *testing.T) {
-	skipWindows(t)
-
 	v := New()
 	fs := afero.NewMemMapFs()
-	fs.Create("/test/c.yaml")
+	fs.Create(testutil.AbsFilePath(t, "/test/c.yaml"))
 	v.SetFs(fs)
 	v.AddConfigPath("/test")
 	v.SetConfigName("c")
@@ -1874,11 +1870,9 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 }
 
 func TestWriteHiddenFile(t *testing.T) {
-	skipWindows(t)
-
 	v := New()
 	fs := afero.NewMemMapFs()
-	fs.Create("/test/.config")
+	fs.Create(testutil.AbsFilePath(t, "/test/.config"))
 	v.SetFs(fs)
 
 	v.SetConfigName(".config")
