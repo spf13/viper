@@ -13,8 +13,6 @@ import (
 )
 
 func TestFinder(t *testing.T) {
-	skipWindows(t)
-
 	t.Parallel()
 
 	fsys := fstest.MapFS{

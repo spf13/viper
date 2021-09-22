@@ -6,7 +6,7 @@ package viper
 import (
 	"errors"
 	"io/fs"
-	"path/filepath"
+	"path"
 )
 
 type finder struct {
@@ -18,10 +18,10 @@ type finder struct {
 }
 
 func (f finder) Find(fsys fs.FS) (string, error) {
-	for _, path := range f.paths {
+	for _, searchPath := range f.paths {
 		for _, fileName := range f.fileNames {
 			for _, extension := range f.extensions {
-				filePath := filepath.Join(path, fileName+"."+extension)
+				filePath := path.Join(searchPath, fileName+"."+extension)
 
 				ok, err := fileExists(fsys, filePath)
 				if err != nil {
@@ -34,7 +34,7 @@ func (f finder) Find(fsys fs.FS) (string, error) {
 			}
 
 			if f.withoutExtension {
-				filePath := filepath.Join(path, fileName)
+				filePath := path.Join(searchPath, fileName)
 
 				ok, err := fileExists(fsys, filePath)
 				if err != nil {
