@@ -45,7 +45,7 @@ to work within an application, and can handle all types of configuration needs
 and formats. It supports:
 
 * setting defaults
-* reading from JSON, TOML, YAML, HCL, envfile and Java properties config files
+* reading from JSON, CUE, TOML, YAML, HCL, envfile and Java properties config files
 * live watching and re-reading of config files (optional)
 * reading from environment variables
 * reading from remote config systems (etcd or Consul), and watching changes
@@ -64,7 +64,7 @@ Viper is here to help with that.
 
 Viper does the following for you:
 
-1. Find, load, and unmarshal a configuration file in JSON, TOML, YAML, HCL, INI, envfile or Java properties formats.
+1. Find, load, and unmarshal a configuration file in JSON, CUE, TOML, YAML, HCL, INI, envfile or Java properties formats.
 2. Provide a mechanism to set default values for your different configuration options.
 3. Provide a mechanism to set override values for options specified through command line flags.
 4. Provide an alias system to easily rename parameters without breaking existing code.
@@ -102,7 +102,7 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 ### Reading Config Files
 
 Viper requires minimal configuration so it knows where to look for config files.
-Viper supports JSON, TOML, YAML, HCL, INI, envfile and Java Properties files. Viper can search multiple paths, but
+Viper supports JSON, CUE, TOML, YAML, HCL, INI, envfile and Java Properties files. Viper can search multiple paths, but
 currently a single Viper instance only supports a single configuration file.
 Viper does not default to any configuration search paths leaving defaults decision
 to an application.
@@ -408,7 +408,7 @@ package:
 
 `import _ "github.com/spf13/viper/remote"`
 
-Viper will read a config string (as JSON, TOML, YAML, HCL or envfile) retrieved from a path
+Viper will read a config string (as JSON, CUE, TOML, YAML, HCL or envfile) retrieved from a path
 in a Key/Value store such as etcd or Consul.  These values take precedence over
 default values, but are overridden by configuration values retrieved from disk,
 flags, or environment variables.

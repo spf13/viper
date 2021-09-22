@@ -85,6 +85,21 @@ var jsonExample = []byte(`{
     }
 }`)
 
+var cueExample = []byte(`
+id: "0001",
+type: "donut"
+name: "Cake",
+ppu: 0.55,
+batters: {
+	batter: [
+		{type: "Regular"},
+		{type: "Chocolate"},
+		{type: "Blueberry"},
+		{type: "Devil's Food"},
+	],
+}
+`)
+
 var hclExample = []byte(`
 id = "0001"
 type = "donut"
@@ -148,6 +163,10 @@ func initConfigs() {
 	r = bytes.NewReader(jsonExample)
 	unmarshalReader(r, v.config)
 
+	SetConfigType("cue")
+	r = bytes.NewReader(cueExample)
+	unmarshalReader(r, v.config)
+
 	SetConfigType("hcl")
 	r = bytes.NewReader(hclExample)
 	unmarshalReader(r, v.config)
@@ -191,6 +210,14 @@ func initJSON() {
 	Reset()
 	SetConfigType("json")
 	r := bytes.NewReader(jsonExample)
+
+	unmarshalReader(r, v.config)
+}
+
+func initCUE() {
+	Reset()
+	SetConfigType("cue")
+	r := bytes.NewReader(cueExample)
 
 	unmarshalReader(r, v.config)
 }
@@ -565,6 +592,17 @@ func TestYML(t *testing.T) {
 func TestJSON(t *testing.T) {
 	initJSON()
 	assert.Equal(t, "0001", Get("id"))
+}
+
+func TestCUE(t *testing.T) {
+	initCUE()
+	assert.Equal(t, "0001", Get("id"))
+	assert.Equal(t, 0.55, Get("ppu"))
+	assert.Equal(t, "donut", Get("type"))
+	assert.Equal(t, "Cake", Get("name"))
+	Set("id", "0002")
+	assert.Equal(t, "0002", Get("id"))
+	assert.NotEqual(t, "cronut", Get("type"))
 }
 
 func TestProperties(t *testing.T) {

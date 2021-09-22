@@ -3,6 +3,7 @@ module github.com/spf13/viper
 go 1.12
 
 require (
+	cuelang.org/go v0.4.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.5
