@@ -6,6 +6,8 @@ Date: 2021-07-20
 
 Proposed
 
+Referenced by [8. Deprecate the global Viper instance](0008-deprecate-the-global-viper-instance.md)
+
 ## Context
 
 The Viper struct currently acts as a facade for reading, writing and watching configuration for changes.
