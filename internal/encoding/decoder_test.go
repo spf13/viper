@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ func TestDecoderRegistry_RegisterDecoder(t *testing.T) {
 		}
 
 		err = registry.RegisterDecoder("myformat", decoder{})
-		if err != ErrDecoderFormatAlreadyRegistered {
+		if !errors.Is(err, ErrDecoderFormatAlreadyRegistered) {
 			t.Fatalf("expected ErrDecoderFormatAlreadyRegistered, got: %v", err)
 		}
 	})
@@ -70,7 +71,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 		var v string
 
 		err := registry.Decode("myformat", []byte("some value"), &v)
-		if err != ErrDecoderNotFound {
+		if !errors.Is(err, ErrDecoderNotFound) {
 			t.Fatalf("expected ErrDecoderNotFound, got: %v", err)
 		}
 	})

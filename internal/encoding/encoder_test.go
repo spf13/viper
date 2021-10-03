@@ -1,6 +1,7 @@
 package encoding
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -31,7 +32,7 @@ func TestEncoderRegistry_RegisterEncoder(t *testing.T) {
 		}
 
 		err = registry.RegisterEncoder("myformat", encoder{})
-		if err != ErrEncoderFormatAlreadyRegistered {
+		if !errors.Is(err, ErrEncoderFormatAlreadyRegistered) {
 			t.Fatalf("expected ErrEncoderFormatAlreadyRegistered, got: %v", err)
 		}
 	})
@@ -63,7 +64,7 @@ func TestEncoderRegistry_Decode(t *testing.T) {
 		registry := NewEncoderRegistry()
 
 		_, err := registry.Encode("myformat", "some value")
-		if err != ErrEncoderNotFound {
+		if !errors.Is(err, ErrEncoderNotFound) {
 			t.Fatalf("expected ErrEncoderNotFound, got: %v", err)
 		}
 	})

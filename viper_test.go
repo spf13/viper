@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -1840,7 +1841,8 @@ func TestSafeWriteConfigWithExistingFile(t *testing.T) {
 	v.SetConfigType("yaml")
 	err := v.SafeWriteConfig()
 	require.Error(t, err)
-	_, ok := err.(ConfigFileAlreadyExistsError)
+	var cfaeErr ConfigFileAlreadyExistsError
+	ok := errors.As(err, &cfaeErr)
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
 
@@ -1865,7 +1867,8 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 	v.SetFs(fs)
 	err := v.SafeWriteConfigAs("/test/c.yaml")
 	require.Error(t, err)
-	_, ok := err.(ConfigFileAlreadyExistsError)
+	var cfaeErr ConfigFileAlreadyExistsError
+	ok := errors.As(err, &cfaeErr)
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
 
