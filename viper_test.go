@@ -1915,6 +1915,7 @@ fu: bar
 var jsonMergeExampleTgt = []byte(`
 {
 	"hello": {
+		"foo": null,
 		"pop": 123456
 	}
 }
@@ -1923,6 +1924,7 @@ var jsonMergeExampleTgt = []byte(`
 var jsonMergeExampleSrc = []byte(`
 {
 	"hello": {
+		"foo": "foo str",
 		"pop": "pop str"
 	}
 }
@@ -2013,6 +2015,10 @@ func TestMergeConfigOverrideType(t *testing.T) {
 
 	if pop := v.GetString("hello.pop"); pop != "pop str" {
 		t.Fatalf("pop != \"pop str\", = %s", pop)
+	}
+
+	if foo := v.GetString("hello.foo"); foo != "foo str" {
+		t.Fatalf("foo != \"foo str\", = %s", foo)
 	}
 }
 
