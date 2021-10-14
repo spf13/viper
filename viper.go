@@ -1808,7 +1808,7 @@ func mergeMaps(
 			v.logger.Trace("merging maps")
 			tsv, ok := sv.(map[string]interface{})
 			if !ok {
-				jww.ERROR.Printf(
+				v.logger.Error(
 					"Could not cast sv to map[string]interface{}; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
 					sk, svType, tvType, sv, tv)
 				continue
