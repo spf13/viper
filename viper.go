@@ -1859,8 +1859,8 @@ func (v *Viper) WatchRemoteConfig() error {
 	return v.watchKeyValueConfig()
 }
 
-func (v *Viper) WatchRemoteConfigOnChannel() error {
-	return v.watchKeyValueConfigOnChannel()
+func (v *Viper) WatchRemoteConfigOnChannel(run func()) error {
+	return v.watchKeyValueConfigOnChannel(run)
 }
 
 // Retrieve the first found remote configuration.
@@ -1894,7 +1894,7 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 }
 
 // Retrieve the first found remote configuration.
-func (v *Viper) watchKeyValueConfigOnChannel() error {
+func (v *Viper) watchKeyValueConfigOnChannel(run func()) error {
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		// Todo: Add quit channel
@@ -1903,6 +1903,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
 				v.unmarshalReader(reader, v.kvstore)
+				run()
 			}
 		}(respc)
 		return nil
