@@ -1903,7 +1903,9 @@ func (v *Viper) watchKeyValueConfigOnChannel(run func()) error {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
 				v.unmarshalReader(reader, v.kvstore)
-				run()
+				if b.Error == nil {
+					run()
+				}
 			}
 		}(respc)
 		return nil
