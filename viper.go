@@ -259,7 +259,8 @@ type Viper struct {
 	// This will only be used if the configuration read is a properties file.
 	properties *properties.Properties
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChange  func(fsnotify.Event)
+	onGetCallMetric func(key string, value interface{})
 }
 
 // New returns an initialized Viper instance.
@@ -588,6 +589,11 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 	return nil
 }
 
+func AddGetMetric(getCallMetric func(key string, val interface{})) { v.AddGetMetric(getCallMetric) }
+func (v *Viper) AddGetMetric(getCallMetric func(key string, val interface{})) {
+	v.onGetCallMetric = getCallMetric
+}
+
 func (v *Viper) providerPathExists(p *defaultRemoteProvider) bool {
 	for _, y := range v.remoteProviders {
 		if reflect.DeepEqual(y, p) {
@@ -836,6 +842,9 @@ func Get(key string) interface{} { return v.Get(key) }
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, true)
+	if v.onGetCallMetric != nil {
+		v.onGetCallMetric(key, val)
+	}
 	if val == nil {
 		return nil
 	}
