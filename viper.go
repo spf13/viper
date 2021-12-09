@@ -1730,9 +1730,12 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		for i := 0; i < len(keys); i++ {
 			key := keys[i]
 			lastSep := strings.LastIndex(key, ".")
-			sectionName := key[:(lastSep)]
+			sectionName := ""
+			if lastSep > 0 {
+				sectionName = key[:(lastSep)]
+			}
 			keyName := key[(lastSep + 1):]
-			if sectionName == "default" {
+			if sectionName == ini.DefaultSection {
 				sectionName = ""
 			}
 			cfg.Section(sectionName).Key(keyName).SetValue(v.GetString(key))
