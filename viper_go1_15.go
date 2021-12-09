@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/afero"
-	jww "github.com/spf13/jwalterweatherman"
 )
 
 // Search all configPaths for any config file.
 // Returns the first path that exists (and is a config file).
 func (v *Viper) findConfigFile() (string, error) {
-	jww.INFO.Println("Searching for config in ", v.configPaths)
+	v.logger.Info("searching for config in paths", "paths", v.configPaths)
 
 	for _, cp := range v.configPaths {
 		file := v.searchInPath(cp)
@@ -27,11 +26,11 @@ func (v *Viper) findConfigFile() (string, error) {
 }
 
 func (v *Viper) searchInPath(in string) (filename string) {
-	jww.DEBUG.Println("Searching for config in ", in)
+	v.logger.Debug("searching for config in path", "path", in)
 	for _, ext := range SupportedExts {
-		jww.DEBUG.Println("Checking for", filepath.Join(in, v.configName+"."+ext))
+		v.logger.Debug("checking if file exists", "file", filepath.Join(in, v.configName+"."+ext))
 		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
-			jww.DEBUG.Println("Found: ", filepath.Join(in, v.configName+"."+ext))
+			v.logger.Debug("found file", "file", filepath.Join(in, v.configName+"."+ext))
 			return filepath.Join(in, v.configName+"."+ext)
 		}
 	}

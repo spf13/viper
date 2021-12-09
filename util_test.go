@@ -87,7 +87,7 @@ func TestAbsPathify(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := absPathify(test.input)
+		got := absPathify(jwwLogger{}, test.input)
 		if got != test.output {
 			t.Errorf("Got %v\nexpected\n%q", got, test.output)
 		}
