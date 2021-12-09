@@ -39,7 +39,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
-	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/pflag"
 	"github.com/subosito/gotenv"
 	"gopkg.in/ini.v1"
@@ -260,6 +259,8 @@ type Viper struct {
 	properties *properties.Properties
 
 	onConfigChange func(fsnotify.Event)
+
+	logger Logger
 }
 
 // New returns an initialized Viper instance.
@@ -277,6 +278,7 @@ func New() *Viper {
 	v.env = make(map[string][]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
+	v.logger = jwwLogger{}
 
 	return v
 }
@@ -517,8 +519,9 @@ func AddConfigPath(in string) { v.AddConfigPath(in) }
 
 func (v *Viper) AddConfigPath(in string) {
 	if in != "" {
-		absin := absPathify(in)
-		jww.INFO.Println("adding", absin, "to paths to search")
+		absin := absPathify(v.logger, in)
+
+		v.logger.Info("adding path to search paths", "path", absin)
 		if !stringInSlice(absin, v.configPaths) {
 			v.configPaths = append(v.configPaths, absin)
 		}
@@ -542,7 +545,8 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 		return UnsupportedRemoteProviderError(provider)
 	}
 	if provider != "" && endpoint != "" {
-		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
+		v.logger.Info("adding remote provider", "provider", provider, "endpoint", endpoint)
+
 		rp := &defaultRemoteProvider{
 			endpoint: endpoint,
 			provider: provider,
@@ -574,7 +578,8 @@ func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring 
 		return UnsupportedRemoteProviderError(provider)
 	}
 	if provider != "" && endpoint != "" {
-		jww.INFO.Printf("adding %s:%s to remote provider list", provider, endpoint)
+		v.logger.Info("adding remote provider", "provider", provider, "endpoint", endpoint)
+
 		rp := &defaultRemoteProvider{
 			endpoint:      endpoint,
 			provider:      provider,
@@ -1390,14 +1395,15 @@ func (v *Viper) registerAlias(alias string, key string) {
 			v.aliases[alias] = key
 		}
 	} else {
-		jww.WARN.Println("Creating circular reference alias", alias, key, v.realKey(key))
+		v.logger.Warn("creating circular reference alias", "alias", alias, "key", key, "real_key", v.realKey(key))
 	}
 }
 
 func (v *Viper) realKey(key string) string {
 	newkey, exists := v.aliases[key]
 	if exists {
-		jww.DEBUG.Println("Alias", key, "to", newkey)
+		v.logger.Debug("key is an alias", "alias", key, "to", newkey)
+
 		return v.realKey(newkey)
 	}
 	return key
@@ -1458,7 +1464,7 @@ func (v *Viper) Set(key string, value interface{}) {
 func ReadInConfig() error { return v.ReadInConfig() }
 
 func (v *Viper) ReadInConfig() error {
-	jww.INFO.Println("Attempting to read in config file")
+	v.logger.Info("attempting to read in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err
@@ -1468,7 +1474,7 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	jww.DEBUG.Println("Reading file: ", filename)
+	v.logger.Debug("reading file", "file", filename)
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
 		return err
@@ -1489,7 +1495,7 @@ func (v *Viper) ReadInConfig() error {
 func MergeInConfig() error { return v.MergeInConfig() }
 
 func (v *Viper) MergeInConfig() error {
-	jww.INFO.Println("Attempting to merge in config file")
+	v.logger.Info("attempting to merge in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err
@@ -1580,7 +1586,8 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 }
 
 func (v *Viper) writeConfig(filename string, force bool) error {
-	jww.INFO.Println("Attempting to write configuration to file.")
+	v.logger.Info("attempting to write configuration to file")
+
 	var configType string
 
 	ext := filepath.Ext(filename)
@@ -1796,7 +1803,7 @@ func mergeMaps(
 	for sk, sv := range src {
 		tk := keyExists(sk, tgt)
 		if tk == "" {
-			jww.TRACE.Printf("tk=\"\", tgt[%s]=%v", sk, sv)
+			v.logger.Trace("", "tk", "\"\"", fmt.Sprintf("tgt[%s]", sk), sv)
 			tgt[sk] = sv
 			if itgt != nil {
 				itgt[sk] = sv
@@ -1806,7 +1813,7 @@ func mergeMaps(
 
 		tv, ok := tgt[tk]
 		if !ok {
-			jww.TRACE.Printf("tgt[%s] != ok, tgt[%s]=%v", tk, sk, sv)
+			v.logger.Trace("", fmt.Sprintf("ok[%s]", tk), false, fmt.Sprintf("tgt[%s]", sk), sv)
 			tgt[sk] = sv
 			if itgt != nil {
 				itgt[sk] = sv
@@ -1817,27 +1824,38 @@ func mergeMaps(
 		svType := reflect.TypeOf(sv)
 		tvType := reflect.TypeOf(tv)
 		if tvType != nil && svType != tvType { // Allow for the target to be nil
-			jww.ERROR.Printf(
-				"svType != tvType; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
-				sk, svType, tvType, sv, tv)
+			v.logger.Error(
+				"svType != tvType",
+				"key", sk,
+				"st", svType,
+				"tt", tvType,
+				"sv", sv,
+				"tv", tv,
+			)
 			continue
 		}
 
-		jww.TRACE.Printf("processing key=%s, st=%v, tt=%v, sv=%v, tv=%v",
-			sk, svType, tvType, sv, tv)
+		v.logger.Trace(
+			"processing",
+			"key", sk,
+			"st", svType,
+			"tt", tvType,
+			"sv", sv,
+			"tv", tv,
+		)
 
 		switch ttv := tv.(type) {
 		case map[interface{}]interface{}:
-			jww.TRACE.Printf("merging maps (must convert)")
+			v.logger.Trace("merging maps (must convert)")
 			tsv := sv.(map[interface{}]interface{})
 			ssv := castToMapStringInterface(tsv)
 			stv := castToMapStringInterface(ttv)
 			mergeMaps(ssv, stv, ttv)
 		case map[string]interface{}:
-			jww.TRACE.Printf("merging maps")
+			v.logger.Trace("merging maps")
 			mergeMaps(sv.(map[string]interface{}), ttv, nil)
 		default:
-			jww.TRACE.Printf("setting value")
+			v.logger.Trace("setting value")
 			tgt[tk] = sv
 			if itgt != nil {
 				itgt[tk] = sv
@@ -1872,7 +1890,7 @@ func (v *Viper) getKeyValueConfig() error {
 	for _, rp := range v.remoteProviders {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
-			jww.ERROR.Printf("get remote config: %s", err)
+			v.logger.Error(fmt.Errorf("get remote config: %w", err).Error())
 
 			continue
 		}
