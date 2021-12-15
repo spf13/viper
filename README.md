@@ -195,12 +195,12 @@ var yamlExample = []byte(`
 Hacker: true
 name: steve
 hobbies:
-- skateboarding
-- snowboarding
-- go
+    - skateboarding
+    - snowboarding
+    - go
 clothing:
-  jacket: leather
-  trousers: denim
+    jacket: leather
+    trousers: denim
 age: 35
 eyes : brown
 beard: true
@@ -794,8 +794,8 @@ You can use your favorite format's marshaller with the config returned by `AllSe
 
 ```go
 import (
-	yaml "gopkg.in/yaml.v2"
-	// ...
+    yaml "gopkg.in/yaml.v3"
+    // ...
 )
 
 func yamlStringSettings() string {

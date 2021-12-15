@@ -9,38 +9,38 @@ import (
 const original = `# key-value pair
 key: value
 list:
-- item1
-- item2
-- item3
+    - item1
+    - item2
+    - item3
 map:
-  key: value
+    key: value
 
 # nested
 # map
 nested_map:
-  map:
-    key: value
-    list:
-    - item1
-    - item2
-    - item3
+    map:
+        key: value
+        list:
+            - item1
+            - item2
+            - item3
 `
 
 // encoded form of the data
 const encoded = `key: value
 list:
-- item1
-- item2
-- item3
-map:
-  key: value
-nested_map:
-  map:
-    key: value
-    list:
     - item1
     - item2
     - item3
+map:
+    key: value
+nested_map:
+    map:
+        key: value
+        list:
+            - item1
+            - item2
+            - item3
 `
 
 // decoded form of the data
@@ -54,11 +54,11 @@ var decoded = map[string]interface{}{
 		"item2",
 		"item3",
 	},
-	"map": map[interface{}]interface{}{
+	"map": map[string]interface{}{
 		"key": "value",
 	},
-	"nested_map": map[interface{}]interface{}{
-		"map": map[interface{}]interface{}{
+	"nested_map": map[string]interface{}{
+		"map": map[string]interface{}{
 			"key": "value",
 			"list": []interface{}{
 				"item1",
