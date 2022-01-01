@@ -1,3 +1,6 @@
+//go:build !viper_toml2
+// +build !viper_toml2
+
 package toml
 
 import (
