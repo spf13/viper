@@ -21,3 +21,12 @@ The solution is easy: switch to using Go Modules.
 Please refer to the [wiki](https://github.com/golang/go/wiki/Modules) on how to do that.
 
 **tl;dr* `export GO111MODULE=on`
+
+## Unquoted 'y' and 'n' characters get replaced with _true_ and _false_ when reading a YAML file
+
+This is a YAML 1.1 feature according to [go-yaml/yaml#740](https://github.com/go-yaml/yaml/issues/740).
+
+Potential solutions are:
+
+1. Quoting values resolved as boolean
+1. Upgrading to YAML v3 (for the time being this is possible by passing the `viper_yaml3` tag to your build)
