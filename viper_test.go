@@ -33,21 +33,21 @@ import (
 	"github.com/spf13/viper/internal/testutil"
 )
 
-var yamlExample = []byte(`Hacker: true
-name: steve
-hobbies:
-- skateboarding
-- snowboarding
-- go
-clothing:
-  jacket: leather
-  trousers: denim
-  pants:
-    size: large
-age: 35
-eyes : brown
-beard: true
-`)
+// var yamlExample = []byte(`Hacker: true
+// name: steve
+// hobbies:
+//     - skateboarding
+//     - snowboarding
+//     - go
+// clothing:
+//     jacket: leather
+//     trousers: denim
+//     pants:
+//         size: large
+// age: 35
+// eyes : brown
+// beard: true
+// `)
 
 var yamlExampleWithExtras = []byte(`Existing: true
 Bogus: true
@@ -263,13 +263,13 @@ func initDirs(t *testing.T) (string, string, func()) {
 	require.Nil(t, err)
 
 	for _, dir := range testDirs {
-		err = os.Mkdir(dir, 0750)
+		err = os.Mkdir(dir, 0o750)
 		assert.Nil(t, err)
 
 		err = ioutil.WriteFile(
 			path.Join(dir, config+".toml"),
 			[]byte("key = \"value is "+dir+"\"\n"),
-			0640)
+			0o640)
 		assert.Nil(t, err)
 	}
 
@@ -305,7 +305,7 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("config file set", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
@@ -325,7 +325,7 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("find file", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
@@ -344,7 +344,7 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("find files only", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/config"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/config"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/config/config.yaml"))
@@ -364,19 +364,19 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("precedence", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/home/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/home/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/home/viper/config.zml"))
 		require.NoError(t, err)
 
-		err = fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err = fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.bml"))
 		require.NoError(t, err)
 
-		err = fs.Mkdir(testutil.AbsFilePath(t, "/var/viper"), 0777)
+		err = fs.Mkdir(testutil.AbsFilePath(t, "/var/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/var/viper/config.yaml"))
@@ -397,7 +397,7 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("without extension", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/.dotfilenoext"))
@@ -418,7 +418,7 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("without extension and config type", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/.dotfilenoext"))
@@ -441,7 +441,7 @@ func TestReadInConfig(t *testing.T) {
 	t.Run("config file set", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir("/etc/viper", 0777)
+		err := fs.Mkdir("/etc/viper", 0o777)
 		require.NoError(t, err)
 
 		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
@@ -466,7 +466,7 @@ func TestReadInConfig(t *testing.T) {
 	t.Run("find file", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
@@ -1558,21 +1558,21 @@ p_ppu = 0.55
 p_batters.batter.type = Regular
 `)
 
-var yamlWriteExpected = []byte(`age: 35
-beard: true
-clothing:
-  jacket: leather
-  pants:
-    size: large
-  trousers: denim
-eyes: brown
-hacker: true
-hobbies:
-- skateboarding
-- snowboarding
-- go
-name: steve
-`)
+// var yamlWriteExpected = []byte(`age: 35
+// beard: true
+// clothing:
+//     jacket: leather
+//     pants:
+//         size: large
+//     trousers: denim
+// eyes: brown
+// hacker: true
+// hobbies:
+//     - skateboarding
+//     - snowboarding
+//     - go
+// name: steve
+// `)
 
 func TestWriteConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
@@ -1912,6 +1912,24 @@ hello:
 fu: bar
 `)
 
+var jsonMergeExampleTgt = []byte(`
+{
+	"hello": {
+		"foo": null,
+		"pop": 123456
+	}
+}
+`)
+
+var jsonMergeExampleSrc = []byte(`
+{
+	"hello": {
+		"foo": "foo str",
+		"pop": "pop str"
+	}
+}
+`)
+
 func TestMergeConfig(t *testing.T) {
 	v := New()
 	v.SetConfigType("yml")
@@ -1981,6 +1999,26 @@ func TestMergeConfig(t *testing.T) {
 
 	if fu := v.GetString("fu"); fu != "bar" {
 		t.Fatalf("fu != \"bar\", = %s", fu)
+	}
+}
+
+func TestMergeConfigOverrideType(t *testing.T) {
+	v := New()
+	v.SetConfigType("json")
+	if err := v.ReadConfig(bytes.NewBuffer(jsonMergeExampleTgt)); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := v.MergeConfig(bytes.NewBuffer(jsonMergeExampleSrc)); err != nil {
+		t.Fatal(err)
+	}
+
+	if pop := v.GetString("hello.pop"); pop != "pop str" {
+		t.Fatalf("pop != \"pop str\", = %s", pop)
+	}
+
+	if foo := v.GetString("hello.foo"); foo != "foo str" {
+		t.Fatalf("foo != \"foo str\", = %s", foo)
 	}
 }
 
@@ -2290,7 +2328,7 @@ func newViperWithConfigFile(t *testing.T) (*Viper, string, func()) {
 	watchDir, err := ioutil.TempDir("", "")
 	require.Nil(t, err)
 	configFile := path.Join(watchDir, "config.yaml")
-	err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0640)
+	err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
 	require.Nil(t, err)
 	cleanup := func() {
 		os.RemoveAll(watchDir)
@@ -2307,11 +2345,11 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func
 	watchDir, err := ioutil.TempDir("", "")
 	require.Nil(t, err)
 	dataDir1 := path.Join(watchDir, "data1")
-	err = os.Mkdir(dataDir1, 0777)
+	err = os.Mkdir(dataDir1, 0o777)
 	require.Nil(t, err)
 	realConfigFile := path.Join(dataDir1, "config.yaml")
 	t.Logf("Real config file location: %s\n", realConfigFile)
-	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0640)
+	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
 	require.Nil(t, err)
 	cleanup := func() {
 		os.RemoveAll(watchDir)
@@ -2355,7 +2393,7 @@ func TestWatchFile(t *testing.T) {
 		})
 		v.WatchConfig()
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
-		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0640)
+		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0o640)
 		wg.Wait()
 		// then the config value should have changed
 		require.Nil(t, err)
@@ -2378,10 +2416,10 @@ func TestWatchFile(t *testing.T) {
 		wg.Add(1)
 		// when link to another `config.yaml` file
 		dataDir2 := path.Join(watchDir, "data2")
-		err := os.Mkdir(dataDir2, 0777)
+		err := os.Mkdir(dataDir2, 0o777)
 		require.Nil(t, err)
 		configFile2 := path.Join(dataDir2, "config.yaml")
-		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0640)
+		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
 		require.Nil(t, err)
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
@@ -2410,25 +2448,25 @@ func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {
 	assert.Equal(t, "cobra_flag", config.Foo.Bar)
 }
 
-var yamlExampleWithDot = []byte(`Hacker: true
-name: steve
-hobbies:
-  - skateboarding
-  - snowboarding
-  - go
-clothing:
-  jacket: leather
-  trousers: denim
-  pants:
-    size: large
-age: 35
-eyes : brown
-beard: true
-emails:
-  steve@hacker.com:
-    created: 01/02/03
-    active: true
-`)
+// var yamlExampleWithDot = []byte(`Hacker: true
+// name: steve
+// hobbies:
+//     - skateboarding
+//     - snowboarding
+//     - go
+// clothing:
+//     jacket: leather
+//     trousers: denim
+//     pants:
+//         size: large
+// age: 35
+// eyes : brown
+// beard: true
+// emails:
+//     steve@hacker.com:
+//         created: 01/02/03
+//         active: true
+// `)
 
 func TestKeyDelimiter(t *testing.T) {
 	v := NewWithOptions(KeyDelimiter("::"))

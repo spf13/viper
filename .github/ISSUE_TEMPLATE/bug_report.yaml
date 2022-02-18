@@ -19,6 +19,8 @@ body:
         required: true
       - label: I am not looking for support or already pursued the available [support channels](https://github.com/spf13/viper/issues/new/choose) without success.
         required: true
+      - label: I have checked the [troubleshooting guide](https://github.com/spf13/viper/blob/master/TROUBLESHOOTING.md) for my problem, without success.
+        required: true
 - type: input
   attributes:
     label: Viper Version
