@@ -1197,6 +1197,17 @@ func (v *Viper) BindEnv(input ...string) error {
 	return nil
 }
 
+// MustBindEnv wraps BindEnv in a panic.
+// If there is an error binding an environment variable, MustBindEnv will
+// panic.
+func MustBindEnv(input ...string) { v.MustBindEnv(input...) }
+
+func (v *Viper) MustBindEnv(input ...string) {
+	if err := v.BindEnv(input...); err != nil {
+		panic(fmt.Sprintf("error while binding environment variable: %v", err))
+	}
+}
+
 // Given a key, find the value.
 //
 // Viper will check to see if an alias exists first.
