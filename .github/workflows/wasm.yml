@@ -20,7 +20,7 @@ jobs:
           go-version: '1.17'
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Ensure Viper compiles for WASM
         run: GOOS=js GOARCH=wasm go build .
