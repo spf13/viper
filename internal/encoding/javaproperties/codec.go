@@ -2,11 +2,9 @@ package javaproperties
 
 import (
 	"bytes"
-	"sort"
-	"strings"
-
 	"github.com/magiconair/properties"
 	"github.com/spf13/cast"
+	"sort"
 )
 
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for Java properties encoding.
@@ -64,14 +62,7 @@ func (c *Codec) Decode(b []byte, v map[string]interface{}) error {
 	for _, key := range c.Properties.Keys() {
 		// ignore existence check: we know it's there
 		value, _ := c.Properties.Get(key)
-
-		// recursively build nested maps
-		path := strings.Split(key, c.keyDelimiter())
-		lastKey := strings.ToLower(path[len(path)-1])
-		deepestMap := deepSearch(v, path[0:len(path)-1])
-
-		// set innermost value
-		deepestMap[lastKey] = value
+		v[key] = value
 	}
 
 	return nil

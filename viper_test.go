@@ -111,6 +111,7 @@ p_type: donut
 p_name: Cake
 p_ppu: 0.55
 p_batters.batter.type: Regular
+p_batters.batter: Foo
 `)
 
 var remoteExample = []byte(`{
@@ -570,6 +571,8 @@ func TestJSON(t *testing.T) {
 func TestProperties(t *testing.T) {
 	initProperties()
 	assert.Equal(t, "0001", Get("p_id"))
+	assert.Equal(t, "Regular", Get("p_batters.batter.type"))
+	assert.Equal(t, "Foo", Get("p_batters.batter"))
 }
 
 func TestTOML(t *testing.T) {
@@ -765,6 +768,7 @@ func TestAllKeys(t *testing.T) {
 		"p_id",
 		"p_ppu",
 		"p_batters.batter.type",
+		"p_batters.batter",
 		"p_type",
 		"p_name",
 		"foos",
@@ -822,7 +826,10 @@ func TestAllKeys(t *testing.T) {
 		"p_ppu":  "0.55",
 		"p_name": "Cake",
 		"p_batters": map[string]interface{}{
-			"batter": map[string]interface{}{"type": "Regular"},
+			"batter": []interface{}{
+				"Foo",
+				map[string]interface{}{"type": "Regular"},
+			},
 		},
 		"p_type": "donut",
 		"foos": []map[string]interface{}{
@@ -1556,6 +1563,7 @@ p_type = donut
 p_name = Cake
 p_ppu = 0.55
 p_batters.batter.type = Regular
+p_batters.batter = Foo
 `)
 
 // var yamlWriteExpected = []byte(`age: 35
