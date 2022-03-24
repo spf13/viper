@@ -190,12 +190,13 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 			m = m3
 			continue
 		}
-		m3, ok := m2.(map[string]interface{})
-		if !ok {
-			// intermediate key is a value
-			// => replace with a new map
+		m3, isMap := m2.(map[string]interface{})
+		if !isMap {
+			// in case the intermediate value is not a map
+			// a slice with previous value and a new map gets created
 			m3 = make(map[string]interface{})
-			m[k] = m3
+			mixedValue := []interface{}{m2, m3}
+			m[k] = mixedValue
 		}
 		// continue search from here
 		m = m3
