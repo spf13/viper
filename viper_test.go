@@ -1979,6 +1979,15 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
 
+func TestMarshal(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
+	c, err := v.Marshal()
+	require.NoError(t, err)
+	assert.Equal(t, c.Bytes(), yamlWriteExpected)
+}
+
 func TestWriteHiddenFile(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()

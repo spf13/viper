@@ -1704,6 +1704,15 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
+// Marshal will return a Buffer containing the content that should have been written to the file
+func (v *Viper) Marshal() (*bytes.Buffer, error) {
+	data, err := v.encoderRegistry.Encode(v.getConfigType(), v.AllSettings())
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(data), nil
+}
+
 func (v *Viper) writeConfig(filename string, force bool) error {
 	v.logger.Info("attempting to write configuration to file")
 
