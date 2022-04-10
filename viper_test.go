@@ -2369,6 +2369,19 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func
 	return v, watchDir, configFile, cleanup
 }
 
+func TestWatchFileWithError(t *testing.T) {
+	t.Run("config file not found", func(t *testing.T) {
+		errChan := v.WatchConfigWithError()
+		err := <-errChan
+		require.Error(t, err)
+	})
+
+	//TODO: newWatcher error
+	t.Run("newWatcher an error occurred", func(t *testing.T) {
+		
+	})
+}
+
 func TestWatchFile(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		// TODO(bep) FIX ME
