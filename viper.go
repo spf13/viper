@@ -1718,7 +1718,8 @@ func keyExists(k string, m map[string]interface{}) string {
 }
 
 func castToMapStringInterface(
-	src map[interface{}]interface{}) map[string]interface{} {
+	src map[interface{}]interface{},
+) map[string]interface{} {
 	tgt := map[string]interface{}{}
 	for k, v := range src {
 		tgt[fmt.Sprintf("%v", k)] = v
@@ -1756,7 +1757,8 @@ func castMapFlagToMapInterface(src map[string]FlagValue) map[string]interface{} 
 // deep. Both map types are supported as there is a go-yaml fork that uses
 // `map[string]interface{}` instead.
 func mergeMaps(
-	src, tgt map[string]interface{}, itgt map[interface{}]interface{}) {
+	src, tgt map[string]interface{}, itgt map[interface{}]interface{},
+) {
 	for sk, sv := range src {
 		tk := keyExists(sk, tgt)
 		if tk == "" {
