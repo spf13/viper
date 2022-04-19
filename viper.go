@@ -1825,8 +1825,8 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	for _, k := range v.AllKeys() {
 		value := v.Get(k)
 		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+			// Key set but empty, include it in the output as a null value
+			m[k] = nil
 			continue
 		}
 
