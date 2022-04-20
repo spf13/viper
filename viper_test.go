@@ -1825,6 +1825,7 @@ func TestEmptySection(t *testing.T) {
 key:
     subkey:
 another_key:
+empty_dict: {}
 `
 
 	v := New()
@@ -1837,6 +1838,7 @@ another_key:
 	assert.NotContains(t, keys, "key") // Only empty leaf nodes are returned
 	assert.Contains(t, keys, "key.subkey")
 	assert.Contains(t, keys, "another_key")
+	assert.Contains(t, keys, "empty_dict")
 	assert.NotContains(t, keys, "is_known")
 	assert.Contains(t, keys, "has_default")
 
@@ -1845,6 +1847,7 @@ another_key:
 	assert.NotContains(t, vars, "key") // Only empty leaf nodes are returned
 	assert.Contains(t, vars, "key.subkey")
 	assert.Contains(t, vars, "another_key")
+	assert.Contains(t, vars, "empty_dict")
 	assert.NotContains(t, vars, "is_known")
 	assert.Contains(t, vars, "has_default")
 }

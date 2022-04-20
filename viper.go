@@ -1789,6 +1789,10 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			shadow[strings.ToLower(fullKey)] = true
 			continue
 		}
+		if len(m2) == 0 {
+			// empty dict explicitly present in the map
+			shadow[strings.ToLower(fullKey)] = true
+		}
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
