@@ -878,6 +878,33 @@ func TestRecursiveAliases(t *testing.T) {
 	RegisterAlias("Roo", "baz")
 }
 
+func TestStringMapOverrides(t *testing.T) {
+	v := New()
+
+	v.SetDefault("foo.bar", "default-value")
+	v.SetDefault("foo.baz", 1)
+	v.SetDefault("deeper.nest.a", "default-value")
+	v.SetDefault("deeper.nest.b", "default-value")
+
+	v.SetEnvPrefix("test")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	testutil.Setenv(t, "TEST_FOO_BAR", "overidden")
+	testutil.Setenv(t, "TEST_DEEPER_NEST_A", "overidden")
+
+	assert.Equal(t, "overidden", v.GetString("foo.bar"))
+	assert.Equal(t, map[string]interface{}{
+		"bar": "overidden",
+		"baz": 1,
+	}, v.GetStringMap("foo"))
+
+	assert.Equal(t, map[string]string{
+		"a": "overidden",
+		"b": "default-value",
+	}, v.GetStringMapString("deeper.nest"))
+}
+
 func TestUnmarshal(t *testing.T) {
 	SetDefault("port", 1313)
 	Set("name", "Steve")

@@ -1041,21 +1041,21 @@ func (v *Viper) GetStringSlice(key string) []string {
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 
 func (v *Viper) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(v.Get(key))
+	return cast.ToStringMap(v.allSettingsUnderParent(key))
 }
 
 // GetStringMapString returns the value associated with the key as a map of strings.
 func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
 
 func (v *Viper) GetStringMapString(key string) map[string]string {
-	return cast.ToStringMapString(v.Get(key))
+	return cast.ToStringMapString(v.allSettingsUnderParent(key))
 }
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
 func GetStringMapStringSlice(key string) map[string][]string { return v.GetStringMapStringSlice(key) }
 
 func (v *Viper) GetStringMapStringSlice(key string) map[string][]string {
-	return cast.ToStringMapStringSlice(v.Get(key))
+	return cast.ToStringMapStringSlice(v.allSettingsUnderParent(key))
 }
 
 // GetSizeInBytes returns the size of the value associated with the given key
@@ -2008,6 +2008,29 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
+		lastKey := strings.ToLower(path[len(path)-1])
+		deepestMap := deepSearch(m, path[0:len(path)-1])
+		// set innermost value
+		deepestMap[lastKey] = value
+	}
+	return m
+}
+
+func (v *Viper) allSettingsUnderParent(parent string) map[string]interface{} {
+	m := map[string]interface{}{}
+	// start from the list of keys, and construct the map one value at a time
+	for _, k := range v.AllKeys() {
+		if !strings.HasPrefix(k, parent) {
+			continue
+		}
+
+		value := v.Get(k)
+		if value == nil {
+			// should not happen, since AllKeys() returns only keys holding a value,
+			// check just in case anything changes
+			continue
+		}
+		path := strings.Split(strings.TrimPrefix(k, parent+v.keyDelim), v.keyDelim)
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
