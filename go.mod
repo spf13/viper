@@ -8,7 +8,7 @@ require (
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/pelletier/go-toml v1.9.4
-	github.com/pelletier/go-toml/v2 v2.0.0-beta.8
+	github.com/pelletier/go-toml/v2 v2.0.0
 	github.com/sagikazarmark/crypt v0.5.0
 	github.com/spf13/afero v1.8.2
 	github.com/spf13/cast v1.4.1
