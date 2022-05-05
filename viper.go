@@ -1809,8 +1809,13 @@ func mergeMaps(
 			tsv, ok := sv.(map[interface{}]interface{})
 			if !ok {
 				v.logger.Error(
-					"Could not cast sv to map[interface{}]interface{}; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
-					sk, svType, tvType, sv, tv)
+					"Could not cast sv to map[interface{}]interface{}",
+					"key", sk,
+					"st", svType,
+					"tt", tvType,
+					"sv", sv,
+					"tv", tv,
+				)
 				continue
 			}
 
@@ -1822,8 +1827,13 @@ func mergeMaps(
 			tsv, ok := sv.(map[string]interface{})
 			if !ok {
 				v.logger.Error(
-					"Could not cast sv to map[string]interface{}; key=%s, st=%v, tt=%v, sv=%v, tv=%v",
-					sk, svType, tvType, sv, tv)
+					"Could not cast sv to map[string]interface{}",
+					"key", sk,
+					"st", svType,
+					"tt", tvType,
+					"sv", sv,
+					"tv", tv,
+				)
 				continue
 			}
 			mergeMaps(tsv, ttv, nil)
