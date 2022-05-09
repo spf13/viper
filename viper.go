@@ -1269,6 +1269,22 @@ func (v *Viper) Set(key string, value interface{}) {
 	deepestMap[lastKey] = value
 }
 
+// Unset removes a value set with Set
+// Unset is case-insensitive for a key.
+// Values which come from flags, config file, ENV or default can't be unset.
+func Unset(key string) { v.Unset(key) }
+func (v *Viper) Unset(key string) {
+	// If alias passed in, then set the proper override
+	key = v.realKey(strings.ToLower(key))
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.override, path[0:len(path)-1])
+
+	// unset innermost value
+	delete(deepestMap, lastKey)
+}
+
 // ReadInConfig will discover and load the configuration file from disk
 // and key/value stores, searching in one of the defined paths.
 func ReadInConfig() error { return v.ReadInConfig() }
