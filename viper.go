@@ -339,6 +339,16 @@ func (v *Viper) getEnv(key string) (string, bool) {
 	return val, ok && (v.allowEmptyEnv || val != "")
 }
 
+func (v *Viper) getAllEnvBoundAndSet() map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for key, value := range v.env {
+		if _, ok := v.getEnv(v.mergeWithEnvPrefix(key)); ok {
+			tgt[key] = value
+		}
+	}
+	return tgt
+}
+
 // ConfigFileUsed returns the file used to populate the config registry.
 func ConfigFileUsed() string            { return v.ConfigFileUsed() }
 func (v *Viper) ConfigFileUsed() string { return v.configFile }
@@ -1571,14 +1581,6 @@ func castToMapStringInterface(
 	return tgt
 }
 
-func castMapStringSliceToMapInterface(src map[string][]string) map[string]interface{} {
-	tgt := map[string]interface{}{}
-	for k, v := range src {
-		tgt[k] = v
-	}
-	return tgt
-}
-
 func castMapStringToMapInterface(src map[string]string) map[string]interface{} {
 	tgt := map[string]interface{}{}
 	for k, v := range src {
@@ -1745,7 +1747,7 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
 	m = v.flattenAndMergeMap(m, v.override, "")
 	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
-	m = v.mergeFlatMap(m, castMapStringSliceToMapInterface(v.env))
+	m = v.mergeFlatMap(m, v.getAllEnvBoundAndSet())
 	m = v.flattenAndMergeMap(m, v.config, "")
 	m = v.flattenAndMergeMap(m, v.kvstore, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
