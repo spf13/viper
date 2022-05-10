@@ -339,6 +339,16 @@ func (v *Viper) getEnv(key string) (string, bool) {
 	return val, ok && (v.allowEmptyEnv || val != "")
 }
 
+func (v *Viper) getAllEnvBoundAndSet() map[string]interface{} {
+	tgt := map[string]interface{}{}
+	for key, value := range v.env {
+		if _, ok := v.getEnv(v.mergeWithEnvPrefix(key)); ok {
+			tgt[key] = value
+		}
+	}
+	return tgt
+}
+
 // ConfigFileUsed returns the file used to populate the config registry.
 func ConfigFileUsed() string            { return v.ConfigFileUsed() }
 func (v *Viper) ConfigFileUsed() string { return v.configFile }
@@ -1259,6 +1269,22 @@ func (v *Viper) Set(key string, value interface{}) {
 	deepestMap[lastKey] = value
 }
 
+// Unset removes a value set with Set
+// Unset is case-insensitive for a key.
+// Values which come from flags, config file, ENV or default can't be unset.
+func Unset(key string) { v.Unset(key) }
+func (v *Viper) Unset(key string) {
+	// If alias passed in, then set the proper override
+	key = v.realKey(strings.ToLower(key))
+
+	path := strings.Split(key, v.keyDelim)
+	lastKey := strings.ToLower(path[len(path)-1])
+	deepestMap := deepSearch(v.override, path[0:len(path)-1])
+
+	// unset innermost value
+	delete(deepestMap, lastKey)
+}
+
 // ReadInConfig will discover and load the configuration file from disk
 // and key/value stores, searching in one of the defined paths.
 func ReadInConfig() error { return v.ReadInConfig() }
@@ -1571,14 +1597,6 @@ func castToMapStringInterface(
 	return tgt
 }
 
-func castMapStringSliceToMapInterface(src map[string][]string) map[string]interface{} {
-	tgt := map[string]interface{}{}
-	for k, v := range src {
-		tgt[k] = v
-	}
-	return tgt
-}
-
 func castMapStringToMapInterface(src map[string]string) map[string]interface{} {
 	tgt := map[string]interface{}{}
 	for k, v := range src {
@@ -1745,7 +1763,7 @@ func (v *Viper) AllKeys() []string {
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
 	m = v.flattenAndMergeMap(m, v.override, "")
 	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
-	m = v.mergeFlatMap(m, castMapStringSliceToMapInterface(v.env))
+	m = v.mergeFlatMap(m, v.getAllEnvBoundAndSet())
 	m = v.flattenAndMergeMap(m, v.config, "")
 	m = v.flattenAndMergeMap(m, v.kvstore, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
@@ -1789,6 +1807,10 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			shadow[strings.ToLower(fullKey)] = true
 			continue
 		}
+		if len(m2) == 0 {
+			// empty dict explicitly present in the map
+			shadow[strings.ToLower(fullKey)] = true
+		}
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
@@ -1825,8 +1847,8 @@ func (v *Viper) AllSettings() map[string]interface{} {
 	for _, k := range v.AllKeys() {
 		value := v.Get(k)
 		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+			// Key set but empty, include it in the output as a null value
+			m[k] = nil
 			continue
 		}
 
