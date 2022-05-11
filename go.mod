@@ -11,7 +11,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.0
 	github.com/sagikazarmark/crypt v0.5.0
 	github.com/spf13/afero v1.8.2
-	github.com/spf13/cast v1.4.1
+	github.com/spf13/cast v1.5.0
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.1
