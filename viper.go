@@ -1882,7 +1882,9 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
+				kvstore := make(map[string]interface{})
+				v.unmarshalReader(reader, kvstore)
+				v.kvstore = kvstore
 			}
 		}(respc)
 		return nil
