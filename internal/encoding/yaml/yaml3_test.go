@@ -1,5 +1,5 @@
-//go:build viper_yaml3
-// +build viper_yaml3
+//go:build !viper_yaml2
+// +build !viper_yaml2
 
 package yaml
 
