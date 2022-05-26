@@ -1,5 +1,5 @@
-//go:build viper_toml2
-// +build viper_toml2
+//go:build !viper_toml1
+// +build !viper_toml1
 
 package toml
 
