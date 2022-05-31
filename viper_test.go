@@ -1818,39 +1818,3 @@ func TestKnownKeys(t *testing.T) {
 		t.Error("SetKnown didn't mark key as known")
 	}
 }
-
-func TestEmptySection(t *testing.T) {
-
-	var yamlWithEnvVars = `
-key:
-    subkey:
-another_key:
-empty_dict: {}
-`
-
-	v := New()
-	initConfig(v, "yaml", yamlWithEnvVars)
-	v.SetKnown("is_known")
-	v.SetDefault("has_default", true)
-	v.BindEnv("is_bound")
-
-	// AllKeys includes empty keys
-	keys := v.AllKeys()
-	assert.NotContains(t, keys, "key") // Only empty leaf nodes are returned
-	assert.Contains(t, keys, "key.subkey")
-	assert.Contains(t, keys, "another_key")
-	assert.Contains(t, keys, "empty_dict")
-	assert.NotContains(t, keys, "is_known")
-	assert.Contains(t, keys, "has_default")
-	assert.NotContains(t, keys, "is_bound")
-
-	// AllSettings includes empty keys
-	vars := v.AllSettings()
-	assert.NotContains(t, vars, "key") // Only empty leaf nodes are returned
-	assert.Contains(t, vars, "key.subkey")
-	assert.Contains(t, vars, "another_key")
-	assert.Contains(t, vars, "empty_dict")
-	assert.NotContains(t, vars, "is_known")
-	assert.Contains(t, vars, "has_default")
-	assert.NotContains(t, vars, "is_bound")
-}
