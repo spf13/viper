@@ -447,6 +447,13 @@ viper.SetConfigType("json") // because there is no file extension in a stream of
 err := viper.ReadRemoteConfig()
 ```
 
+#### etcd3
+```go
+viper.AddRemoteProvider("etcd3", "http://127.0.0.1:4001","/config/hugo.json")
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv"
+err := viper.ReadRemoteConfig()
+```
+
 #### Consul
 You need to set a key to Consul key/value storage with JSON value containing your desired config.
 For example, create a Consul key/value store key `MY_CONSUL_KEY` with value:
