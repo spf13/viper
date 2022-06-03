@@ -281,6 +281,13 @@ func EnvKeyReplacer(r StringReplacer) Option {
 	})
 }
 
+// WithLogger sets a custom logger.
+func WithLogger(l Logger) Option {
+	return optionFunc(func(v *Viper) {
+		v.logger = l
+	})
+}
+
 // NewWithOptions creates a new Viper instance.
 func NewWithOptions(opts ...Option) *Viper {
 	v := New()
