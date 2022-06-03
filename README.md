@@ -840,6 +840,18 @@ y.SetDefault("ContentDir", "foobar")
 When working with multiple vipers, it is up to the user to keep track of the
 different vipers.
 
+## Custom Logging
+
+Viper uses a [jww logger](https://github.com/spf13/jwalterweatherman) by default.
+However, any logger can be set on a viper which satisfies the Logger interface
+[here](./logger.go). To set a different logger on a viper instance, you can do the
+following:
+
+```go
+customLogger := someloggingpackage.NewLogger()
+
+v := viper.NewWithOptions(viper.WithLogger(customLogger))
+```
 
 ## Q & A
 
