@@ -1,7 +1,5 @@
 package yaml
 
-// import "gopkg.in/yaml.v2"
-
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for YAML encoding.
 type Codec struct{}
 

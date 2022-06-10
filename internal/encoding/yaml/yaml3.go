@@ -1,6 +1,3 @@
-//go:build !viper_yaml2
-// +build !viper_yaml2
-
 package yaml
 
 import yamlv3 "gopkg.in/yaml.v3"

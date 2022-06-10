@@ -17,7 +17,6 @@ require (
 	github.com/stretchr/testify v1.7.2
 	github.com/subosito/gotenv v1.4.0
 	gopkg.in/ini.v1 v1.66.4
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
