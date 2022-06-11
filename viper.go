@@ -1870,6 +1870,10 @@ func (v *Viper) getKeyValueConfig() error {
 		return RemoteConfigError("Enable the remote features by doing a blank import of the viper/remote package: '_ github.com/spf13/viper/remote'")
 	}
 
+	if len(v.remoteProviders) == 0 {
+		return RemoteConfigError("No Remote Providers")
+	}
+
 	for _, rp := range v.remoteProviders {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
@@ -1896,6 +1900,10 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 
 // Retrieve the first found remote configuration.
 func (v *Viper) watchKeyValueConfigOnChannel() error {
+	if len(v.remoteProviders) == 0 {
+		return RemoteConfigError("No Remote Providers")
+	}
+
 	for _, rp := range v.remoteProviders {
 		respc, _ := RemoteConfig.WatchChannel(rp)
 		// Todo: Add quit channel
@@ -1913,9 +1921,15 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 
 // Retrieve the first found remote configuration.
 func (v *Viper) watchKeyValueConfig() error {
+	if len(v.remoteProviders) == 0 {
+		return RemoteConfigError("No Remote Providers")
+	}
+
 	for _, rp := range v.remoteProviders {
 		val, err := v.watchRemoteConfig(rp)
 		if err != nil {
+			v.logger.Error(fmt.Errorf("watch remote config: %w", err).Error())
+
 			continue
 		}
 		v.kvstore = val
