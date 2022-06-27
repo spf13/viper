@@ -594,7 +594,7 @@ configuration level.
 
 Viper can access array indices by using numbers in the path. For example:
 
-```json
+```jsonc
 {
     "host": {
         "address": "localhost",
@@ -622,7 +622,7 @@ GetInt("host.ports.1") // returns 6029
 Lastly, if there exists a key that matches the delimited key path, its value
 will be returned instead. E.g.
 
-```json
+```jsonc
 {
     "datastore.metric.host": "0.0.0.0",
     "host": {
