@@ -609,15 +609,36 @@ func (v *Viper) Get(key string) interface{} {
 	return val
 }
 
+// GetSkipDefault returns an interface. For a specific value use one of the Get____ methods.
+func GetSkipDefault(key string) interface{} { return v.GetSkipDefault(key) }
+func (v *Viper) GetSkipDefault(key string) interface{} {
+	val, _ := v.GetESkipDefault(key)
+	return val
+}
+
 // GetE is like Get but also returns parsing errors.
 func GetE(key string) (interface{}, error) { return v.GetE(key) }
 func (v *Viper) GetE(key string) (interface{}, error) {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, false)
 	if val == nil {
 		return nil, nil
 	}
+	return v.castByDefValue(lcaseKey, val)
+}
 
+// GetESkipDefault is like GetE but ignors defaults.
+func GetESkipDefault(key string) (interface{}, error) { return v.GetESkipDefault(key) }
+func (v *Viper) GetESkipDefault(key string) (interface{}, error) {
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey, true)
+	if val == nil {
+		return nil, nil
+	}
+	return v.castByDefValue(lcaseKey, val)
+}
+
+func (v *Viper) castByDefValue(lcaseKey string, val interface{}) (interface{}, error) {
 	if v.typeByDefValue {
 		// TODO(bep) this branch isn't covered by a single test.
 		valType := val
@@ -654,7 +675,7 @@ func (v *Viper) GetE(key string) (interface{}, error) {
 func GetRaw(key string) interface{} { return v.GetRaw(key) }
 func (v *Viper) GetRaw(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	return v.find(lcaseKey)
+	return v.find(lcaseKey, false)
 }
 
 // Sub returns new Viper instance representing a sub tree of this instance.
@@ -983,9 +1004,10 @@ func (v *Viper) BindEnv(input ...string) error {
 // Given a key, find the value.
 // Viper will check in the following order:
 // flag, env, config file, key/value store, default.
+// If skipDefault is set to true, find will ignore default values.
 // Viper will check to see if an alias exists first.
 // Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string) interface{} {
+func (v *Viper) find(lcaseKey string, skipDefault bool) interface{} {
 
 	var (
 		val    interface{}
@@ -1079,12 +1101,14 @@ func (v *Viper) find(lcaseKey string) interface{} {
 	}
 
 	// Default next
-	val = v.searchMap(v.defaults, path)
-	if val != nil {
-		return val
-	}
-	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
-		return nil
+	if !skipDefault {
+		val = v.searchMap(v.defaults, path)
+		if val != nil {
+			return val
+		}
+		if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
+			return nil
+		}
 	}
 
 	// last chance: if no other value is returned and a flag does exist for the value,
@@ -1123,7 +1147,7 @@ func readAsCSV(val string) ([]string, error) {
 func IsSet(key string) bool { return v.IsSet(key) }
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey)
+	val := v.find(lcaseKey, false)
 	return val != nil
 }
 
@@ -1820,13 +1844,22 @@ outer:
 // AllSettings merges all settings and returns them as a map[string]interface{}.
 func AllSettings() map[string]interface{} { return v.AllSettings() }
 func (v *Viper) AllSettings() map[string]interface{} {
+	return v.allSettings(v.Get)
+}
+
+// AllSettingsWithoutDefault merges all settings and returns them as a map[string]interface{}.
+func AllSettingsWithoutDefault() map[string]interface{} { return v.AllSettingsWithoutDefault() }
+func (v *Viper) AllSettingsWithoutDefault() map[string]interface{} {
+	return v.allSettings(v.GetSkipDefault)
+}
+
+func (v *Viper) allSettings(getter func(string) interface{}) map[string]interface{} {
 	m := map[string]interface{}{}
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range v.AllKeys() {
-		value := v.Get(k)
+		value := getter(k)
 		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+			// should only happens if we `getter` ignors defaults
 			continue
 		}
 
