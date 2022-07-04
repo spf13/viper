@@ -7,7 +7,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.6
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/pelletier/go-toml v1.9.5
 	github.com/pelletier/go-toml/v2 v2.0.2
 	github.com/sagikazarmark/crypt v0.6.0
 	github.com/spf13/afero v1.8.2
