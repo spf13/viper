@@ -35,7 +35,7 @@ func (v *Viper) searchInPath(in string) (filename string) {
 		}
 	}
 
-	if v.configType != "" {
+	if v.configType == "" {
 		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
 			return filepath.Join(in, v.configName)
 		}
