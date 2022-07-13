@@ -561,6 +561,41 @@ clothing.winter:
 `
 	v := New()
 	v.SetConfigType("yaml")
+	v.SetDefault("test", "example")
+	r := strings.NewReader(exampleYaml)
+
+	if err := v.unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	expectedAll := map[string]interface{}{"hacker": true, "name": "steve", "test": "example", "hobbies": []interface{}{"skate.boarding", "snowboarding"}, "clothing.summer": map[string]interface{}{"jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "clothing.winter": map[string]interface{}{"jacket": "wool", "pants": map[string]interface{}{"size": "medium"}}}
+	expectedKeys := sort.StringSlice{"hacker", "name", "test", "hobbies", "clothing.summer.jacket", "clothing.summer.pants.size", "clothing.winter.jacket", "clothing.winter.pants.size"}
+	expectedKeys.Sort()
+	keys := sort.StringSlice(v.AllKeys())
+	keys.Sort()
+
+	assert.Equal(t, expectedKeys, keys)
+	assert.Equal(t, expectedAll, v.AllSettings())
+}
+
+func TestAllSettingsWithDelimiterInKeysWithoutDefault(t *testing.T) {
+	exampleYaml := `Hacker: true
+name: steve
+hobbies:
+- skate.boarding
+- snowboarding
+clothing.summer:
+  jacket: leather
+  pants:
+    size: large
+clothing.winter:
+  jacket: wool
+  pants:
+    size: medium
+`
+	v := New()
+	v.SetConfigType("yaml")
+	v.SetDefault("test", "example")
 	r := strings.NewReader(exampleYaml)
 
 	if err := v.unmarshalReader(r, v.config); err != nil {
@@ -568,13 +603,13 @@ clothing.winter:
 	}
 
 	expectedAll := map[string]interface{}{"hacker": true, "name": "steve", "hobbies": []interface{}{"skate.boarding", "snowboarding"}, "clothing.summer": map[string]interface{}{"jacket": "leather", "pants": map[string]interface{}{"size": "large"}}, "clothing.winter": map[string]interface{}{"jacket": "wool", "pants": map[string]interface{}{"size": "medium"}}}
-	expectedKeys := sort.StringSlice{"hacker", "name", "hobbies", "clothing.summer.jacket", "clothing.summer.pants.size", "clothing.winter.jacket", "clothing.winter.pants.size"}
+	expectedKeys := sort.StringSlice{"hacker", "name", "test", "hobbies", "clothing.summer.jacket", "clothing.summer.pants.size", "clothing.winter.jacket", "clothing.winter.pants.size"}
 	expectedKeys.Sort()
 	keys := sort.StringSlice(v.AllKeys())
 	keys.Sort()
 
 	assert.Equal(t, expectedKeys, keys)
-	assert.Equal(t, expectedAll, v.AllSettings())
+	assert.Equal(t, expectedAll, v.AllSettingsWithoutDefault())
 }
 
 func TestAliasesOfAliases(t *testing.T) {
