@@ -1953,6 +1953,10 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("uint pop != 37890, = %d", pop)
 	}
 
+	if pop := v.GetUint16("hello.pop"); pop != uint16(37890) {
+		t.Fatalf("uint pop != 37890, = %d", pop)
+	}
+
 	if pop := v.GetUint32("hello.pop"); pop != 37890 {
 		t.Fatalf("uint32 pop != 37890, = %d", pop)
 	}

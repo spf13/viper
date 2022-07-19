@@ -991,6 +991,13 @@ func (v *Viper) GetUint(key string) uint {
 	return cast.ToUint(v.Get(key))
 }
 
+// GetUint16 returns the value associated with the key as an unsigned integer.
+func GetUint16(key string) uint16 { return v.GetUint16(key) }
+
+func (v *Viper) GetUint16(key string) uint16 {
+	return cast.ToUint16(v.Get(key))
+}
+
 // GetUint32 returns the value associated with the key as an unsigned integer.
 func GetUint32(key string) uint32 { return v.GetUint32(key) }
 
