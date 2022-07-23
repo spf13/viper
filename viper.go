@@ -939,8 +939,21 @@ func (v *Viper) Sub(key string) *Viper {
 		return nil
 	}
 
-	if reflect.TypeOf(data).Kind() == reflect.Map {
+	//if t := reflect.TypeOf(data).Kind(); t == reflect.Map || t == reflect.Slice {
+	//	// https://github.com/spf13/cast/pull/148
+	//	subv.config = cast.ToStringMap(data)
+	//	return subv
+	//}
+	switch reflect.TypeOf(data).Kind() {
+	case reflect.Map:
 		subv.config = cast.ToStringMap(data)
+		return subv
+	case reflect.Slice, reflect.Array:
+		dataValue := reflect.ValueOf(data)
+		subv.config = make(map[string]interface{}, dataValue.Len())
+		for x := 0; x < dataValue.Len(); x++ {
+			subv.config[cast.ToString(x)] = dataValue.Index(x).Interface()
+		}
 		return subv
 	}
 	return nil
