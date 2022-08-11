@@ -2135,14 +2135,17 @@ func (v *Viper) getConfigFile() (string, error) {
 
 // Debug prints all configuration registries for debugging
 // purposes.
-func Debug() { v.Debug() }
+func Debug()              { v.Debug() }
+func DebugTo(w io.Writer) { v.DebugTo(w) }
 
-func (v *Viper) Debug() {
-	fmt.Printf("Aliases:\n%#v\n", v.aliases)
-	fmt.Printf("Override:\n%#v\n", v.override)
-	fmt.Printf("PFlags:\n%#v\n", v.pflags)
-	fmt.Printf("Env:\n%#v\n", v.env)
-	fmt.Printf("Key/Value Store:\n%#v\n", v.kvstore)
-	fmt.Printf("Config:\n%#v\n", v.config)
-	fmt.Printf("Defaults:\n%#v\n", v.defaults)
+func (v *Viper) Debug() { v.DebugTo(os.Stdout) }
+
+func (v *Viper) DebugTo(w io.Writer) {
+	fmt.Fprintf(w, "Aliases:\n%#v\n", v.aliases)
+	fmt.Fprintf(w, "Override:\n%#v\n", v.override)
+	fmt.Fprintf(w, "PFlags:\n%#v\n", v.pflags)
+	fmt.Fprintf(w, "Env:\n%#v\n", v.env)
+	fmt.Fprintf(w, "Key/Value Store:\n%#v\n", v.kvstore)
+	fmt.Fprintf(w, "Config:\n%#v\n", v.config)
+	fmt.Fprintf(w, "Defaults:\n%#v\n", v.defaults)
 }
