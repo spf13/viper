@@ -1,0 +1,7 @@
+# See https://help.github.com/articles/about-codeowners/ for syntax
+# Rules are matched bottom-to-top, so one team can own subdirectories
+# and another the rest of the directory.
+
+# All file changes should be reviewed by the maintainer team unless
+# specified otherwise
+*     @DataDog/agent-shared-components
