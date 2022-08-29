@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -1012,6 +1013,31 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 
 	err := v.ReadInConfig()
 	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{"", ""}), reflect.TypeOf(err))
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
+	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
+func TestNoPermissionDirs(t *testing.T) {
+	tmpdir := t.TempDir()
+
+	v := New()
+	v.SetDefault(`key`, `default`)
+
+	// Make an fs with an un-readable /directory
+	v.fs = afero.NewBasePathFs(afero.NewOsFs(), tmpdir)
+	err := v.fs.Mkdir("/directory", 000)
+	if err != nil {
+		t.Fatalf("Error from fs.Mkdir: %v", err)
+	}
+
+	v.AddConfigPath("/directory")
+	err = v.ReadInConfig()
+
+	if !errors.Is(err, os.ErrPermission) {
+		t.Fatalf("error should have been a permissions error")
+	}
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
