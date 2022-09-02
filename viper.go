@@ -1947,7 +1947,6 @@ func (v *Viper) searchInPath(in string) (filename string, err error) {
 	for _, ext := range SupportedExts {
 		jww.DEBUG.Println("Checking for", filepath.Join(in, v.configName+"."+ext))
 		b, err := exists(v.fs, filepath.Join(in, v.configName+"."+ext))
-		fmt.Printf("%s %t %s\n", filepath.Join(in, v.configName+"."+ext), b, err)
 		if err != nil {
 			lastError = err
 		} else if b {
