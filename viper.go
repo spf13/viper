@@ -1941,17 +1941,21 @@ func (v *Viper) getConfigFile() (string, error) {
 	return v.configFile, nil
 }
 
-func (v *Viper) searchInPath(in string) (filename string) {
+func (v *Viper) searchInPath(in string) (filename string, err error) {
+	var lastError error
 	jww.DEBUG.Println("Searching for config in ", in)
 	for _, ext := range SupportedExts {
 		jww.DEBUG.Println("Checking for", filepath.Join(in, v.configName+"."+ext))
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
+		b, err := exists(v.fs, filepath.Join(in, v.configName+"."+ext))
+		if err != nil {
+			lastError = err
+		} else if b {
 			jww.DEBUG.Println("Found: ", filepath.Join(in, v.configName+"."+ext))
-			return filepath.Join(in, v.configName+"."+ext)
+			return filepath.Join(in, v.configName+"."+ext), nil
 		}
 	}
 
-	return ""
+	return "", lastError
 }
 
 // Search all configPaths for any config file.
@@ -1959,13 +1963,23 @@ func (v *Viper) searchInPath(in string) (filename string) {
 func (v *Viper) findConfigFile() (string, error) {
 	jww.INFO.Println("Searching for config in ", v.configPaths)
 
+	var lastError error
 	for _, cp := range v.configPaths {
-		file := v.searchInPath(cp)
+		file, err := v.searchInPath(cp)
 		if file != "" {
 			return file, nil
 		}
+		if err != nil {
+			lastError = err
+		}
 	}
-	return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+
+	// If there was no more-specific error, assume this was a not-found error
+	if lastError == nil {
+		lastError = ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+	}
+
+	return "", lastError
 }
 
 // Debug prints all configuration registries for debugging
