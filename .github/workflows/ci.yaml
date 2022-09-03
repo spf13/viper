@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.15', '1.16', '1.17', '1.18']
+        go: ['1.15', '1.16', '1.17', '1.18', '1.19']
         tags: ['', 'viper_yaml2', 'viper_toml1']
     env:
       GOFLAGS: -mod=readonly
