@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
+	"io/ioutil" //nolint:staticcheck
 	"os"
 	"os/exec"
 	"path"
@@ -998,7 +998,7 @@ func TestBindPFlags(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl
 func TestBindPFlagsStringSlice(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1046,7 +1046,7 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl
 func TestBindPFlagsStringArray(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1094,7 +1094,7 @@ func TestBindPFlagsStringArray(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
 		Expected []int
