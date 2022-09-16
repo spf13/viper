@@ -90,10 +90,10 @@ type DecoderConfigOption func(*mapstructure.DecoderConfig)
 // DecodeHook returns a DecoderConfigOption which overrides the default
 // DecoderConfig.DecodeHook value, the default is:
 //
-//  mapstructure.ComposeDecodeHookFunc(
-//		mapstructure.StringToTimeDurationHookFunc(),
-//		mapstructure.StringToSliceHookFunc(","),
-//	)
+//	 mapstructure.ComposeDecodeHookFunc(
+//			mapstructure.StringToTimeDurationHookFunc(),
+//			mapstructure.StringToSliceHookFunc(","),
+//		)
 func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.DecodeHook = hook
@@ -114,18 +114,18 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 //
 // For example, if values from the following sources were loaded:
 //
-//  Defaults : {
-//  	"secret": "",
-//  	"user": "default",
-//  	"endpoint": "https://localhost"
-//  }
-//  Config : {
-//  	"user": "root"
-//  	"secret": "defaultsecret"
-//  }
-//  Env : {
-//  	"secret": "somesecretkey"
-//  }
+//	Defaults : {
+//		"secret": "",
+//		"user": "default",
+//		"endpoint": "https://localhost"
+//	}
+//	Config : {
+//		"user": "root"
+//		"secret": "defaultsecret"
+//	}
+//	Env : {
+//		"secret": "somesecretkey"
+//	}
 //
 // The resulting config will have the following values:
 //
@@ -511,7 +511,8 @@ func (v *Viper) searchMapWithPathPrefixes(source map[string]interface{}, path []
 // isPathShadowedInDeepMap makes sure the given path is not shadowed somewhere
 // on its path in the map.
 // e.g., if "foo.bar" has a value in the given map, it “shadows”
-//       "foo.bar.baz" in a lower-priority map
+//
+//	"foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]interface{}) string {
 	var parentVal interface{}
 	for i := 1; i < len(path); i++ {
@@ -536,7 +537,8 @@ func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]interface{})
 // isPathShadowedInFlatMap makes sure the given path is not shadowed somewhere
 // in a sub-path of the map.
 // e.g., if "foo.bar" has a value in the given map, it “shadows”
-//       "foo.bar.baz" in a lower-priority map
+//
+//	"foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInFlatMap(path []string, mi interface{}) string {
 	// unify input map
 	var m map[string]interface{}
@@ -561,7 +563,8 @@ func (v *Viper) isPathShadowedInFlatMap(path []string, mi interface{}) string {
 // isPathShadowedInAutoEnv makes sure the given path is not shadowed somewhere
 // in the environment, when automatic env is on.
 // e.g., if "foo.bar" has a value in the environment, it “shadows”
-//       "foo.bar.baz" in a lower-priority map
+//
+//	"foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 	var parentKey string
 	for i := 1; i < len(path); i++ {
@@ -582,11 +585,11 @@ func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 // would return a string slice for the key if the key's type is inferred by
 // the default value and the Get function would return:
 //
-//   []string {"a", "b", "c"}
+//	[]string {"a", "b", "c"}
 //
 // Otherwise the Get function would return:
 //
-//   "a b c"
+//	"a b c"
 func SetTypeByDefaultValue(enable bool) { v.SetTypeByDefaultValue(enable) }
 
 // SetTypeByDefaultValue enables or disables the inference of a key value's
@@ -598,11 +601,11 @@ func SetTypeByDefaultValue(enable bool) { v.SetTypeByDefaultValue(enable) }
 // would return a string slice for the key if the key's type is inferred by
 // the default value and the Get function would return:
 //
-//   []string {"a", "b", "c"}
+//	[]string {"a", "b", "c"}
 //
 // Otherwise the Get function would return:
 //
-//   "a b c"
+//	"a b c"
 func (v *Viper) SetTypeByDefaultValue(enable bool) {
 	v.typeByDefValue = enable
 }
@@ -695,11 +698,14 @@ func (v *Viper) Sub(key string) *Viper {
 }
 
 // GetString returns the value associated with the key as a string.
-func GetString(key string) string { return v.GetString(key) }
+func GetString(key string, defaultValue string) string { return v.GetString(key, defaultValue) }
 
 // GetString returns the value associated with the key as a string.
-func (v *Viper) GetString(key string) string {
-	return cast.ToString(v.Get(key))
+func (v *Viper) GetString(key string, defaultValue string) string {
+	if v.IsSet(key) {
+		return cast.ToString(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetBool returns the value associated with the key as a boolean.
@@ -711,126 +717,181 @@ func (v *Viper) GetBool(key string) bool {
 }
 
 // GetInt returns the value associated with the key as an integer.
-func GetInt(key string) int { return v.GetInt(key) }
+func GetInt(key string, defaultValue int) int { return v.GetInt(key, defaultValue) }
 
 // GetInt returns the value associated with the key as an integer.
-func (v *Viper) GetInt(key string) int {
-	return cast.ToInt(v.Get(key))
+func (v *Viper) GetInt(key string, defaultValue int) int {
+	if v.IsSet(key) {
+		return cast.ToInt(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetInt32 returns the value associated with the key as an integer.
-func GetInt32(key string) int32 { return v.GetInt32(key) }
+func GetInt32(key string, defaultValue int32) int32 { return v.GetInt32(key, defaultValue) }
 
 // GetInt32 returns the value associated with the key as an integer.
-func (v *Viper) GetInt32(key string) int32 {
-	return cast.ToInt32(v.Get(key))
+func (v *Viper) GetInt32(key string, defaultValue int32) int32 {
+	if v.IsSet(key) {
+		return cast.ToInt32(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetInt64 returns the value associated with the key as an integer.
-func GetInt64(key string) int64 { return v.GetInt64(key) }
+func GetInt64(key string, defaultValue int64) int64 { return v.GetInt64(key, defaultValue) }
 
 // GetInt64 returns the value associated with the key as an integer.
-func (v *Viper) GetInt64(key string) int64 {
-	return cast.ToInt64(v.Get(key))
+func (v *Viper) GetInt64(key string, defaultValue int64) int64 {
+	if v.IsSet(key) {
+		return cast.ToInt64(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetUint returns the value associated with the key as an unsigned integer.
-func GetUint(key string) uint { return v.GetUint(key) }
+func GetUint(key string, defaultValue uint) uint { return v.GetUint(key, defaultValue) }
 
 // GetUint returns the value associated with the key as an unsigned integer.
-func (v *Viper) GetUint(key string) uint {
-	return cast.ToUint(v.Get(key))
+func (v *Viper) GetUint(key string, defaultValue uint) uint {
+	if v.IsSet(key) {
+		return cast.ToUint(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetUint32 returns the value associated with the key as an unsigned integer.
-func GetUint32(key string) uint32 { return v.GetUint32(key) }
+func GetUint32(key string, defaultValue uint32) uint32 { return v.GetUint32(key, defaultValue) }
 
 // GetUint32 returns the value associated with the key as an unsigned integer.
-func (v *Viper) GetUint32(key string) uint32 {
-	return cast.ToUint32(v.Get(key))
+func (v *Viper) GetUint32(key string, defaultValue uint32) uint32 {
+	if v.IsSet(key) {
+		return cast.ToUint32(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetUint64 returns the value associated with the key as an unsigned integer.
-func GetUint64(key string) uint64 { return v.GetUint64(key) }
+func GetUint64(key string, defaultValue uint64) uint64 { return v.GetUint64(key, defaultValue) }
 
 // GetUint64 returns the value associated with the key as an unsigned integer.
-func (v *Viper) GetUint64(key string) uint64 {
-	return cast.ToUint64(v.Get(key))
+func (v *Viper) GetUint64(key string, defaultValue uint64) uint64 {
+	if v.IsSet(key) {
+		return cast.ToUint64(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetFloat64 returns the value associated with the key as a float64.
-func GetFloat64(key string) float64 { return v.GetFloat64(key) }
+func GetFloat64(key string, defaultValue float64) float64 { return v.GetFloat64(key, defaultValue) }
 
 // GetFloat64 returns the value associated with the key as a float64.
-func (v *Viper) GetFloat64(key string) float64 {
-	return cast.ToFloat64(v.Get(key))
+func (v *Viper) GetFloat64(key string, defaultValue float64) float64 {
+	if v.IsSet(key) {
+		return cast.ToFloat64(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetTime returns the value associated with the key as time.
-func GetTime(key string) time.Time { return v.GetTime(key) }
+func GetTime(key string, defaultValue time.Time) time.Time { return v.GetTime(key, defaultValue) }
 
 // GetTime returns the value associated with the key as time.
-func (v *Viper) GetTime(key string) time.Time {
-	return cast.ToTime(v.Get(key))
+func (v *Viper) GetTime(key string, defaultValue time.Time) time.Time {
+	if v.IsSet(key) {
+		return cast.ToTime(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetDuration returns the value associated with the key as a duration.
-func GetDuration(key string) time.Duration { return v.GetDuration(key) }
+func GetDuration(key string, defaultValue time.Duration) time.Duration {
+	return v.GetDuration(key, defaultValue)
+}
 
 // GetDuration returns the value associated with the key as a duration.
-func (v *Viper) GetDuration(key string) time.Duration {
-	return cast.ToDuration(v.Get(key))
+func (v *Viper) GetDuration(key string, defaultValue time.Duration) time.Duration {
+	if v.IsSet(key) {
+		return cast.ToDuration(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetIntSlice returns the value associated with the key as a slice of int values.
-func GetIntSlice(key string) []int { return v.GetIntSlice(key) }
+func GetIntSlice(key string, defaultValue []int) []int { return v.GetIntSlice(key, defaultValue) }
 
 // GetIntSlice returns the value associated with the key as a slice of int values.
-func (v *Viper) GetIntSlice(key string) []int {
-	return cast.ToIntSlice(v.Get(key))
+func (v *Viper) GetIntSlice(key string, defaultValue []int) []int {
+	if v.IsSet(key) {
+		return cast.ToIntSlice(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetStringSlice returns the value associated with the key as a slice of strings.
-func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
+func GetStringSlice(key string, defaultValue []string) []string {
+	return v.GetStringSlice(key, defaultValue)
+}
 
 // GetStringSlice returns the value associated with the key as a slice of strings.
-func (v *Viper) GetStringSlice(key string) []string {
-	return cast.ToStringSlice(v.Get(key))
+func (v *Viper) GetStringSlice(key string, defaultValue []string) []string {
+	if v.IsSet(key) {
+		return cast.ToStringSlice(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetStringMap returns the value associated with the key as a map of interfaces.
-func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
+func GetStringMap(key string, defaultValue map[string]interface{}) map[string]interface{} {
+	return v.GetStringMap(key, defaultValue)
+}
 
 // GetStringMap returns the value associated with the key as a map of interfaces.
-func (v *Viper) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(v.Get(key))
+func (v *Viper) GetStringMap(key string, defaultValue map[string]interface{}) map[string]interface{} {
+	if v.IsSet(key) {
+		return cast.ToStringMap(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetStringMapString returns the value associated with the key as a map of strings.
-func GetStringMapString(key string) map[string]string { return v.GetStringMapString(key) }
+func GetStringMapString(key string, defaultValue map[string]string) map[string]string {
+	return v.GetStringMapString(key, defaultValue)
+}
 
 // GetStringMapString returns the value associated with the key as a map of strings.
-func (v *Viper) GetStringMapString(key string) map[string]string {
-	return cast.ToStringMapString(v.Get(key))
+func (v *Viper) GetStringMapString(key string, defaultValue map[string]string) map[string]string {
+	if v.IsSet(key) {
+		return cast.ToStringMapString(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
-func GetStringMapStringSlice(key string) map[string][]string { return v.GetStringMapStringSlice(key) }
+func GetStringMapStringSlice(key string, defaultValue map[string][]string) map[string][]string {
+	return v.GetStringMapStringSlice(key, defaultValue)
+}
 
 // GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
-func (v *Viper) GetStringMapStringSlice(key string) map[string][]string {
-	return cast.ToStringMapStringSlice(v.Get(key))
+func (v *Viper) GetStringMapStringSlice(key string, defaultValue map[string][]string) map[string][]string {
+	if v.IsSet(key) {
+		return cast.ToStringMapStringSlice(v.Get(key))
+	}
+	return defaultValue
 }
 
 // GetSizeInBytes returns the size of the value associated with the given key
 // in bytes.
-func GetSizeInBytes(key string) uint { return v.GetSizeInBytes(key) }
+func GetSizeInBytes(key string, defaultValue uint) uint { return v.GetSizeInBytes(key, defaultValue) }
 
 // GetSizeInBytes returns the size of the value associated with the given key
 // in bytes.
-func (v *Viper) GetSizeInBytes(key string) uint {
-	sizeStr := cast.ToString(v.Get(key))
-	return parseSizeInBytes(sizeStr)
+func (v *Viper) GetSizeInBytes(key string, defaultValue uint) uint {
+	if v.IsSet(key) {
+		sizeStr := cast.ToString(v.Get(key))
+		return parseSizeInBytes(sizeStr)
+	}
+	return defaultValue
 }
 
 // UnmarshalKey takes a single key and unmarshals it into a Struct.
@@ -910,17 +971,15 @@ func (v *Viper) BindPFlags(flags *pflag.FlagSet) error {
 // BindPFlag binds a specific key to a pflag (as used by cobra).
 // Example (where serverCmd is a Cobra instance):
 //
-//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
-//	 Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
-//
+//	serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 func BindPFlag(key string, flag *pflag.Flag) error { return v.BindPFlag(key, flag) }
 
 // BindPFlag binds a specific key to a pflag (as used by cobra).
 // Example (where serverCmd is a Cobra instance):
 //
-//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
-//	 Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
-//
+//	serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	Viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
 func (v *Viper) BindPFlag(key string, flag *pflag.Flag) error {
 	return v.BindFlagValue(key, pflagValue{flag})
 }
@@ -943,17 +1002,15 @@ func (v *Viper) BindFlagValues(flags FlagValueSet) (err error) {
 // BindFlagValue binds a specific key to a FlagValue.
 // Example (where serverCmd is a Cobra instance):
 //
-//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
-//	 Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
-//
+//	serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
 func BindFlagValue(key string, flag FlagValue) error { return v.BindFlagValue(key, flag) }
 
 // BindFlagValue binds a specific key to a FlagValue.
 // Example (where serverCmd is a Cobra instance):
 //
-//	 serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
-//	 Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
-//
+//	serverCmd.Flags().Int("port", 1138, "Port to run Application server on")
+//	Viper.BindFlagValue("port", serverCmd.Flags().Lookup("port"))
 func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
@@ -1658,9 +1715,10 @@ func (v *Viper) AllKeys() []string {
 
 // flattenAndMergeMap recursively flattens the given map into a map[string]bool
 // of key paths (used as a set, easier to manipulate than a []string):
-// - each path is merged into a single key string, delimited with v.keyDelim (= ".")
-// - if a path is shadowed by an earlier value in the initial shadow map,
-//   it is skipped.
+//   - each path is merged into a single key string, delimited with v.keyDelim (= ".")
+//   - if a path is shadowed by an earlier value in the initial shadow map,
+//     it is skipped.
+//
 // The resulting set of paths is merged to the given shadow set at the same time.
 func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interface{}, prefix string) map[string]bool {
 	if shadow != nil && prefix != "" && shadow[prefix] {
