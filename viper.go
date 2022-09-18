@@ -1700,7 +1700,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
 		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
-			return ConfigParseError{err}
+			return &ConfigParseError{err}
 		}
 	}
 

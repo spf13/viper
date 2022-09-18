@@ -27,8 +27,13 @@ type ConfigParseError struct {
 }
 
 // Error returns the formatted configuration error.
-func (pe ConfigParseError) Error() string {
+func (pe *ConfigParseError) Error() string {
 	return fmt.Sprintf("While parsing config: %s", pe.err.Error())
+}
+
+// Unwrap returns the wrapped error.
+func (pe *ConfigParseError) Unwrap() error {
+	return pe.err
 }
 
 // toCaseInsensitiveValue checks if the value is a  map;
