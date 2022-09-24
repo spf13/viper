@@ -1270,7 +1270,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
 		case "stringToString", "stringToInt":
-			return csvKeyValueConv(flag.ValueString())
+			return stringToInterfaceCong(flag.ValueString())
 		default:
 			return flag.ValueString()
 		}
@@ -1349,7 +1349,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
 			case "stringToString", "stringToInt":
-				return csvKeyValueConv(flag.ValueString())
+				return stringToInterfaceCong(flag.ValueString())
 			default:
 				return flag.ValueString()
 			}
@@ -1371,7 +1371,7 @@ func readAsCSV(val string) ([]string, error) {
 
 // mostly copied from pflag's implementation of this operation here https://github.com/spf13/pflag/blob/master/string_to_string.go#L79
 // alterations are: errors are swallowed, map[string]interface{} is returned in order to enable cast.ToStringMap
-func csvKeyValueConv(val string) interface{} {
+func stringToInterfaceCong(val string) interface{} {
 	val = strings.Trim(val, "[]")
 	// An empty string would cause an empty map
 	if len(val) == 0 {
