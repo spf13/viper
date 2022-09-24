@@ -1166,16 +1166,22 @@ func TestBindPFlagDetectNilFlag(t *testing.T) {
 	assert.Error(t, result)
 }
 
-func TestBindPFlagStringToString(t *testing.T) {
+func TestBindPFlagCSVKeyValue(t *testing.T) {
 	tests := []struct {
 		Expected map[string]string
 		Value    string
 	}{
+		// stringToString
 		{map[string]string{}, ""},
 		{map[string]string{"yo": "hi"}, "yo=hi"},
 		{map[string]string{"yo": "hi", "oh": "hi=there"}, "yo=hi,oh=hi=there"},
 		{map[string]string{"yo": ""}, "yo="},
 		{map[string]string{"yo": "", "oh": "hi=there"}, "yo=,oh=hi=there"},
+		//stringToInt
+		{map[string]string{"yo": "1", "oh": "21"}, "yo=1,oh=21"},
+		{map[string]string{"yo": "2", "oh": "21.0"}, "yo=2,oh=21.0"},
+		{map[string]string{"yo": "", "oh": "20.99"}, "yo=,oh=20.99"},
+		{map[string]string{"yo": "", "oh": ""}, "yo=,oh="},
 	}
 
 	v := New() // create independent Viper object
