@@ -2569,6 +2569,23 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
 }
 
+func TestMapWithDefaults(t *testing.T) {
+	Set("config.value1", 1)
+	SetDefault("config.value2.internal", 3)
+
+	m, ok := Get("config").(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, map[string]interface{}{"internal": 3}, m["value2"])
+}
+
+func TestSubWithDefaults(t *testing.T) {
+	Set("config.value1", 1)
+	SetDefault("config.value2.internal", 3)
+
+	sub := Sub("config")
+	assert.Equal(t, 3, sub.Get("value2.internal"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()

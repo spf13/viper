@@ -886,10 +886,13 @@ func Get(key string) interface{} { return v.Get(key) }
 
 func (v *Viper) Get(key string) interface{} {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey, true)
-	if val == nil {
+
+	found := v.find(lcaseKey, true)
+	if len(found) == 0 {
 		return nil
 	}
+
+	val := v.mergeFoundMaps(lcaseKey, found)
 
 	if v.typeByDefValue {
 		// TODO(bep) this branch isn't covered by a single test.
@@ -1226,9 +1229,10 @@ func (v *Viper) MustBindEnv(input ...string) {
 // corresponds to a flag, the flag's default value is returned.
 //
 // Note: this assumes a lower-cased key given.
-func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
+func (v *Viper) find(lcaseKey string, flagDefault bool) []interface{} {
 	var (
 		val    interface{}
+		found  []interface{}
 		exists bool
 		path   = strings.Split(lcaseKey, v.keyDelim)
 		nested = len(path) > 1
@@ -1247,10 +1251,10 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 	// Set() override first
 	val = v.searchMap(v.override, path)
 	if val != nil {
-		return val
+		found = append(found, val)
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
-		return nil
+		return found
 	}
 
 	// PFlag override next
@@ -1258,27 +1262,27 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
-			return cast.ToInt(flag.ValueString())
+			found = append(found, cast.ToInt(flag.ValueString()))
 		case "bool":
-			return cast.ToBool(flag.ValueString())
+			found = append(found, cast.ToBool(flag.ValueString()))
 		case "stringSlice", "stringArray":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
-			return res
+			found = append(found, res)
 		case "intSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
-			return cast.ToIntSlice(res)
+			found = append(found, cast.ToIntSlice(res))
 		case "stringToString":
-			return stringToStringConv(flag.ValueString())
+			found = append(found, stringToStringConv(flag.ValueString()))
 		default:
-			return flag.ValueString()
+			found = append(found, flag.ValueString())
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
-		return nil
+		return found
 	}
 
 	// Env override next
@@ -1286,49 +1290,50 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
 		if val, ok := v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); ok {
-			return val
+			found = append(found, val)
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
-			return nil
+			return found
 		}
 	}
 	envkeys, exists := v.env[lcaseKey]
 	if exists {
 		for _, envkey := range envkeys {
 			if val, ok := v.getEnv(envkey); ok {
-				return val
+				found = append(found, val)
+				break
 			}
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
-		return nil
+		return found
 	}
 
 	// Config file next
 	val = v.searchIndexableWithPathPrefixes(v.config, path)
 	if val != nil {
-		return val
+		found = append(found, val)
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
-		return nil
+		return found
 	}
 
 	// K/V store next
 	val = v.searchMap(v.kvstore, path)
 	if val != nil {
-		return val
+		found = append(found, val)
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
-		return nil
+		return found
 	}
 
 	// Default next
 	val = v.searchMap(v.defaults, path)
 	if val != nil {
-		return val
+		found = append(found, val)
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
-		return nil
+		return found
 	}
 
 	if flagDefault {
@@ -1337,29 +1342,64 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 		if flag, exists := v.pflags[lcaseKey]; exists {
 			switch flag.ValueType() {
 			case "int", "int8", "int16", "int32", "int64":
-				return cast.ToInt(flag.ValueString())
+				found = append(found, cast.ToInt(flag.ValueString()))
 			case "bool":
-				return cast.ToBool(flag.ValueString())
+				found = append(found, cast.ToBool(flag.ValueString()))
 			case "stringSlice", "stringArray":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
-				return res
+				found = append(found, res)
 			case "intSlice":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
-				return cast.ToIntSlice(res)
+				found = append(found, cast.ToIntSlice(res))
 			case "stringToString":
-				return stringToStringConv(flag.ValueString())
+				found = append(found, stringToStringConv(flag.ValueString()))
 			default:
-				return flag.ValueString()
+				found = append(found, flag.ValueString())
 			}
 		}
 		// last item, no need to check shadowing
 	}
 
-	return nil
+	return found
+}
+
+// found is a slice of values found across layers for lcaseKey in priority
+// order (i.e. override, flag, env, config file, key/value store, default). If
+// the highest priority value found is a map, traverse back across found
+// values, and, while they are "mappable", merged them into the overall result.
+func (v *Viper) mergeFoundMaps(lcaseKey string, found []interface{}) interface{} {
+	if len(found) == 0 {
+		return nil
+	}
+
+	var foundMaps []map[string]interface{}
+	for _, fv := range found {
+		fm, err := cast.ToStringMapE(fv)
+		if err != nil {
+			// A non-map value found. This shadows everything else
+			// further down the list.
+			break
+		}
+		foundMaps = append(foundMaps, fm)
+	}
+
+	// No non-shadowed maps found. Return the highest priority value.
+	if len(foundMaps) == 0 {
+		return found[0]
+	}
+
+	mergedMap := map[string]interface{}{}
+
+	// merge in reversed order (so that higher priority sources overwrite lower priority ones)
+	for i := len(foundMaps) - 1; i >= 0; i = i - 1 {
+		mergeMaps(foundMaps[i], mergedMap, nil)
+	}
+
+	return mergedMap
 }
 
 func readAsCSV(val string) ([]string, error) {
@@ -1401,8 +1441,8 @@ func IsSet(key string) bool { return v.IsSet(key) }
 
 func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
-	val := v.find(lcaseKey, false)
-	return val != nil
+	vals := v.find(lcaseKey, false)
+	return len(vals) != 0
 }
 
 // AutomaticEnv makes Viper check if environment variables match any of the existing keys
