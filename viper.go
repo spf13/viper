@@ -205,6 +205,7 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
+	allowEmptyMap       bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -533,6 +534,15 @@ func AllowEmptyEnv(allowEmptyEnv bool) { v.AllowEmptyEnv(allowEmptyEnv) }
 
 func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
 	v.allowEmptyEnv = allowEmptyEnv
+}
+
+// AllowEmptyMap tells Viper to consider set,
+// but empty maps as valid values instead of falling back.
+// For backward compatibility reasons this is false by default.
+func AllowEmptyMap(allowEmptyMap bool) { v.AllowEmptyMap(allowEmptyMap) }
+
+func (v *Viper) AllowEmptyMap(allowEmptyMap bool) {
+	v.allowEmptyMap = allowEmptyMap
 }
 
 // TODO: should getEnv logic be moved into find(). Can generalize the use of
@@ -1550,6 +1560,8 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 
+	fmt.Println(config)
+
 	v.config = config
 	return nil
 }
@@ -1582,7 +1594,9 @@ func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 
 func (v *Viper) ReadConfig(in io.Reader) error {
 	v.config = make(map[string]interface{})
-	return v.unmarshalReader(in, v.config)
+	err := v.unmarshalReader(in, v.config)
+	fmt.Println(v.config)
+	return err
 }
 
 // MergeConfig merges a new configuration with an existing config.
@@ -2010,6 +2024,13 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			// immediate value
 			shadow[strings.ToLower(fullKey)] = true
 			continue
+		}
+
+		if v.allowEmptyMap {
+			if len(val.(map[string]interface{})) == 0 {
+				shadow[strings.ToLower(fullKey)] = true
+				continue
+			}
 		}
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
