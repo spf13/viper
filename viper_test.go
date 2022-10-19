@@ -60,6 +60,8 @@ type testUnmarshalExtra struct {
 var tomlExample = []byte(`
 title = "TOML Example"
 
+[empty.map]
+
 [owner]
 organization = "MongoDB"
 Bio = "MongoDB Chief Developer Advocate & Hacker at Large"
@@ -667,6 +669,16 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
+}
+
+func TestEmptyMap_Allowed(t *testing.T) {
+	initTOML()
+	AllowEmptyMap(true)
+
+	allkeys := sort.StringSlice(AllKeys())
+	allkeys.Sort()
+
+	assert.Equal(t, sort.StringSlice(sort.StringSlice{"empty.map", "owner.bio", "owner.dob", "owner.organization", "title"}), allkeys)
 }
 
 func TestEnvPrefix(t *testing.T) {

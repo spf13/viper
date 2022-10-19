@@ -205,6 +205,7 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
+	allowEmptyMap       bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -524,6 +525,15 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 	}
 
 	return strings.ToUpper(in)
+}
+
+// AllowEmptyMap tells Viper to consider set,
+// but empty maps as valid values instead of falling back.
+// For backward compatibility reasons this is false by default.
+func AllowEmptyMap(allowEmptyMap bool) { v.AllowEmptyMap(allowEmptyMap) }
+
+func (v *Viper) AllowEmptyMap(allowEmptyMap bool) {
+	v.allowEmptyMap = allowEmptyMap
 }
 
 // AllowEmptyEnv tells Viper to consider set,
@@ -2011,6 +2021,14 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			shadow[strings.ToLower(fullKey)] = true
 			continue
 		}
+
+		if v.allowEmptyMap {
+			if len(val.(map[string]interface{})) == 0 {
+				shadow[strings.ToLower(fullKey)] = true
+				continue
+			}
+		}
+
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
