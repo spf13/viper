@@ -1,5 +1,5 @@
-//go:build !js && !aix
-// +build !js,!aix
+//go:build darwin || dragonfly || freebsd || openbsd || linux || netbsd || solaris || windows
+// +build darwin dragonfly freebsd openbsd linux netbsd solaris windows
 
 package viper
 
