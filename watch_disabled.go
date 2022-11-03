@@ -1,4 +1,5 @@
-// +build js,wasm
+//go:build js || aix
+// +build js aix
 
 package viper
 
