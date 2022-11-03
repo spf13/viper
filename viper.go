@@ -463,9 +463,8 @@ func (v *Viper) WatchConfig() {
 					// we only care about the config file with the following cases:
 					// 1 - if the config file was modified or created
 					// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
-					const writeOrCreateMask = fsnotify.Write | fsnotify.Create
 					if (filepath.Clean(event.Name) == configFile &&
-						event.Op&writeOrCreateMask != 0) ||
+						(event.Has(fsnotify.Write) || event.Has(fsnotify.Create))) ||
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
@@ -475,8 +474,7 @@ func (v *Viper) WatchConfig() {
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
 						}
-					} else if filepath.Clean(event.Name) == configFile &&
-						event.Op&fsnotify.Remove != 0 {
+					} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) {
 						eventsWG.Done()
 						return
 					}
