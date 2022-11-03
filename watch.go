@@ -1,5 +1,5 @@
-//go:build !js
-// +build !js
+//go:build !js && !aix
+// +build !js,!aix
 
 package viper
 
