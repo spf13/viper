@@ -1,13 +1,18 @@
-//go:build js || aix
-// +build js aix
+//go:build !darwin && !dragonfly && !freebsd && !openbsd && !linux && !netbsd && !solaris && !windows
+// +build !darwin,!dragonfly,!freebsd,!openbsd,!linux,!netbsd,!solaris,!windows
 
 package viper
 
 import (
-	"errors"
+	"fmt"
+	"runtime"
 
 	"github.com/fsnotify/fsnotify"
 )
+
+func newWatcher() (*watcher, error) {
+	return &watcher{}, fmt.Errorf("fsnotify not supported on %s", runtime.GOOS)
+}
 
 type watcher struct {
 	Events chan fsnotify.Event
@@ -24,8 +29,4 @@ func (*watcher) Add(name string) error {
 
 func (*watcher) Remove(name string) error {
 	return nil
-}
-
-func newWatcher() (*watcher, error) {
-	return &watcher{}, errors.New("fsnotify is not supported on WASM")
 }
