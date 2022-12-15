@@ -1,0 +1,33 @@
+name: Dagger
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    # strategy:
+      # Fail fast is disabled because there are Go version specific features and tests
+      # that should be able to fail independently.
+      # fail-fast: false
+      # matrix:
+      #   go: ['1.16', '1.17', '1.18', '1.19']
+        # tags: ['', 'viper_yaml2', 'viper_toml1']
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Test
+        run: |
+          cd ci
+          go run main.go -w .. test
