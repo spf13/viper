@@ -205,6 +205,7 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
+	logMessage          bool
 
 	parents        []string
 	config         map[string]interface{}
@@ -242,6 +243,7 @@ func New() *Viper {
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
 	v.logger = jwwLogger{}
+	v.logMessage = true
 
 	v.resetEncoding()
 
@@ -267,6 +269,14 @@ func (fn optionFunc) apply(v *Viper) {
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
 		v.keyDelim = d
+	})
+}
+
+// DisableMessageLog block any kind of messages to be logged.
+// By default, all messages are logged.
+func DisableMessageLog() Option {
+	return optionFunc(func(v *Viper) {
+		v.logMessage = false
 	})
 }
 
@@ -440,14 +450,16 @@ func (v *Viper) WatchConfig() {
 	initWG.Add(1)
 	go func() {
 		watcher, err := newWatcher()
-		if err != nil {
+		if err != nil && v.logMessage {
 			log.Fatal(err)
 		}
 		defer watcher.Close()
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			if v.logMessage {
+				log.Printf("error: %v\n", err)
+			}
 			initWG.Done()
 			return
 		}
@@ -475,7 +487,7 @@ func (v *Viper) WatchConfig() {
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
-						if err != nil {
+						if err != nil && v.logMessage {
 							log.Printf("error reading config file: %v\n", err)
 						}
 						if v.onConfigChange != nil {
@@ -487,7 +499,7 @@ func (v *Viper) WatchConfig() {
 					}
 
 				case err, ok := <-watcher.Errors:
-					if ok { // 'Errors' channel is not closed
+					if ok && v.logMessage { // 'Errors' channel is not closed
 						log.Printf("watcher error: %v\n", err)
 					}
 					eventsWG.Done()
