@@ -40,8 +40,8 @@ go get github.com/spf13/viper
 
 ## What is Viper?
 
-Viper is a complete configuration solution for Go applications including 12-Factor apps. It is designed
-to work within an application, and can handle all types of configuration needs
+Viper is a complete configuration solution for Go applications including [12-Factor apps](https://12factor.net/#the_twelve_factors).
+It is designed to work within an application, and can handle all types of configuration needs
 and formats. It supports:
 
 * setting defaults
