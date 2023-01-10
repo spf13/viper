@@ -428,19 +428,30 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 
 func WatchConfig() { v.WatchConfig() }
 
+func (v *Viper) WatchConfigWithError() <-chan error{
+	return v.watchConfig()
+}
+
 func (v *Viper) WatchConfig() {
+	v.watchConfig()
+}
+
+func (v *Viper) watchConfig() <-chan error {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
+	errChan := make(chan error, 1)
 	go func() {
 		watcher, err := newWatcher()
 		if err != nil {
-			log.Fatal(err)
+			errChan <- err
+			initWG.Done()
+			return
 		}
 		defer watcher.Close()
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
-			log.Printf("error: %v\n", err)
+			errChan <- err
 			initWG.Done()
 			return
 		}
@@ -481,7 +492,7 @@ func (v *Viper) WatchConfig() {
 
 				case err, ok := <-watcher.Errors:
 					if ok { // 'Errors' channel is not closed
-						log.Printf("watcher error: %v\n", err)
+						errChan <- err
 					}
 					eventsWG.Done()
 					return
@@ -493,6 +504,7 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+	return errChan
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
