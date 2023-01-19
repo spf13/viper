@@ -1,6 +1,3 @@
-//go:build !viper_yaml2
-// +build !viper_yaml2
-
 package viper
 
 var yamlExample = []byte(`Hacker: true
