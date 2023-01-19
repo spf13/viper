@@ -46,10 +46,10 @@ func TestNestedOverrides(t *testing.T) {
 	deepCheckValue(assert, v, overrideLayer, []string{"tom", "size"}, 4)
 
 	// Case 4: key:value overridden by a map
-	v = overrideDefault(assert, "tom.size", 4, "tom", map[string]interface{}{"age": 10}) // "tom.size" is first given "4" as default value, then "tom" is overridden by map{"age":10}
-	assert.Equal(4, v.Get("tom.size"))                                                   // "tom.size" should still be reachable
-	assert.Equal(10, v.Get("tom.age"))                                                   // new value should be there
-	deepCheckValue(assert, v, overrideLayer, []string{"tom", "age"}, 10)                 // new value should be there
+	assert.Equal(map[string]interface{}{"size": 4, "age": 10}, v.Get("tom")) // "tom.size" is first given "4" as default value, then "tom" is set to map{"age":10}, size and age should be merged.
+	assert.Equal(4, v.Get("tom.size"))                                       // "tom.size" should still be reachable
+	assert.Equal(10, v.Get("tom.age"))                                       // new value should be there
+	deepCheckValue(assert, v, overrideLayer, []string{"tom", "age"}, 10)     // new value should be there
 	v = override(assert, "tom.size", 4, "tom", map[string]interface{}{"age": 10})
 	assert.Nil(v.Get("tom.size"))
 	assert.Equal(10, v.Get("tom.age"))
