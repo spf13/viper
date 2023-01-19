@@ -421,18 +421,16 @@ var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props
 // SupportedRemoteProviders are universally supported remote providers.
 var SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore"}
 
-// OnConfigChange is used to implement a response on config files change.
+// OnConfigChange sets the event handler that is called when a config file changes.
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
 func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 	v.onConfigChange = run
 }
 
-// WatchConfig is watching changes on config files
-// to start event in OnConfigChange. Used for global viper config.
+// WatchConfig starts watching a config file for changes.
 func WatchConfig() { v.WatchConfig() }
 
-// WatchConfig is watching changes on config files
-// to start event in OnConfigChange.
+// WatchConfig starts watching a config file for changes.
 func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
