@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.16', '1.17', '1.18', '1.19']
+        go: ['1.17', '1.18', '1.19']
     env:
       GOFLAGS: -mod=readonly
 
