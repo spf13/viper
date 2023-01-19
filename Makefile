@@ -16,7 +16,7 @@ endif
 
 # Dependency versions
 GOTESTSUM_VERSION = 1.8.0
-GOLANGCI_VERSION = 1.49.0
+GOLANGCI_VERSION = 1.50.1
 
 # Add the ability to override some variables
 # Use with care
