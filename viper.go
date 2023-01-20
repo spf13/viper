@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -205,7 +204,6 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
-	logMessage          bool
 
 	config         map[string]interface{}
 	override       map[string]interface{}
@@ -241,7 +239,6 @@ func New() *Viper {
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
 	v.logger = jwwLogger{}
-	v.logMessage = true
 
 	v.resetEncoding()
 
@@ -267,14 +264,6 @@ func (fn optionFunc) apply(v *Viper) {
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
 		v.keyDelim = d
-	})
-}
-
-// DisableMessageLog block any kind of messages to be logged.
-// By default, all messages are logged.
-func DisableMessageLog() Option {
-	return optionFunc(func(v *Viper) {
-		v.logMessage = false
 	})
 }
 
@@ -443,16 +432,17 @@ func (v *Viper) WatchConfig() {
 	initWG.Add(1)
 	go func() {
 		watcher, err := newWatcher()
-		if err != nil && v.logMessage {
-			log.Fatal(err)
+		if err != nil {
+			v.logger.Error("failure to create watcher",
+				"msg", err.Error())
+			os.Exit(1)
 		}
 		defer watcher.Close()
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
-			if v.logMessage {
-				log.Printf("error: %v\n", err)
-			}
+			v.logger.Error("get config file",
+				"msg", err.Error())
 			initWG.Done()
 			return
 		}
@@ -480,8 +470,9 @@ func (v *Viper) WatchConfig() {
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
-						if err != nil && v.logMessage {
-							log.Printf("error reading config file: %v\n", err)
+						if err != nil {
+							v.logger.Error("reading config file",
+								"msg", err.Error())
 						}
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
@@ -492,8 +483,8 @@ func (v *Viper) WatchConfig() {
 					}
 
 				case err, ok := <-watcher.Errors:
-					if ok && v.logMessage { // 'Errors' channel is not closed
-						log.Printf("watcher error: %v\n", err)
+					if ok { // 'Errors' channel is not closed
+						v.logger.Error("watcher error", "msg", err.Error())
 					}
 					eventsWG.Done()
 					return
