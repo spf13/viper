@@ -928,6 +928,8 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToStringSlice(val)
 		case []int:
 			return cast.ToIntSlice(val)
+		case []time.Duration:
+			return cast.ToDurationSlice(val)
 		}
 	}
 
@@ -1274,8 +1276,14 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
+		case "durationSlice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			slice := strings.Split(s, ",")
+			return cast.ToDurationSlice(slice)
 		case "stringToString":
 			return stringToStringConv(flag.ValueString())
+
 		default:
 			return flag.ValueString()
 		}
@@ -1355,6 +1363,11 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 				return cast.ToIntSlice(res)
 			case "stringToString":
 				return stringToStringConv(flag.ValueString())
+			case "durationSlice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				slice := strings.Split(s, ",")
+				return cast.ToDurationSlice(slice)
 			default:
 				return flag.ValueString()
 			}
