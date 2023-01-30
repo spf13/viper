@@ -928,6 +928,10 @@ func (v *Viper) Get(key string) interface{} {
 			return cast.ToStringSlice(val)
 		case []int:
 			return cast.ToIntSlice(val)
+		case map[string]string:
+			return cast.ToStringMapString(val)
+		case map[string]interface{}:
+			return cast.ToStringMap(val)
 		}
 	}
 
