@@ -1094,6 +1094,28 @@ func TestBindPFlagsStringArray(t *testing.T) {
 	}
 }
 
+func TestSliceFlagsReturnCorrectType(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flagSet.IntSlice("int", []int{1, 2}, "")
+	flagSet.StringSlice("str", []string{"3", "4"}, "")
+	flagSet.DurationSlice("duration", []time.Duration{5 * time.Second}, "")
+
+	v := New()
+	v.BindPFlags(flagSet)
+
+	all := v.AllSettings()
+
+	if _, ok := all["int"].([]int); !ok {
+		t.Errorf("unexpected type %T expected []int", all["int"])
+	}
+	if _, ok := all["str"].([]string); !ok {
+		t.Errorf("unexpected type %T expected []string", all["str"])
+	}
+	if _, ok := all["duration"].([]time.Duration); !ok {
+		t.Errorf("unexpected type %T expected []time.Duration", all["duration"])
+	}
+}
+
 //nolint:dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
