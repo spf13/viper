@@ -1094,7 +1094,7 @@ func TestBindPFlagsStringArray(t *testing.T) {
 	}
 }
 
-func TestSliceFlagsReturnCorretType(t *testing.T) {
+func TestSliceFlagsReturnCorrectType(t *testing.T) {
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	flagSet.IntSlice("int", []int{1, 2}, "")
 	flagSet.StringSlice("str", []string{"3", "4"}, "")
