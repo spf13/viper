@@ -1235,6 +1235,53 @@ func TestBindPFlagStringToString(t *testing.T) {
 	}
 }
 
+func TestBindPFlagStringToInt(t *testing.T) {
+	tests := []struct {
+		Expected map[string]int
+		Value    string
+	}{
+		{map[string]int{"yo": 1, "oh": 21}, "yo=1,oh=21"},
+		{map[string]int{"yo": 100000000, "oh": 0}, "yo=100000000,oh=0"},
+		{map[string]int{}, "yo=2,oh=21.0"},
+		{map[string]int{}, "yo=,oh=20.99"},
+		{map[string]int{}, "yo=,oh="},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := map[string]int{}
+	v.SetDefault("stringtoint", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.StringToInt("stringtoint", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestMap struct {
+				StringToInt map[string]int
+			}
+			val := &TestMap{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			if changed {
+				assert.Equal(t, testValue.Expected, val.StringToInt)
+			} else {
+				assert.Equal(t, defaultVal, val.StringToInt)
+			}
+		}
+	}
+}
+
 func TestBoundCaseSensitivity(t *testing.T) {
 	assert.Equal(t, "brown", Get("eyes"))
 

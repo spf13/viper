@@ -1283,7 +1283,8 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 			return cast.ToDurationSlice(slice)
 		case "stringToString":
 			return stringToStringConv(flag.ValueString())
-
+		case "stringToInt":
+			return stringToIntConv(flag.ValueString())
 		default:
 			return flag.ValueString()
 		}
@@ -1363,6 +1364,8 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 				return cast.ToIntSlice(res)
 			case "stringToString":
 				return stringToStringConv(flag.ValueString())
+			case "stringToInt":
+				return stringToIntConv(flag.ValueString())
 			case "durationSlice":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")
@@ -1407,6 +1410,30 @@ func stringToStringConv(val string) interface{} {
 			return nil
 		}
 		out[kv[0]] = kv[1]
+	}
+	return out
+}
+
+// mostly copied from pflag's implementation of this operation here https://github.com/spf13/pflag/blob/d5e0c0615acee7028e1e2740a11102313be88de1/string_to_int.go#L68
+// alterations are: errors are swallowed, map[string]interface{} is returned in order to enable cast.ToStringMap
+func stringToIntConv(val string) interface{} {
+	val = strings.Trim(val, "[]")
+	// An empty string would cause an empty map
+	if len(val) == 0 {
+		return map[string]interface{}{}
+	}
+	ss := strings.Split(val, ",")
+	out := make(map[string]interface{}, len(ss))
+	for _, pair := range ss {
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) != 2 {
+			return nil
+		}
+		var err error
+		out[kv[0]], err = strconv.Atoi(kv[1])
+		if err != nil {
+			return nil
+		}
 	}
 	return out
 }
