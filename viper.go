@@ -948,7 +948,10 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.config = cast.ToStringMap(data)
+		m := cast.ToStringMap(data)
+		for k, v := range m {
+			subv.config[strings.ToLower(k)] = v
+		}
 		return subv
 	}
 	return nil
