@@ -27,6 +27,7 @@ Many Go projects are built using Viper including:
 * [doctl](https://github.com/digitalocean/doctl)
 * [Clairctl](https://github.com/jgsqware/clairctl)
 * [Mercure](https://mercure.rocks)
+* [Coder](https://github.com/coder/coder)
 
 
 ## Install
