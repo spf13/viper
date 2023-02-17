@@ -29,6 +29,7 @@ Many Go projects are built using Viper including:
 * [Mercure](https://mercure.rocks)
 * [Meshery](https://github.com/meshery/meshery)
 * [Bearer](https://github.com/bearer/bearer)
+* [Coder](https://github.com/coder/coder)
 
 
 ## Install
