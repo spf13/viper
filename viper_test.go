@@ -699,6 +699,29 @@ func TestAutoEnv(t *testing.T) {
 	assert.Equal(t, "13", Get("foo_bar"))
 }
 
+func TestAutoEnvWithSlice(t *testing.T) {
+	initJSON()
+
+	AutomaticEnv()
+
+	type config struct {
+		Batters struct {
+			Batter []struct {
+				Type string
+			}
+		}
+	}
+
+	testutil.Setenv(t, "BATTERS.BATTER.1.TYPE", "Small")
+
+	var C config
+	err := Unmarshal(&C)
+	if err != nil {
+		t.Fatalf("unable to decode into struct, %v", err)
+	}
+	assert.Equal(t, []struct{ Type string }{{"Regular"}, {"Small"}, {"Blueberry"}, {"Devil's Food"}}, C.Batters.Batter)
+}
+
 func TestAutoEnvWithPrefix(t *testing.T) {
 	Reset()
 
@@ -767,8 +790,13 @@ func TestAllKeys(t *testing.T) {
 		"name",
 		"beard",
 		"ppu",
-		"batters.batter",
-		"hobbies",
+		"batters.batter.0.type",
+		"batters.batter.1.type",
+		"batters.batter.2.type",
+		"batters.batter.3.type",
+		"hobbies.0",
+		"hobbies.1",
+		"hobbies.2",
 		"clothing.jacket",
 		"clothing.trousers",
 		"default.import_path",
@@ -2221,7 +2249,7 @@ clothing:
 
 func TestDotParameter(t *testing.T) {
 	initJSON()
-	// shoud take precedence over batters defined in jsonExample
+	// should take precedence over batters defined in jsonExample
 	r := bytes.NewReader([]byte(`{ "batters.batter": [ { "type": "Small" } ] }`))
 	unmarshalReader(r, v.config)
 
