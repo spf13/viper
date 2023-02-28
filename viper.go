@@ -1097,6 +1097,27 @@ func (v *Viper) UnmarshalKey(key string, rawVal interface{}, opts ...DecoderConf
 	return decode(v.Get(key), defaultDecoderConfig(rawVal, opts...))
 }
 
+// UnmarshalKeyWithMeta performs UnmarshalKey and provides access to the
+// mapstructure.Metadata in an additional return value.
+func UnmarshalKeyWithMeta(key string, rawVal interface{}) (mapstructure.Metadata, error) {
+	return v.UnmarshalKeyWithMeta(key, rawVal)
+}
+func (v *Viper) UnmarshalKeyWithMeta(key string, rawVal interface{}) (mapstructure.Metadata, error) {
+	var meta mapstructure.Metadata
+	config := defaultDecoderConfig(rawVal)
+	config.Metadata = &meta
+
+	err := decode(v.Get(key), config)
+
+	if err != nil {
+		return meta, err
+	}
+
+	v.insensitiviseMaps()
+
+	return meta, nil
+}
+
 // Unmarshal unmarshals the config into a Struct. Make sure that the tags
 // on the fields of the structure are properly set.
 func Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error {
@@ -1107,7 +1128,28 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with suppot
+// UnmarshalWithMeta performs Unmarshal and provides access to the
+// mapstructure.Metadata in an additional return value.
+func UnmarshalWithMeta(rawVal interface{}) (mapstructure.Metadata, error) {
+	return v.UnmarshalWithMeta(rawVal)
+}
+func (v *Viper) UnmarshalWithMeta(rawVal interface{}) (mapstructure.Metadata, error) {
+	var meta mapstructure.Metadata
+	config := defaultDecoderConfig(rawVal)
+	config.Metadata = &meta
+
+	err := decode(v.AllSettings(), config)
+
+	if err != nil {
+		return meta, err
+	}
+
+	v.insensitiviseMaps()
+
+	return meta, nil
+}
+
+// defaultDecoderConfig returns default mapsstructure.DecoderConfig with support
 // of time.Duration values & string slices
 func defaultDecoderConfig(output interface{}, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	c := &mapstructure.DecoderConfig{

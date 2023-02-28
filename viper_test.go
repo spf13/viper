@@ -518,6 +518,85 @@ func TestUnmarshaling(t *testing.T) {
 	assert.Equal(t, 35, Get("age"))
 }
 
+func ExampleUnmarshalWithMeta() {
+	v := New()
+	type Lib struct {
+		Name    string
+		Awesome bool
+		Useful  bool
+	}
+	var libsCfg struct {
+		Libs map[string]Lib
+	}
+	v.config = map[string]interface{}{
+		"libs": map[string]interface{}{
+			"viper": map[string]interface{}{
+				"name":    "Viper",
+				"awesome": true,
+				"tagline": "Go configuration with fangs!",
+			},
+		},
+		"numbers": []int{4, 8, 15, 16, 23, 42},
+	}
+	meta, _ := v.UnmarshalWithMeta(&libsCfg)
+	// The keys slice is not stable. Sorting them in lexicographical
+	// order allows comparison.
+	sort.Strings(meta.Keys)
+	sort.Strings(meta.Unused)
+	fmt.Printf("%#v\n", meta.Keys)
+	fmt.Printf("%#v", meta.Unused)
+	// Output:
+	// []string{"Libs", "Libs[viper]", "Libs[viper]", "Libs[viper].Awesome", "Libs[viper].Name"}
+	// []string{"Libs[viper].tagline", "numbers"}
+}
+
+func ExampleUnmarshalKeyWithMeta() {
+	v := New()
+	var lib struct {
+		Name    string
+		Awesome bool
+		Useful  bool
+	}
+	v.config = map[string]interface{}{
+		"libs": map[string]interface{}{
+			"viper": map[string]interface{}{
+				"name":    "Viper",
+				"awesome": true,
+				"tagline": "Go configuration with fangs!",
+			},
+		},
+	}
+	meta, _ := v.UnmarshalKeyWithMeta("libs.viper", &lib)
+	fmt.Println(meta.Keys)
+	fmt.Println(meta.Unused)
+	// Output:
+	// [Name Awesome]
+	// [tagline]
+}
+
+func TestUnmarshalKeyWithMeta(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var clothes struct {
+		Jacket string
+		Pants  interface{}
+	}
+	meta, err := v.UnmarshalKeyWithMeta("clothing", &clothes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := []string{"Jacket", "Pants"}
+	unused := []string{"trousers"}
+	sort.Strings(meta.Keys)
+	sort.Strings(meta.Unused)
+	assert.Equal(t, keys, meta.Keys, "keys decoded")
+	assert.Equal(t, unused, meta.Unused, "keys in config not in struct")
+}
+
 func TestUnmarshalExact(t *testing.T) {
 	vip := New()
 	target := &testUnmarshalExtra{}
