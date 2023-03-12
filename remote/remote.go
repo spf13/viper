@@ -10,10 +10,11 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"strings"
+
+	crypt "github.com/sagikazarmark/crypt/config"
 
 	"github.com/spf13/viper"
-
-	crypt "github.com/xordataexchange/crypt/config"
 )
 
 type remoteConfigProvider struct{}
@@ -75,6 +76,7 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 	var cm crypt.ConfigManager
 	var err error
 
+	endpoints := strings.Split(rp.Endpoint(), ";")
 	if rp.SecretKeyring() != "" {
 		var kr *os.File
 		kr, err = os.Open(rp.SecretKeyring())
@@ -82,16 +84,26 @@ func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
 			return nil, err
 		}
 		defer kr.Close()
-		if rp.Provider() == "etcd" {
-			cm, err = crypt.NewEtcdConfigManager([]string{rp.Endpoint()}, kr)
-		} else {
-			cm, err = crypt.NewConsulConfigManager([]string{rp.Endpoint()}, kr)
+		switch rp.Provider() {
+		case "etcd":
+			cm, err = crypt.NewEtcdConfigManager(endpoints, kr)
+		case "etcd3":
+			cm, err = crypt.NewEtcdV3ConfigManager(endpoints, kr)
+		case "firestore":
+			cm, err = crypt.NewFirestoreConfigManager(endpoints, kr)
+		default:
+			cm, err = crypt.NewConsulConfigManager(endpoints, kr)
 		}
 	} else {
-		if rp.Provider() == "etcd" {
-			cm, err = crypt.NewStandardEtcdConfigManager([]string{rp.Endpoint()})
-		} else {
-			cm, err = crypt.NewStandardConsulConfigManager([]string{rp.Endpoint()})
+		switch rp.Provider() {
+		case "etcd":
+			cm, err = crypt.NewStandardEtcdConfigManager(endpoints)
+		case "etcd3":
+			cm, err = crypt.NewStandardEtcdV3ConfigManager(endpoints)
+		case "firestore":
+			cm, err = crypt.NewStandardFirestoreConfigManager(endpoints)
+		default:
+			cm, err = crypt.NewStandardConsulConfigManager(endpoints)
 		}
 	}
 	if err != nil {
