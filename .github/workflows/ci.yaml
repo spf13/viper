@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: js
+            goarch: wasm
+          - goos: aix
+            goarch: ppc64
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build
+        run: go build .
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Fail fast is disabled because there are Go version specific features and tests
+      # that should be able to fail independently.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ['1.17', '1.18', '1.19']
+    env:
+      GOFLAGS: -mod=readonly
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Test
+        run: go test -race -v ./...
+        if: runner.os != 'Windows'
+
+      - name: Test (without race detector)
+        run: go test -v ./...
+        if: runner.os == 'Windows'
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=readonly
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.1
