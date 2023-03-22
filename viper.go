@@ -22,6 +22,7 @@ package viper
 import (
 	"bytes"
 	"encoding/csv"
+	js "encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -223,6 +224,8 @@ type Viper struct {
 	// TODO: should probably be protected with a mutex
 	encoderRegistry *encoding.EncoderRegistry
 	decoderRegistry *encoding.DecoderRegistry
+
+	registered map[string]RegisteredConfig
 }
 
 // New returns an initialized Viper instance.
@@ -474,10 +477,57 @@ func (v *Viper) WatchConfig() {
 						(event.Has(fsnotify.Write) || event.Has(fsnotify.Create))) ||
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
-						err := v.ReadInConfig()
+						tempViper := New()
+						tempViper.AddConfigPath(realConfigFile)
+						err := tempViper.ReadInConfig()
 						if err != nil {
 							log.Printf("error reading config file: %v\n", err)
 						}
+
+						for key, config := range v.registered {
+							oldValue := v.Get(key)
+							newValue := tempViper.Get(key)
+							// Check exist
+							if newValue == nil && !config.CanBeNil {
+								if config.OnUpdateFailed != nil {
+									config.OnUpdateFailed(&Event{
+										old: oldValue,
+										new: nil,
+									})
+								}
+								continue
+							}
+
+							// Type check & convert
+							newValueJson, _ := js.Marshal(newValue)
+							err = js.Unmarshal(newValueJson, config.Schema)
+							if err != nil {
+								config.OnUpdateFailed(&Event{
+									old: oldValue,
+									new: nil,
+								})
+								continue
+							}
+
+							// Validation
+							if !config.Validator(config.Schema) {
+								config.OnUpdateFailed(&Event{
+									old: oldValue,
+									new: nil,
+								})
+								continue
+							}
+
+							// Success
+							v.Set(key, config.Schema)
+							if config.OnUpdate != nil {
+								config.OnUpdate(&Event{
+									new: config.Schema,
+									old: oldValue,
+								})
+							}
+						}
+
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
 						}
