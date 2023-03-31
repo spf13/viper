@@ -1107,7 +1107,7 @@ func (v *Viper) Unmarshal(rawVal interface{}, opts ...DecoderConfigOption) error
 	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
 }
 
-// defaultDecoderConfig returns default mapsstructure.DecoderConfig with support
+// defaultDecoderConfig returns default mapstructure.DecoderConfig with support
 // of time.Duration values & string slices
 func defaultDecoderConfig(output interface{}, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	c := &mapstructure.DecoderConfig{
