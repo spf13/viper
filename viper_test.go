@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil" //nolint:staticcheck
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -874,8 +874,10 @@ func TestAliasesOfAliases(t *testing.T) {
 }
 
 func TestRecursiveAliases(t *testing.T) {
+	Set("baz", "bat")
 	RegisterAlias("Baz", "Roo")
 	RegisterAlias("Roo", "baz")
+	assert.Equal(t, "bat", Get("Baz"))
 }
 
 func TestUnmarshal(t *testing.T) {
