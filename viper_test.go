@@ -2619,6 +2619,15 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
 }
 
+func TestSubUsesEnvPrefix(t *testing.T) {
+	testutil.Setenv(t, "TEST_SUB_VALUE", "test")
+	v.SetEnvPrefix("TEST")
+	v.AutomaticEnv()
+
+	sub := v.Sub("sub")
+	assert.Equal(t, "test", sub.GetString("value"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()

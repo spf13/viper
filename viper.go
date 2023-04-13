@@ -944,20 +944,15 @@ func Sub(key string) *Viper { return v.Sub(key) }
 
 func (v *Viper) Sub(key string) *Viper {
 	subv := New()
+	subv.parents = append(v.parents, strings.ToLower(key))
+	subv.automaticEnvApplied = v.automaticEnvApplied
+	subv.envPrefix = v.envPrefix
+	subv.envKeyReplacer = v.envKeyReplacer
 	data := v.Get(key)
-	if data == nil {
-		return nil
-	}
-
 	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.parents = append(v.parents, strings.ToLower(key))
-		subv.automaticEnvApplied = v.automaticEnvApplied
-		subv.envPrefix = v.envPrefix
-		subv.envKeyReplacer = v.envKeyReplacer
 		subv.config = cast.ToStringMap(data)
-		return subv
 	}
-	return nil
+	return subv
 }
 
 // GetString returns the value associated with the key as a string.
