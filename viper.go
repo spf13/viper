@@ -1563,7 +1563,7 @@ func (v *Viper) ReadInConfig() error {
 	v.logger.Debug("reading file", "file", filename)
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
-		return err
+		return ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 	}
 
 	config := make(map[string]interface{})
@@ -1593,7 +1593,7 @@ func (v *Viper) MergeInConfig() error {
 
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
-		return err
+		return ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 	}
 
 	return v.MergeConfig(bytes.NewReader(file))
