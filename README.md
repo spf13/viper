@@ -139,6 +139,42 @@ if err := viper.ReadInConfig(); err != nil {
 
 *NOTE [since 1.6]:* You can also have a file without an extension and specify the format programmaticaly. For those configuration files that lie in the home of the user without any extension like `.bashrc`
 
+### MapTo
+- source file
+```yaml
+service:
+	port: 1234
+	ip: "127.0.0.1"
+version: 1.0.01
+```
+- use MapTo
+
+```go
+type Service struct {
+	Port int `viper:"port"`
+	IP string `viper:"ip"`
+}
+//your prepare code ...
+
+var service Service
+var version string
+
+if err := viper.MapTo("service",&service); err != nil {
+	//error handler...
+}
+if err := viper.MapTo("version",&version); err != nil {
+	//error handler...
+}
+
+
+
+log.Println(service,version)
+
+//....
+
+```
+
+
 ### Writing Config Files
 
 Reading from config files is useful, but at times you want to store all modifications made at run time.
