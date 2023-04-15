@@ -16,9 +16,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"unicode"
 
 	"github.com/spf13/cast"
+	insensitiveopt "github.com/spf13/viper/internal/insensitiveOpt"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
@@ -50,7 +50,7 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 	nm := make(map[string]interface{})
 
 	for key, val := range m {
-		lkey := strings.ToLower(key)
+		lkey := insensitiveopt.ToLower(key)
 		switch v := val.(type) {
 		case map[interface{}]interface{}:
 			nm[lkey] = copyAndInsensitiviseMap(cast.ToStringMap(v))
@@ -83,7 +83,7 @@ func insensitiviseVal(val interface{}) interface{} {
 func insensitiviseMap(m map[string]interface{}) {
 	for key, val := range m {
 		val = insensitiviseVal(val)
-		lower := strings.ToLower(key)
+		lower := insensitiveopt.ToLower(key)
 		if key != lower {
 			// remove old key (not lower-cased)
 			delete(m, key)
@@ -159,7 +159,7 @@ func parseSizeInBytes(sizeStr string) uint {
 	if lastChar > 0 {
 		if sizeStr[lastChar] == 'b' || sizeStr[lastChar] == 'B' {
 			if lastChar > 1 {
-				switch unicode.ToLower(rune(sizeStr[lastChar-1])) {
+				switch insensitiveopt.ToLowerRune(rune(sizeStr[lastChar-1])) {
 				case 'k':
 					multiplier = 1 << 10
 					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])

@@ -7,6 +7,7 @@ import (
 
 	"github.com/magiconair/properties"
 	"github.com/spf13/cast"
+	insensitiveopt "github.com/spf13/viper/internal/insensitiveOpt"
 )
 
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for Java properties encoding.
@@ -67,7 +68,7 @@ func (c *Codec) Decode(b []byte, v map[string]interface{}) error {
 
 		// recursively build nested maps
 		path := strings.Split(key, c.keyDelimiter())
-		lastKey := strings.ToLower(path[len(path)-1])
+		lastKey := insensitiveopt.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(v, path[0:len(path)-1])
 
 		// set innermost value

@@ -1,9 +1,8 @@
 package dotenv
 
 import (
-	"strings"
-
 	"github.com/spf13/cast"
+	insensitiveopt "github.com/spf13/viper/internal/insensitiveOpt"
 )
 
 // flattenAndMergeMap recursively flattens the given map into a new map
@@ -31,7 +30,7 @@ func flattenAndMergeMap(shadow map[string]interface{}, m map[string]interface{},
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = val
+			shadow[insensitiveopt.ToLower(fullKey)] = val
 			continue
 		}
 		// recursively merge to shadow map

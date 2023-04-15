@@ -48,6 +48,7 @@ import (
 	"github.com/spf13/viper/internal/encoding/json"
 	"github.com/spf13/viper/internal/encoding/toml"
 	"github.com/spf13/viper/internal/encoding/yaml"
+	insensitiveopt "github.com/spf13/viper/internal/insensitiveOpt"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.
@@ -303,6 +304,14 @@ func Reset() {
 	v = New()
 	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore"}
+}
+
+func SetCaseSensitive() {
+	insensitiveopt.Insensitive(false)
+}
+
+func SetCaseInsensitive() {
+	insensitiveopt.Insensitive(true)
 }
 
 // TODO: make this lazy initialization instead
@@ -699,7 +708,7 @@ func (v *Viper) searchIndexableWithPathPrefixes(source interface{}, path []strin
 
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
-		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
+		prefixKey := insensitiveopt.ToLower(strings.Join(path[0:i], v.keyDelim))
 
 		var val interface{}
 		switch sourceIndexable := source.(type) {
@@ -890,7 +899,7 @@ func GetViper() *Viper {
 func Get(key string) interface{} { return v.Get(key) }
 
 func (v *Viper) Get(key string) interface{} {
-	lcaseKey := strings.ToLower(key)
+	lcaseKey := insensitiveopt.ToLower(key)
 	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
@@ -950,7 +959,7 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.parents = append(v.parents, strings.ToLower(key))
+		subv.parents = append(v.parents, insensitiveopt.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
 		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
@@ -1189,7 +1198,7 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 	if flag == nil {
 		return fmt.Errorf("flag for %q is nil", key)
 	}
-	v.pflags[strings.ToLower(key)] = flag
+	v.pflags[insensitiveopt.ToLower(key)] = flag
 	return nil
 }
 
@@ -1206,7 +1215,7 @@ func (v *Viper) BindEnv(input ...string) error {
 		return fmt.Errorf("missing key to bind to")
 	}
 
-	key := strings.ToLower(input[0])
+	key := insensitiveopt.ToLower(input[0])
 
 	if len(input) == 1 {
 		v.env[key] = append(v.env[key], v.mergeWithEnvPrefix(key))
@@ -1423,7 +1432,7 @@ func stringToStringConv(val string) interface{} {
 func IsSet(key string) bool { return v.IsSet(key) }
 
 func (v *Viper) IsSet(key string) bool {
-	lcaseKey := strings.ToLower(key)
+	lcaseKey := insensitiveopt.ToLower(key)
 	val := v.find(lcaseKey, false)
 	return val != nil
 }
@@ -1450,11 +1459,11 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
 
 func (v *Viper) RegisterAlias(alias string, key string) {
-	v.registerAlias(alias, strings.ToLower(key))
+	v.registerAlias(alias, insensitiveopt.ToLower(key))
 }
 
 func (v *Viper) registerAlias(alias string, key string) {
-	alias = strings.ToLower(alias)
+	alias = insensitiveopt.ToLower(alias)
 	if alias != key && alias != v.realKey(key) {
 		_, exists := v.aliases[alias]
 
@@ -1499,7 +1508,7 @@ func (v *Viper) realKey(key string) string {
 func InConfig(key string) bool { return v.InConfig(key) }
 
 func (v *Viper) InConfig(key string) bool {
-	lcaseKey := strings.ToLower(key)
+	lcaseKey := insensitiveopt.ToLower(key)
 
 	// if the requested key is an alias, then return the proper key
 	lcaseKey = v.realKey(lcaseKey)
@@ -1515,11 +1524,11 @@ func SetDefault(key string, value interface{}) { v.SetDefault(key, value) }
 
 func (v *Viper) SetDefault(key string, value interface{}) {
 	// If alias passed in, then set the proper default
-	key = v.realKey(strings.ToLower(key))
+	key = v.realKey(insensitiveopt.ToLower(key))
 	value = toCaseInsensitiveValue(value)
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := insensitiveopt.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
 
 	// set innermost value
@@ -1534,11 +1543,11 @@ func Set(key string, value interface{}) { v.Set(key, value) }
 
 func (v *Viper) Set(key string, value interface{}) {
 	// If alias passed in, then set the proper override
-	key = v.realKey(strings.ToLower(key))
+	key = v.realKey(insensitiveopt.ToLower(key))
 	value = toCaseInsensitiveValue(value)
 
 	path := strings.Split(key, v.keyDelim)
-	lastKey := strings.ToLower(path[len(path)-1])
+	lastKey := insensitiveopt.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
 	// set innermost value
@@ -1719,7 +1728,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
-	switch format := strings.ToLower(v.getConfigType()); format {
+	switch format := insensitiveopt.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
 		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
@@ -1750,9 +1759,9 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 }
 
 func keyExists(k string, m map[string]interface{}) string {
-	lk := strings.ToLower(k)
+	lk := insensitiveopt.ToLower(k)
 	for mk := range m {
-		lmk := strings.ToLower(mk)
+		lmk := insensitiveopt.ToLower(mk)
 		if lmk == lk {
 			return mk
 		}
@@ -2031,7 +2040,7 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = true
+			shadow[insensitiveopt.ToLower(fullKey)] = true
 			continue
 		}
 		// recursively merge to shadow map
@@ -2057,7 +2066,7 @@ outer:
 			}
 		}
 		// add key
-		shadow[strings.ToLower(k)] = true
+		shadow[insensitiveopt.ToLower(k)] = true
 	}
 	return shadow
 }
@@ -2076,7 +2085,7 @@ func (v *Viper) AllSettings() map[string]interface{} {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
-		lastKey := strings.ToLower(path[len(path)-1])
+		lastKey := insensitiveopt.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
 		deepestMap[lastKey] = value
