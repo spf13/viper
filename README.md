@@ -28,6 +28,7 @@ Many Go projects are built using Viper including:
 * [Clairctl](https://github.com/jgsqware/clairctl)
 * [Mercure](https://mercure.rocks)
 * [Meshery](https://github.com/meshery/meshery)
+* [Bearer](https://github.com/bearer/bearer)
 
 
 ## Install
