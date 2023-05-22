@@ -484,49 +484,7 @@ func (v *Viper) WatchConfig() {
 							log.Printf("error reading config file: %v\n", err)
 						}
 
-						for key, config := range v.registered {
-							oldValue := v.Get(key)
-							newValue := tempViper.Get(key)
-							// Check exist
-							if newValue == nil && !config.CanBeNil {
-								if config.OnUpdateFailed != nil {
-									config.OnUpdateFailed(&Event{
-										old: oldValue,
-										new: nil,
-									})
-								}
-								continue
-							}
-
-							// Type check & convert
-							newValueJson, _ := js.Marshal(newValue)
-							err = js.Unmarshal(newValueJson, config.Schema)
-							if err != nil {
-								config.OnUpdateFailed(&Event{
-									old: oldValue,
-									new: nil,
-								})
-								continue
-							}
-
-							// Validation
-							if !config.Validator(config.Schema) {
-								config.OnUpdateFailed(&Event{
-									old: oldValue,
-									new: nil,
-								})
-								continue
-							}
-
-							// Success
-							v.Set(key, config.Schema)
-							if config.OnUpdate != nil {
-								config.OnUpdate(&Event{
-									new: config.Schema,
-									old: oldValue,
-								})
-							}
-						}
+						v.updateRegisteredConfig(tempViper)
 
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
@@ -550,6 +508,53 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+}
+
+// updateRegisteredConfig validate the registered config items in the new config, notify user with the hook functions.
+func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
+	for key, config := range v.registered {
+		oldValue := v.Get(key)
+		newValue := newConfigViper.Get(key)
+		// Check exist
+		if newValue == nil && !config.CanBeNil {
+			if config.OnUpdateFailed != nil {
+				config.OnUpdateFailed(&Event{
+					old: oldValue,
+					new: nil,
+				})
+			}
+			continue
+		}
+
+		// Type check & convert
+		newValueJson, _ := js.Marshal(newValue)
+		err := js.Unmarshal(newValueJson, config.Schema)
+		if err != nil {
+			config.OnUpdateFailed(&Event{
+				old: oldValue,
+				new: nil,
+			})
+			continue
+		}
+
+		// Validation
+		if !config.Validator(config.Schema) {
+			config.OnUpdateFailed(&Event{
+				old: oldValue,
+				new: nil,
+			})
+			continue
+		}
+
+		// Success
+		v.Set(key, config.Schema)
+		if config.OnUpdate != nil {
+			config.OnUpdate(&Event{
+				new: config.Schema,
+				old: oldValue,
+			})
+		}
+	}
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
