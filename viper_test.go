@@ -1485,17 +1485,14 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
 
-func TestUnwrap(t *testing.T) {
-	yamlInvalid := []byte(`hash: map
-	- foo
-	- bar
-	`)
+var yamlInvalid = []byte(`hash: map
+- foo
+- bar
+`)
 
+func TestUnwrapParseErrors(t *testing.T) {
 	SetConfigType("yaml")
-	err := ReadConfig(bytes.NewBuffer(yamlInvalid))
-
-	var cpe ConfigParseError
-	if !errors.As(err, &cpe) {
+	if !errors.As(ReadConfig(bytes.NewBuffer(yamlInvalid)), &ConfigParseError{}) {
 		t.Fatalf("not a ConfigParseError")
 	}
 }
