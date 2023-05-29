@@ -433,16 +433,14 @@ func (v *Viper) WatchConfig() {
 	go func() {
 		watcher, err := newWatcher()
 		if err != nil {
-			v.logger.Error("failure to create watcher",
-				"msg", err.Error())
+			v.logger.Error(fmt.Sprintf("failed to create watcher: %s", err))
 			os.Exit(1)
 		}
 		defer watcher.Close()
 		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
 		filename, err := v.getConfigFile()
 		if err != nil {
-			v.logger.Error("get config file",
-				"msg", err.Error())
+			v.logger.Error(fmt.Sprintf("get config file: %s", err))
 			initWG.Done()
 			return
 		}
@@ -471,8 +469,7 @@ func (v *Viper) WatchConfig() {
 						realConfigFile = currentConfigFile
 						err := v.ReadInConfig()
 						if err != nil {
-							v.logger.Error("reading config file",
-								"msg", err.Error())
+							v.logger.Error(fmt.Sprintf("read config file: %s", err))
 						}
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
@@ -484,7 +481,7 @@ func (v *Viper) WatchConfig() {
 
 				case err, ok := <-watcher.Errors:
 					if ok { // 'Errors' channel is not closed
-						v.logger.Error("watcher error", "msg", err.Error())
+						v.logger.Error(fmt.Sprintf("watcher error: %s", err))
 					}
 					eventsWG.Done()
 					return
