@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -1571,6 +1572,18 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
 	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
+var yamlInvalid = []byte(`hash: map
+- foo
+- bar
+`)
+
+func TestUnwrapParseErrors(t *testing.T) {
+	SetConfigType("yaml")
+	if !errors.As(ReadConfig(bytes.NewBuffer(yamlInvalid)), &ConfigParseError{}) {
+		t.Fatalf("not a ConfigParseError")
+	}
 }
 
 func TestSub(t *testing.T) {
