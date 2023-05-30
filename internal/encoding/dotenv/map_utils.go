@@ -24,9 +24,9 @@ func flattenAndMergeMap(shadow map[string]interface{}, m map[string]interface{},
 	}
 	for k, val := range m {
 		fullKey := prefix + k
-		switch val.(type) {
+		switch val :=val.(type) {
 		case map[string]interface{}:
-			m2 = val.(map[string]interface{})
+			m2 = val
 		case map[interface{}]interface{}:
 			m2 = cast.ToStringMap(val)
 		default:
