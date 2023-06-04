@@ -245,6 +245,7 @@ func New() *Viper {
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
 	v.logger = jwwLogger{}
+	v.registered = make(map[string]RegisteredConfig)
 
 	v.resetEncoding()
 
@@ -1997,8 +1998,10 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 		go func(rc <-chan *RemoteResponse) {
 			for {
 				b := <-rc
+				tempViper := New()
 				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
+				tempViper.unmarshalReader(reader, tempViper.kvstore)
+				v.updateRegisteredConfig(tempViper)
 			}
 		}(respc)
 		return nil

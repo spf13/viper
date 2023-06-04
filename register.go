@@ -5,7 +5,7 @@ type RegisteredConfig struct {
 	CanBeNil       bool
 	OnUpdate       func(e *Event)
 	OnUpdateFailed func(e *Event)
-	Schema         *interface{}
+	Schema         interface{}
 	Validator      func(interface{}) bool
 }
 
