@@ -508,12 +508,13 @@ func (v *Viper) WatchConfig() {
 }
 
 // updateRegisteredConfig validate the registered config items in the new config, notify user with the hook functions.
-func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
+func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) map[string]interface{} {
 	for key, config := range v.registered {
 		oldValue := v.Get(key)
-		newValue := newConfigViper.Get(key)
+		newValue := newConfig[key]
 		// Check exist
 		if newValue == nil && !config.CanBeNil {
+			newConfig[key] = oldValue
 			if config.OnUpdateFailed != nil {
 				config.OnUpdateFailed(&Event{
 					old: oldValue,
@@ -527,6 +528,7 @@ func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
 		newValueJson, _ := js.Marshal(newValue)
 		err := js.Unmarshal(newValueJson, config.Schema)
 		if err != nil {
+			newConfig[key] = oldValue
 			config.OnUpdateFailed(&Event{
 				old: oldValue,
 				new: nil,
@@ -536,6 +538,7 @@ func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
 
 		// Validation
 		if !config.Validator(config.Schema) {
+			newConfig[key] = oldValue
 			config.OnUpdateFailed(&Event{
 				old: oldValue,
 				new: nil,
@@ -544,7 +547,7 @@ func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
 		}
 
 		// Success
-		v.Set(key, config.Schema)
+		newConfig[key] = config.Schema
 		if config.OnUpdate != nil {
 			config.OnUpdate(&Event{
 				new: config.Schema,
@@ -552,6 +555,7 @@ func (v *Viper) updateRegisteredConfig(newConfigViper *Viper) {
 			})
 		}
 	}
+	return newConfig
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
@@ -1619,13 +1623,11 @@ func (v *Viper) ReadInConfig() error {
 	}
 
 	config := make(map[string]interface{})
-	tempViper := New()
-	tempViper.configType = v.getConfigType()
-	err = tempViper.unmarshalReader(bytes.NewReader(file), config)
+	err = v.unmarshalReader(bytes.NewReader(file), config)
 	if err != nil {
 		return err
 	}
-	v.updateRegisteredConfig(tempViper)
+	config = v.updateRegisteredConfig(config)
 
 	v.config = config
 	return nil
@@ -1980,10 +1982,9 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	tempViper := New()
-	tempViper.configType = v.getConfigType()
-	err = tempViper.unmarshalReader(reader, tempViper.kvstore)
-	v.updateRegisteredConfig(tempViper)
+	kvStore := make(map[string]interface{})
+	err = v.unmarshalReader(reader, kvStore)
+	v.kvstore = v.updateRegisteredConfig(kvStore)
 	return v.kvstore, err
 }
 
@@ -1999,11 +2000,10 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 		go func(rc <-chan *RemoteResponse) {
 			for {
 				b := <-rc
-				tempViper := New()
-				tempViper.configType = v.getConfigType()
 				reader := bytes.NewReader(b.Value)
-				tempViper.unmarshalReader(reader, tempViper.kvstore)
-				v.updateRegisteredConfig(tempViper)
+				kvStore := make(map[string]interface{})
+				v.unmarshalReader(reader, kvStore)
+				v.kvstore = v.updateRegisteredConfig(kvStore)
 			}
 		}(respc)
 		return nil
