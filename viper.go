@@ -527,24 +527,32 @@ func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) (result
 		}
 
 		// Type check & convert
-		newValueJson, _ := js.Marshal(newValue)
-		err := js.Unmarshal(newValueJson, config.Schema)
-		if err != nil {
-			newConfig[key] = oldValue
-			config.OnUpdateFailed(&Event{
-				old: oldValue,
-				new: nil,
-			})
-			continue
+		if config.Schema != nil {
+			newValueJson, _ := js.Marshal(newValue)
+			err := js.Unmarshal(newValueJson, config.Schema)
+			if err != nil {
+				newConfig[key] = oldValue
+				if config.OnUpdateFailed != nil {
+					config.OnUpdateFailed(&Event{
+						old: oldValue,
+						new: nil,
+					})
+				}
+				continue
+			}
+		} else {
+			config.Schema = newValue
 		}
 
 		// Validation
 		if config.Validator != nil && !config.Validator(config.Schema) {
 			newConfig[key] = oldValue
-			config.OnUpdateFailed(&Event{
-				old: oldValue,
-				new: nil,
-			})
+			if config.OnUpdateFailed != nil {
+				config.OnUpdateFailed(&Event{
+					old: oldValue,
+					new: nil,
+				})
+			}
 			continue
 		}
 
