@@ -508,7 +508,9 @@ func (v *Viper) WatchConfig() {
 }
 
 // updateRegisteredConfig validate the registered config items in the new config, notify user with the hook functions.
-func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) map[string]interface{} {
+func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) (result map[string]interface{}) {
+	result = make(map[string]interface{})
+
 	for key, config := range v.registered {
 		oldValue := v.Get(key)
 		newValue := newConfig[key]
@@ -537,7 +539,7 @@ func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) map[str
 		}
 
 		// Validation
-		if !config.Validator(config.Schema) {
+		if config.Validator != nil && !config.Validator(config.Schema) {
 			newConfig[key] = oldValue
 			config.OnUpdateFailed(&Event{
 				old: oldValue,
@@ -547,7 +549,7 @@ func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) map[str
 		}
 
 		// Success
-		newConfig[key] = config.Schema
+		result[key] = config.Schema
 		if config.OnUpdate != nil {
 			config.OnUpdate(&Event{
 				new: config.Schema,
@@ -555,7 +557,7 @@ func (v *Viper) updateRegisteredConfig(newConfig map[string]interface{}) map[str
 			})
 		}
 	}
-	return newConfig
+	return result
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
