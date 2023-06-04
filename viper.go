@@ -478,14 +478,10 @@ func (v *Viper) WatchConfig() {
 						(event.Has(fsnotify.Write) || event.Has(fsnotify.Create))) ||
 						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
 						realConfigFile = currentConfigFile
-						tempViper := New()
-						tempViper.AddConfigPath(realConfigFile)
-						err := tempViper.ReadInConfig()
+						err := v.ReadInConfig()
 						if err != nil {
 							log.Printf("error reading config file: %v\n", err)
 						}
-
-						v.updateRegisteredConfig(tempViper)
 
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
@@ -1623,11 +1619,13 @@ func (v *Viper) ReadInConfig() error {
 	}
 
 	config := make(map[string]interface{})
-
-	err = v.unmarshalReader(bytes.NewReader(file), config)
+	tempViper := New()
+	tempViper.configType = v.getConfigType()
+	err = tempViper.unmarshalReader(bytes.NewReader(file), config)
 	if err != nil {
 		return err
 	}
+	v.updateRegisteredConfig(tempViper)
 
 	v.config = config
 	return nil
@@ -1982,7 +1980,10 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
+	tempViper := New()
+	tempViper.configType = v.getConfigType()
+	err = tempViper.unmarshalReader(reader, tempViper.kvstore)
+	v.updateRegisteredConfig(tempViper)
 	return v.kvstore, err
 }
 
@@ -1999,6 +2000,7 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				tempViper := New()
+				tempViper.configType = v.getConfigType()
 				reader := bytes.NewReader(b.Value)
 				tempViper.unmarshalReader(reader, tempViper.kvstore)
 				v.updateRegisteredConfig(tempViper)
