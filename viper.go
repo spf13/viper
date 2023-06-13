@@ -523,6 +523,12 @@ func (v *Viper) SetEnvPrefix(in string) {
 	}
 }
 
+func GetEnvPrefix() string { return v.GetEnvPrefix() }
+
+func (v *Viper) GetEnvPrefix() string {
+	return v.envPrefix
+}
+
 func (v *Viper) mergeWithEnvPrefix(in string) string {
 	if v.envPrefix != "" {
 		return strings.ToUpper(v.envPrefix + "_" + in)
