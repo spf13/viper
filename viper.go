@@ -180,6 +180,10 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 //
 // Note: Vipers are not safe for concurrent Get() and Set() operations.
 type Viper struct {
+
+	// Will use as both the viper name and the logger name, will be printed as the prefix for each log entry.
+	name string
+
 	// Delimiter that separates a list of keys
 	// used to access a nested value in one go
 	keyDelim string
@@ -231,6 +235,7 @@ type Viper struct {
 // New returns an initialized Viper instance.
 func New() *Viper {
 	v := new(Viper)
+	v.name = "default"
 	v.keyDelim = "."
 	v.configName = "config"
 	v.configPermissions = os.FileMode(0o644)
@@ -244,7 +249,7 @@ func New() *Viper {
 	v.env = make(map[string][]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
-	v.logger = jwwLogger{}
+	v.logger = &jwwLogger{name: v.name}
 	v.registered = make(map[string]RegisteredConfig)
 
 	v.resetEncoding()
@@ -640,6 +645,14 @@ func (v *Viper) AddConfigPath(in string) {
 			v.configPaths = append(v.configPaths, absin)
 		}
 	}
+}
+
+// SetName Updates the name of a Viper object.
+func SetName(name string) { v.SetName(name) }
+
+func (v *Viper) SetName(name string) {
+	v.name = name
+	v.logger.SetName(name)
 }
 
 // AddRemoteProvider adds a remote configuration source.

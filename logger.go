@@ -38,28 +38,42 @@ type Logger interface {
 	// Loggers commonly provide Fatal and Panic levels above Error level,
 	// but exiting and panicing is out of scope for a logging library.
 	Error(msg string, keyvals ...interface{})
+
+	// SetName sets a name for logger, the logger name will be the prefix of all the log entry.
+	SetName(string)
 }
 
-type jwwLogger struct{}
+type jwwLogger struct {
+	name string
+}
 
-func (jwwLogger) Trace(msg string, keyvals ...interface{}) {
+func (j *jwwLogger) Trace(msg string, keyvals ...interface{}) {
+	msg = fmt.Sprintf("%s | %s", j.name, msg)
 	jww.TRACE.Printf(jwwLogMessage(msg, keyvals...))
 }
 
-func (jwwLogger) Debug(msg string, keyvals ...interface{}) {
+func (j *jwwLogger) Debug(msg string, keyvals ...interface{}) {
+	msg = fmt.Sprintf("%s | %s", j.name, msg)
 	jww.DEBUG.Printf(jwwLogMessage(msg, keyvals...))
 }
 
-func (jwwLogger) Info(msg string, keyvals ...interface{}) {
+func (j *jwwLogger) Info(msg string, keyvals ...interface{}) {
+	msg = fmt.Sprintf("%s | %s", j.name, msg)
 	jww.INFO.Printf(jwwLogMessage(msg, keyvals...))
 }
 
-func (jwwLogger) Warn(msg string, keyvals ...interface{}) {
+func (j *jwwLogger) Warn(msg string, keyvals ...interface{}) {
+	msg = fmt.Sprintf("%s | %s", j.name, msg)
 	jww.WARN.Printf(jwwLogMessage(msg, keyvals...))
 }
 
-func (jwwLogger) Error(msg string, keyvals ...interface{}) {
+func (j *jwwLogger) Error(msg string, keyvals ...interface{}) {
+	msg = fmt.Sprintf("%s | %s", j.name, msg)
 	jww.ERROR.Printf(jwwLogMessage(msg, keyvals...))
+}
+
+func (j *jwwLogger) SetName(name string) {
+	j.name = name
 }
 
 func jwwLogMessage(msg string, keyvals ...interface{}) string {
