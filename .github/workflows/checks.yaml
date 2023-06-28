@@ -15,4 +15,15 @@ jobs:
         with:
           mode: minimum
           count: 1
-          labels: "release-note/ignore, kind/feature, release-note/new-feature, kind/enhancement, release-note/enhancement, kind/bug, release-note/bug-fix, release-note/breaking-change, release-note/deprecation, area/dependencies, release-note/dependency-update"
+          labels: |
+            release-note/ignore
+            kind/feature
+            release-note/new-feature
+            kind/enhancement
+            release-note/enhancement
+            kind/bug
+            release-note/bug-fix
+            release-note/breaking-change
+            release-note/deprecation
+            area/dependencies
+            release-note/dependency-update
