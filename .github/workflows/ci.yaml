@@ -2,14 +2,14 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +20,8 @@ jobs:
             goarch: ppc64
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -37,19 +37,18 @@ jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+
     strategy:
       # Fail fast is disabled because there are Go version specific features and tests
       # that should be able to fail independently.
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.17', '1.18', '1.19', '1.20']
-    env:
-      GOFLAGS: -mod=readonly
+        go: ['1.18', '1.19', '1.20']
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -67,12 +66,10 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    env:
-      GOFLAGS: -mod=readonly
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Set up Go
         uses: actions/setup-go@v4
