@@ -27,3 +27,4 @@ jobs:
             release-note/deprecation
             area/dependencies
             release-note/dependency-update
+            release-note/misc
