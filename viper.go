@@ -1478,11 +1478,11 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
 }
 
-// SetKeyDelim sets the delimiter used for determining key parts on the viper
+// SetKeyDelimiter sets the delimiter used for determining key parts on the viper
 // object.
-func SetKeyDelim(d string) { v.SetKeyDelim(d) }
+func SetKeyDelimiter(d string) { v.SetKeyDelimiter(d) }
 
-func (v *Viper) SetKeyDelim(d string) {
+func (v *Viper) SetKeyDelimiter(d string) {
 	v.keyDelim = d
 }
 
