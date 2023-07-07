@@ -21,6 +21,7 @@ package viper
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -431,10 +432,13 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 }
 
 // WatchConfig starts watching a config file for changes.
-func WatchConfig() { v.WatchConfig() }
+// The function returned for stop watching manually.
+func WatchConfig() func() { return v.WatchConfig() }
 
 // WatchConfig starts watching a config file for changes.
-func (v *Viper) WatchConfig() {
+// The function returned for stop watching manually.
+func (v *Viper) WatchConfig() func() {
+	ctx, cancel := context.WithCancel(context.Background())
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
 	go func() {
@@ -492,6 +496,8 @@ func (v *Viper) WatchConfig() {
 					}
 					eventsWG.Done()
 					return
+				case <-ctx.Done(): // cancel function called
+					watcher.Close()
 				}
 			}
 		}()
@@ -500,6 +506,7 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+	return cancel
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
