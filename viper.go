@@ -301,7 +301,7 @@ func NewWithOptions(opts ...Option) *Viper {
 func Reset() {
 	v = New()
 	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
-	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore"}
+	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore", "nats"}
 }
 
 // TODO: make this lazy initialization instead
@@ -420,7 +420,7 @@ type RemoteProvider interface {
 var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 
 // SupportedRemoteProviders are universally supported remote providers.
-var SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore"}
+var SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore", "nats"}
 
 // OnConfigChange sets the event handler that is called when a config file changes.
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
@@ -584,8 +584,8 @@ func (v *Viper) AddConfigPath(in string) {
 
 // AddRemoteProvider adds a remote configuration source.
 // Remote Providers are searched in the order they are added.
-// provider is a string value: "etcd", "etcd3", "consul" or "firestore" are currently supported.
-// endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
+// provider is a string value: "etcd", "etcd3", "consul", "firestore" or "nats" are currently supported.
+// endpoint is the url.  etcd requires http://ip:port, consul requires ip:port, nats requires nats://ip:port
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
@@ -615,7 +615,7 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 
 // AddSecureRemoteProvider adds a remote configuration source.
 // Secure Remote Providers are searched in the order they are added.
-// provider is a string value: "etcd", "etcd3", "consul" or "firestore" are currently supported.
+// provider is a string value: "etcd", "etcd3", "consul", "firestore" or "nats" are currently supported.
 // endpoint is the url.  etcd requires http://ip:port  consul requires ip:port
 // secretkeyring is the filepath to your openpgp secret keyring.  e.g. /etc/secrets/myring.gpg
 // path is the path in the k/v store to retrieve configuration

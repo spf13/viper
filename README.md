@@ -487,6 +487,15 @@ err := viper.ReadRemoteConfig()
 
 Of course, you're allowed to use `SecureRemoteProvider` also
 
+
+#### NATS
+
+```go
+viper.AddRemoteProvider("nats", "nats://127.0.0.1:4222", "myapp.config")
+viper.SetConfigType("json")
+err := viper.ReadRemoteConfig()
+```
+
 ### Remote Key/Value Store Example - Encrypted
 
 ```go
