@@ -2679,6 +2679,31 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
 }
 
+func TestIsPathShadowedInFlatMap(t *testing.T) {
+	v := New()
+
+	stringMap := map[string]string{
+		"foo": "value",
+	}
+
+	flagMap := map[string]FlagValue{
+		"foo": pflagValue{},
+	}
+
+	path1 := []string{"foo", "bar"}
+	expected1 := "foo"
+
+	// "foo.bar" should shadowed by"foo"
+	assert.Equal(t, expected1, v.isPathShadowedInFlatMap(path1, stringMap))
+	assert.Equal(t, expected1, v.isPathShadowedInFlatMap(path1, flagMap))
+
+	path2 := []string{"bar", "foo"}
+	expected2 := ""
+	// "bar.foo" should not shadowed by "foo"
+	assert.Equal(t, expected2, v.isPathShadowedInFlatMap(path2, stringMap))
+	assert.Equal(t, expected2, v.isPathShadowedInFlatMap(path2, flagMap))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
