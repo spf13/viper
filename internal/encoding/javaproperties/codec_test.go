@@ -18,10 +18,8 @@ map.key = value
 
 // Viper's internal representation
 var data = map[string]interface{}{
-	"key": "value",
-	"map": map[string]interface{}{
-		"key": "value",
-	},
+	"key":     "value",
+	"map.key": "value",
 }
 
 func TestCodec_Encode(t *testing.T) {

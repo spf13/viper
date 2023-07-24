@@ -60,6 +60,8 @@ func flattenAndMergeMap(shadow map[string]interface{}, m map[string]interface{},
 		switch val.(type) {
 		case map[string]interface{}:
 			m2 = val.(map[string]interface{})
+		case []interface{}:
+			m2 = cast.ToStringMap(val)
 		case map[interface{}]interface{}:
 			m2 = cast.ToStringMap(val)
 		default:
