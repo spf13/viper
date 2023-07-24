@@ -19,6 +19,8 @@ import (
 	"unicode"
 
 	"github.com/spf13/cast"
+
+	"github.com/spf13/viper/internal/features"
 )
 
 // ConfigParseError denotes failing to parse configuration file.
@@ -79,8 +81,11 @@ func insensitiviseVal(val interface{}) interface{} {
 		// nested map: recursively insensitivise
 		insensitiviseMap(val.(map[string]interface{}))
 	case []interface{}:
-		// nested array: recursively insensitivise
-		insensitiveArray(val.([]interface{}))
+		// deprecated, drop in Viper v2
+		if !features.Revert1387 {
+			// nested array: recursively insensitivise
+			insensitiveArray(val.([]interface{}))
+		}
 	}
 	return val
 }

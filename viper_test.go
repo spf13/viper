@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/spf13/viper/internal/features"
 	"github.com/spf13/viper/internal/testutil"
 )
 
@@ -2671,6 +2672,22 @@ func TestSliceIndexAccess(t *testing.T) {
 	// Test nested keys with capital letters
 	assert.Equal(t, "The Expanse", v.GetString("tv.0.title_i18n.USA"))
 	assert.Equal(t, "エクスパンス -巨獣めざめる-", v.GetString("tv.0.title_i18n.Japan"))
+
+	var expectedtitlei18n map[string]any
+
+	if features.Revert1387 {
+		expectedtitlei18n = map[string]any{
+			"USA":   "The Expanse",
+			"Japan": "エクスパンス -巨獣めざめる-",
+		}
+	} else {
+		expectedtitlei18n = map[string]any{
+			"usa":   "The Expanse",
+			"japan": "エクスパンス -巨獣めざめる-",
+		}
+	}
+
+	assert.Equal(t, expectedtitlei18n, v.GetStringMap("tv.0.title_i18n"))
 
 	// Test for index out of bounds
 	assert.Equal(t, "", v.GetString("tv.0.seasons.2.first_released"))
