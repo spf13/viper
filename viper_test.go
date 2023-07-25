@@ -1979,6 +1979,18 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
 
+func TestEncode(t *testing.T) {
+	type config struct {
+		Age   int
+		Beard bool
+	}
+	C := &config{35, true}
+	v := New()
+	require.NoError(t, v.Encode(C))
+	expected := map[string]interface{}{"age": 35, "beard": true}
+	assert.Equal(t, v.config, expected)
+}
+
 func TestMarshal(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
@@ -1986,6 +1998,20 @@ func TestMarshal(t *testing.T) {
 	c, err := v.Marshal()
 	require.NoError(t, err)
 	assert.Equal(t, c.Bytes(), yamlWriteExpected)
+}
+
+func TestEncodeAndMarshal(t *testing.T) {
+	type config struct {
+		Age   int
+		Beard bool
+	}
+	C := &config{35, true}
+	v := New()
+	require.NoError(t, v.Encode(C))
+	v.SetConfigType("yaml")
+	c, err := v.Marshal()
+	require.NoError(t, err)
+	assert.Equal(t, c.Bytes(), yamlEncodeWriteExpected)
 }
 
 func TestWriteHiddenFile(t *testing.T) {
