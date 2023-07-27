@@ -70,17 +70,17 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 }
 
 func insensitiviseVal(val interface{}) interface{} {
-	switch val.(type) {
+	switch v := val.(type) {
 	case map[interface{}]interface{}:
 		// nested map: cast and recursively insensitivise
 		val = cast.ToStringMap(val)
 		insensitiviseMap(val.(map[string]interface{}))
 	case map[string]interface{}:
 		// nested map: recursively insensitivise
-		insensitiviseMap(val.(map[string]interface{}))
+		insensitiviseMap(v)
 	case []interface{}:
 		// nested array: recursively insensitivise
-		insensitiveArray(val.([]interface{}))
+		insensitiveArray(v)
 	}
 	return val
 }

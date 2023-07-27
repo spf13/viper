@@ -672,13 +672,13 @@ func (v *Viper) searchMap(source map[string]interface{}, path []string) interfac
 		}
 
 		// Nested case
-		switch next.(type) {
+		switch next := next.(type) {
 		case map[interface{}]interface{}:
 			return v.searchMap(cast.ToStringMap(next), path[1:])
 		case map[string]interface{}:
 			// Type assertion is safe here since it is only reached
 			// if the type of `next` is the same as the type being asserted
-			return v.searchMap(next.(map[string]interface{}), path[1:])
+			return v.searchMap(next, path[1:])
 		default:
 			// got a value but nested key expected, return "nil" for not found
 			return nil
@@ -2057,9 +2057,9 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 	}
 	for k, val := range m {
 		fullKey := prefix + k
-		switch val.(type) {
+		switch val := val.(type) {
 		case map[string]interface{}:
-			m2 = val.(map[string]interface{})
+			m2 = val
 		case map[interface{}]interface{}:
 			m2 = cast.ToStringMap(val)
 		default:
