@@ -2545,6 +2545,46 @@ func TestWatchFile(t *testing.T) {
 	})
 }
 
+func TestStopWatching(t *testing.T) {
+	t.Run(
+		"file content changed after stop watching", func(t *testing.T) {
+			// given a `config.yaml` file being watched
+			v, configFile, cleanup := newViperWithConfigFile(t)
+			defer cleanup()
+			_, err := os.Stat(configFile)
+			require.NoError(t, err)
+			t.Logf("test config file: %s\n", configFile)
+
+			v.WatchConfig()
+			v.StopWatching()
+
+			// overwriting the file after StopWatching called
+			err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0o640)
+			time.Sleep(time.Second) // wait for file changed event
+			// then the config value should not be changed
+			require.Nil(t, err)
+			assert.Equal(t, "bar", v.Get("foo"))
+
+			// watch again
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			var wgDoneOnce sync.Once // OnConfigChange is called twice on Windows
+			v.OnConfigChange(
+				func(in fsnotify.Event) {
+					t.Logf("config file changed again")
+					wgDoneOnce.Do(func() { wg.Done() })
+				},
+			)
+			v.WatchConfig()
+			// overwriting the file after StopWatching and Watch again
+			err = ioutil.WriteFile(configFile, []byte("foo: qux\n"), 0o640)
+			wg.Wait()
+			require.Nil(t, err)
+			assert.Equal(t, "qux", v.Get("foo"))
+		},
+	)
+}
+
 func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {
 	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	flags.String("foo.bar", "cobra_flag", "")

@@ -216,7 +216,8 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChange   func(fsnotify.Event)
+	stopWatchingFunc func()
 
 	logger Logger
 
@@ -432,13 +433,10 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 }
 
 // WatchConfig starts watching a config file for changes.
-// The function returned for stop watching manually.
-func WatchConfig() func() { return v.WatchConfig() }
+func WatchConfig() { v.WatchConfig() }
 
 // WatchConfig starts watching a config file for changes.
-// The function returned for stop watching manually.
-func (v *Viper) WatchConfig() func() {
-	ctx, cancel := context.WithCancel(context.Background())
+func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
 	go func() {
@@ -459,6 +457,10 @@ func (v *Viper) WatchConfig() func() {
 		configFile := filepath.Clean(filename)
 		configDir, _ := filepath.Split(configFile)
 		realConfigFile, _ := filepath.EvalSymlinks(filename)
+
+		// init the stopWatchingFunc
+		watchingCtx, cancel := context.WithCancel(context.Background())
+		v.stopWatchingFunc = cancel
 
 		eventsWG := sync.WaitGroup{}
 		eventsWG.Add(1)
@@ -496,8 +498,9 @@ func (v *Viper) WatchConfig() func() {
 					}
 					eventsWG.Done()
 					return
-				case <-ctx.Done(): // cancel function called
-					watcher.Close()
+				case <-watchingCtx.Done(): // StopWatching function called
+					eventsWG.Done()
+					return
 				}
 			}
 		}()
@@ -506,7 +509,16 @@ func (v *Viper) WatchConfig() func() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
-	return cancel
+}
+
+// StopWatching stop watching a config file for changes.
+func StopWatching() { v.StopWatching() }
+
+// StopWatching stop watching a config file for changes.
+func (v *Viper) StopWatching() {
+	if v.stopWatchingFunc != nil {
+		v.stopWatchingFunc()
+	}
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
