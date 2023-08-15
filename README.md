@@ -8,10 +8,10 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#configuration)
 [![run on repl.it](https://repl.it/badge/github/sagikazarmark/Viper-example)](https://repl.it/@sagikazarmark/Viper-example#main.go)
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/spf13/viper/CI?style=flat-square)](https://github.com/spf13/viper/actions?query=workflow%3ACI)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/spf13/viper/ci.yaml?branch=master&style=flat-square)](https://github.com/spf13/viper/actions?query=workflow%3ACI)
 [![Join the chat at https://gitter.im/spf13/viper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/spf13/viper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Go Report Card](https://goreportcard.com/badge/github.com/spf13/viper?style=flat-square)](https://goreportcard.com/report/github.com/spf13/viper)
-![Go Version](https://img.shields.io/badge/go%20version-%3E=1.15-61CFDD.svg?style=flat-square)
+![Go Version](https://img.shields.io/badge/go%20version-%3E=1.18-61CFDD.svg?style=flat-square)
 [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/spf13/viper)](https://pkg.go.dev/mod/github.com/spf13/viper)
 
 **Go configuration with fangs!**
@@ -27,6 +27,9 @@ Many Go projects are built using Viper including:
 * [doctl](https://github.com/digitalocean/doctl)
 * [Clairctl](https://github.com/jgsqware/clairctl)
 * [Mercure](https://mercure.rocks)
+* [Meshery](https://github.com/meshery/meshery)
+* [Bearer](https://github.com/bearer/bearer)
+* [Coder](https://github.com/coder/coder)
 
 
 ## Install
@@ -40,8 +43,8 @@ go get github.com/spf13/viper
 
 ## What is Viper?
 
-Viper is a complete configuration solution for Go applications including 12-Factor apps. It is designed
-to work within an application, and can handle all types of configuration needs
+Viper is a complete configuration solution for Go applications including [12-Factor apps](https://12factor.net/#the_twelve_factors).
+It is designed to work within an application, and can handle all types of configuration needs
 and formats. It supports:
 
 * setting defaults
@@ -879,3 +882,31 @@ No, you will need to synchronize access to the viper yourself (for example by us
 ## Troubleshooting
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+## Development
+
+**For an optimal developer experience, it is recommended to install [Nix](https://nixos.org/download.html) and [direnv](https://direnv.net/docs/installation.html).**
+
+_Alternatively, install [Go](https://go.dev/dl/) on your computer then run `make deps` to install the rest of the dependencies._
+
+Run the test suite:
+
+```shell
+make test
+```
+
+Run linters:
+
+```shell
+make lint # pass -j option to run them in parallel
+```
+
+Some linter violations can automatically be fixed:
+
+```shell
+make fmt
+```
+
+## License
+
+The project is licensed under the [MIT License](LICENSE).

@@ -156,11 +156,11 @@ func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string,
 		}
 
 		// deep scan of the map to get the final value
-		switch val.(type) {
+		switch val := val.(type) {
 		case map[interface{}]interface{}:
 			m = cast.ToStringMap(val)
 		case map[string]interface{}:
-			m = val.(map[string]interface{})
+			m = val
 		default:
 			assert.Fail(fmt.Sprintf("%s is not a map[string]interface{}", ms))
 			return

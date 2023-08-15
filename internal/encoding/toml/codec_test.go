@@ -1,6 +1,3 @@
-//go:build viper_toml1
-// +build viper_toml1
-
 package toml
 
 import (
@@ -29,17 +26,16 @@ list = [
 `
 
 // encoded form of the data
-const encoded = `key = "value"
-list = ["item1", "item2", "item3"]
+const encoded = `key = 'value'
+list = ['item1', 'item2', 'item3']
 
 [map]
-  key = "value"
+key = 'value'
 
 [nested_map]
-
-  [nested_map.map]
-    key = "value"
-    list = ["item1", "item2", "item3"]
+[nested_map.map]
+key = 'value'
+list = ['item1', 'item2', 'item3']
 `
 
 // Viper's internal representation

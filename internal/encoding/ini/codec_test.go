@@ -20,7 +20,6 @@ const encoded = `key=value
 
 [map]
 key=value
-
 `
 
 // decoded form of the data

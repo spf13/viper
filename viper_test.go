@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -733,6 +734,24 @@ func TestEnvKeyReplacer(t *testing.T) {
 	assert.Equal(t, "30s", v.Get("refresh-interval"))
 }
 
+func TestEnvSubConfig(t *testing.T) {
+	initYAML()
+
+	v.AutomaticEnv()
+
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	testutil.Setenv(t, "CLOTHING_PANTS_SIZE", "small")
+	subv := v.Sub("clothing").Sub("pants")
+	assert.Equal(t, "small", subv.Get("size"))
+
+	// again with EnvPrefix
+	v.SetEnvPrefix("foo") // will be uppercased automatically
+	subWithPrefix := v.Sub("clothing").Sub("pants")
+	testutil.Setenv(t, "FOO_CLOTHING_PANTS_SIZE", "large")
+	assert.Equal(t, "large", subWithPrefix.Get("size"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
@@ -874,8 +893,10 @@ func TestAliasesOfAliases(t *testing.T) {
 }
 
 func TestRecursiveAliases(t *testing.T) {
+	Set("baz", "bat")
 	RegisterAlias("Baz", "Roo")
 	RegisterAlias("Roo", "baz")
+	assert.Equal(t, "bat", Get("Baz"))
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -998,7 +1019,7 @@ func TestBindPFlags(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl
 func TestBindPFlagsStringSlice(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1046,7 +1067,7 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl
 func TestBindPFlagsStringArray(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1094,7 +1115,29 @@ func TestBindPFlagsStringArray(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+func TestSliceFlagsReturnCorrectType(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flagSet.IntSlice("int", []int{1, 2}, "")
+	flagSet.StringSlice("str", []string{"3", "4"}, "")
+	flagSet.DurationSlice("duration", []time.Duration{5 * time.Second}, "")
+
+	v := New()
+	v.BindPFlags(flagSet)
+
+	all := v.AllSettings()
+
+	if _, ok := all["int"].([]int); !ok {
+		t.Errorf("unexpected type %T expected []int", all["int"])
+	}
+	if _, ok := all["str"].([]string); !ok {
+		t.Errorf("unexpected type %T expected []string", all["str"])
+	}
+	if _, ok := all["duration"].([]time.Duration); !ok {
+		t.Errorf("unexpected type %T expected []time.Duration", all["duration"])
+	}
+}
+
+//nolint:dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
 		Expected []int
@@ -1208,6 +1251,53 @@ func TestBindPFlagStringToString(t *testing.T) {
 				assert.Equal(t, testValue.Expected, val.StringToString)
 			} else {
 				assert.Equal(t, defaultVal, val.StringToString)
+			}
+		}
+	}
+}
+
+func TestBindPFlagStringToInt(t *testing.T) {
+	tests := []struct {
+		Expected map[string]int
+		Value    string
+	}{
+		{map[string]int{"yo": 1, "oh": 21}, "yo=1,oh=21"},
+		{map[string]int{"yo": 100000000, "oh": 0}, "yo=100000000,oh=0"},
+		{map[string]int{}, "yo=2,oh=21.0"},
+		{map[string]int{}, "yo=,oh=20.99"},
+		{map[string]int{}, "yo=,oh="},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := map[string]int{}
+	v.SetDefault("stringtoint", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.StringToInt("stringtoint", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			if err != nil {
+				t.Fatalf("error binding flag set, %v", err)
+			}
+
+			type TestMap struct {
+				StringToInt map[string]int
+			}
+			val := &TestMap{}
+			if err := v.Unmarshal(val); err != nil {
+				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
+			}
+			if changed {
+				assert.Equal(t, testValue.Expected, val.StringToInt)
+			} else {
+				assert.Equal(t, defaultVal, val.StringToInt)
 			}
 		}
 	}
@@ -1484,6 +1574,18 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	assert.Equal(t, `default`, v.GetString(`key`))
 }
 
+var yamlInvalid = []byte(`hash: map
+- foo
+- bar
+`)
+
+func TestUnwrapParseErrors(t *testing.T) {
+	SetConfigType("yaml")
+	if !errors.As(ReadConfig(bytes.NewBuffer(yamlInvalid)), &ConfigParseError{}) {
+		t.Fatalf("not a ConfigParseError")
+	}
+}
+
 func TestSub(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
@@ -1501,8 +1603,17 @@ func TestSub(t *testing.T) {
 	subv = v.Sub("missing.key")
 	assert.Equal(t, (*Viper)(nil), subv)
 
+
 	subv = v.Sub("hobbies")
 	assert.Equal(t, v.Get("hobbies.0"), subv.Get("0"))
+
+	subv = v.Sub("clothing")
+	assert.Equal(t, subv.parents[0], "clothing")
+
+	subv = v.Sub("clothing").Sub("pants")
+	assert.Equal(t, len(subv.parents), 2)
+	assert.Equal(t, subv.parents[0], "clothing")
+	assert.Equal(t, subv.parents[1], "pants")
 }
 
 var hclWriteExpected = []byte(`"foos" = {
@@ -1953,6 +2064,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if pop := v.GetUint("hello.pop"); pop != 37890 {
+		t.Fatalf("uint pop != 37890, = %d", pop)
+	}
+
+	if pop := v.GetUint16("hello.pop"); pop != uint16(37890) {
 		t.Fatalf("uint pop != 37890, = %d", pop)
 	}
 
