@@ -36,7 +36,7 @@ type Logger interface {
 	//
 	// Critical events that require immediate attention.
 	// Loggers commonly provide Fatal and Panic levels above Error level,
-	// but exiting and panicing is out of scope for a logging library.
+	// but exiting and panicking is out of scope for a logging library.
 	Error(msg string, keyvals ...interface{})
 }
 

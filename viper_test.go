@@ -2283,7 +2283,7 @@ clothing:
 
 func TestDotParameter(t *testing.T) {
 	initJSON()
-	// shoud take precedence over batters defined in jsonExample
+	// should take precedence over batters defined in jsonExample
 	r := bytes.NewReader([]byte(`{ "batters.batter": [ { "type": "Small" } ] }`))
 	unmarshalReader(r, v.config)
 
