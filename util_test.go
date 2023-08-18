@@ -15,8 +15,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/spf13/viper/internal/testutil"
 )
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
@@ -64,8 +62,8 @@ func TestAbsPathify(t *testing.T) {
 	homer := filepath.Join(home, "homer")
 	wd, _ := os.Getwd()
 
-	testutil.Setenv(t, "HOMER_ABSOLUTE_PATH", homer)
-	testutil.Setenv(t, "VAR_WITH_RELATIVE_PATH", "relative")
+	t.Setenv("HOMER_ABSOLUTE_PATH", homer)
+	t.Setenv("VAR_WITH_RELATIVE_PATH", "relative")
 
 	tests := []struct {
 		input  string
