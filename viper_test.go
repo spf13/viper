@@ -620,10 +620,10 @@ func TestEnv(t *testing.T) {
 	BindEnv("id")
 	BindEnv("f", "FOOD", "OLD_FOOD")
 
-	testutil.Setenv(t, "ID", "13")
-	testutil.Setenv(t, "FOOD", "apple")
-	testutil.Setenv(t, "OLD_FOOD", "banana")
-	testutil.Setenv(t, "NAME", "crunk")
+	t.Setenv("ID", "13")
+	t.Setenv("FOOD", "apple")
+	t.Setenv("OLD_FOOD", "banana")
+	t.Setenv("NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
@@ -639,7 +639,7 @@ func TestMultipleEnv(t *testing.T) {
 
 	BindEnv("f", "FOOD", "OLD_FOOD")
 
-	testutil.Setenv(t, "OLD_FOOD", "banana")
+	t.Setenv("OLD_FOOD", "banana")
 
 	assert.Equal(t, "banana", Get("f"))
 }
@@ -650,7 +650,7 @@ func TestEmptyEnv(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	testutil.Setenv(t, "TYPE", "")
+	t.Setenv("TYPE", "")
 
 	assert.Equal(t, "donut", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
@@ -664,7 +664,7 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 	BindEnv("type") // Empty environment variable
 	BindEnv("name") // Bound, but not set environment variable
 
-	testutil.Setenv(t, "TYPE", "")
+	t.Setenv("TYPE", "")
 
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
@@ -677,9 +677,9 @@ func TestEnvPrefix(t *testing.T) {
 	BindEnv("id")
 	BindEnv("f", "FOOD") // not using prefix
 
-	testutil.Setenv(t, "FOO_ID", "13")
-	testutil.Setenv(t, "FOOD", "apple")
-	testutil.Setenv(t, "FOO_NAME", "crunk")
+	t.Setenv("FOO_ID", "13")
+	t.Setenv("FOOD", "apple")
+	t.Setenv("FOO_NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
 	assert.Equal(t, "apple", Get("f"))
@@ -695,7 +695,7 @@ func TestAutoEnv(t *testing.T) {
 
 	AutomaticEnv()
 
-	testutil.Setenv(t, "FOO_BAR", "13")
+	t.Setenv("FOO_BAR", "13")
 
 	assert.Equal(t, "13", Get("foo_bar"))
 }
@@ -706,7 +706,7 @@ func TestAutoEnvWithPrefix(t *testing.T) {
 	AutomaticEnv()
 	SetEnvPrefix("Baz")
 
-	testutil.Setenv(t, "BAZ_BAR", "13")
+	t.Setenv("BAZ_BAR", "13")
 
 	assert.Equal(t, "13", Get("bar"))
 }
@@ -716,7 +716,7 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 
 	AutomaticEnv()
 
-	testutil.Setenv(t, "REFRESH_INTERVAL", "30s")
+	t.Setenv("REFRESH_INTERVAL", "30s")
 
 	replacer := strings.NewReplacer("-", "_")
 	SetEnvKeyReplacer(replacer)
@@ -729,7 +729,7 @@ func TestEnvKeyReplacer(t *testing.T) {
 
 	v.AutomaticEnv()
 
-	testutil.Setenv(t, "REFRESH_INTERVAL", "30s")
+	t.Setenv("REFRESH_INTERVAL", "30s")
 
 	assert.Equal(t, "30s", v.Get("refresh-interval"))
 }
@@ -741,14 +741,14 @@ func TestEnvSubConfig(t *testing.T) {
 
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	testutil.Setenv(t, "CLOTHING_PANTS_SIZE", "small")
+	t.Setenv("CLOTHING_PANTS_SIZE", "small")
 	subv := v.Sub("clothing").Sub("pants")
 	assert.Equal(t, "small", subv.Get("size"))
 
 	// again with EnvPrefix
 	v.SetEnvPrefix("foo") // will be uppercased automatically
 	subWithPrefix := v.Sub("clothing").Sub("pants")
-	testutil.Setenv(t, "FOO_CLOTHING_PANTS_SIZE", "large")
+	t.Setenv("FOO_CLOTHING_PANTS_SIZE", "large")
 	assert.Equal(t, "large", subWithPrefix.Get("size"))
 }
 
@@ -875,8 +875,8 @@ func TestAllKeysWithEnv(t *testing.T) {
 	v.BindEnv("foo.bar")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	testutil.Setenv(t, "ID", "13")
-	testutil.Setenv(t, "FOO_BAR", "baz")
+	t.Setenv("ID", "13")
+	t.Setenv("FOO_BAR", "baz")
 
 	expectedKeys := sort.StringSlice{"id", "foo.bar"}
 	expectedKeys.Sort()
@@ -1308,7 +1308,7 @@ func TestBoundCaseSensitivity(t *testing.T) {
 
 	BindEnv("eYEs", "TURTLE_EYES")
 
-	testutil.Setenv(t, "TURTLE_EYES", "blue")
+	t.Setenv("TURTLE_EYES", "blue")
 
 	assert.Equal(t, "blue", Get("eyes"))
 
@@ -1492,8 +1492,8 @@ func TestIsSet(t *testing.T) {
 	v.BindEnv("clothing.hat")
 	v.BindEnv("clothing.hats")
 
-	testutil.Setenv(t, "FOO", "bar")
-	testutil.Setenv(t, "CLOTHING_HAT", "bowler")
+	t.Setenv("FOO", "bar")
+	t.Setenv("CLOTHING_HAT", "bowler")
 
 	assert.True(t, v.IsSet("eyes"))           // in the config file
 	assert.True(t, v.IsSet("foo"))            // in the environment
