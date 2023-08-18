@@ -6,16 +6,21 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spf13/viper/internal/encoding/codec"
 	"github.com/subosito/gotenv"
 )
 
 const keyDelimiter = "_"
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for encoding data containing environment variables
+// Codec implements the Codec interface for encoding data containing environment variables
 // (commonly called as dotenv format).
 type Codec struct{}
 
-func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
+func New(args ...interface{}) codec.Codec {
+	return &Codec{}
+}
+
+func (*Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	flattened := map[string]interface{}{}
 
 	flattened = flattenAndMergeMap(flattened, v, "", keyDelimiter)
@@ -40,7 +45,7 @@ func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (Codec) Decode(b []byte, v map[string]interface{}) error {
+func (*Codec) Decode(b []byte, v map[string]interface{}) error {
 	var buf bytes.Buffer
 
 	_, err := buf.Write(b)

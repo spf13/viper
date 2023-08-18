@@ -2,16 +2,22 @@ package json
 
 import (
 	"encoding/json"
+
+	"github.com/spf13/viper/internal/encoding/codec"
 )
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for JSON encoding.
+// Codec implements the encoding.Codec interface for JSON encoding.
 type Codec struct{}
 
-func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
+func New(_ ...interface{}) codec.Codec {
+	return &Codec{}
+}
+
+func (*Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	// TODO: expose prefix and indent in the Codec as setting?
 	return json.MarshalIndent(v, "", "  ")
 }
 
-func (Codec) Decode(b []byte, v map[string]interface{}) error {
+func (*Codec) Decode(b []byte, v map[string]interface{}) error {
 	return json.Unmarshal(b, &v)
 }

@@ -1,14 +1,21 @@
 package yaml
 
-import "gopkg.in/yaml.v3"
+import (
+	"github.com/spf13/viper/internal/encoding/codec"
+	"gopkg.in/yaml.v3"
+)
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for YAML encoding.
+// Codec implements the encoding.Codec interface for YAML encoding.
 type Codec struct{}
 
-func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
+func New(_ ...interface{}) codec.Codec {
+	return &Codec{}
+}
+
+func (*Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	return yaml.Marshal(v)
 }
 
-func (Codec) Decode(b []byte, v map[string]interface{}) error {
+func (*Codec) Decode(b []byte, v map[string]interface{}) error {
 	return yaml.Unmarshal(b, &v)
 }

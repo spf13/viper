@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spf13/viper/internal/encoding/codec"
+
 	"github.com/spf13/cast"
 	"gopkg.in/ini.v1"
 )
@@ -13,13 +15,34 @@ import (
 // This type is added here for convenience: this way consumers can import a single package called "ini".
 type LoadOptions = ini.LoadOptions
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for INI encoding.
+// Codec implements the encoding.Codec interface for INI encoding.
 type Codec struct {
 	KeyDelimiter string
 	LoadOptions  LoadOptions
 }
 
-func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
+// New treats its first argument as string for KeyDelimiter and the second as ini.LoadOptions.
+// The other args will be ignored
+func New(args ...interface{}) codec.Codec {
+	if len(args) < 2 {
+		return nil
+	}
+	keyDelimiter, ok := args[0].(string)
+	if !ok {
+		return nil
+	}
+	loadOptions, ok := args[1].(LoadOptions)
+	if !ok {
+		return nil
+	}
+
+	return &Codec{
+		KeyDelimiter: keyDelimiter,
+		LoadOptions:  loadOptions,
+	}
+}
+
+func (c *Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	cfg := ini.Empty()
 	ini.PrettyFormat = false
 
@@ -62,7 +85,7 @@ func (c Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (c Codec) Decode(b []byte, v map[string]interface{}) error {
+func (c *Codec) Decode(b []byte, v map[string]interface{}) error {
 	cfg := ini.Empty(c.LoadOptions)
 
 	err := cfg.Append(b)
@@ -90,7 +113,7 @@ func (c Codec) Decode(b []byte, v map[string]interface{}) error {
 	return nil
 }
 
-func (c Codec) keyDelimiter() string {
+func (c *Codec) keyDelimiter() string {
 	if c.KeyDelimiter == "" {
 		return "."
 	}

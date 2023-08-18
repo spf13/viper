@@ -5,11 +5,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spf13/viper/internal/encoding/codec"
+
 	"github.com/magiconair/properties"
 	"github.com/spf13/cast"
 )
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for Java properties encoding.
+// Codec implements the encoding.Codec interface for Java properties encoding.
 type Codec struct {
 	KeyDelimiter string
 
@@ -18,6 +20,20 @@ type Codec struct {
 	// TODO: drop this feature in v2
 	// TODO: make use of the global properties object optional
 	Properties *properties.Properties
+}
+
+// New treats its first argument as string for KeyDelimiter, the other args will be ignored
+func New(args ...interface{}) codec.Codec {
+	if len(args) == 0 {
+		return nil
+	}
+	keyDelimiter, ok := args[0].(string)
+	if !ok {
+		return nil
+	}
+	return &Codec{
+		KeyDelimiter: keyDelimiter,
+	}
 }
 
 func (c *Codec) Encode(v map[string]interface{}) ([]byte, error) {
@@ -77,7 +93,7 @@ func (c *Codec) Decode(b []byte, v map[string]interface{}) error {
 	return nil
 }
 
-func (c Codec) keyDelimiter() string {
+func (c *Codec) keyDelimiter() string {
 	if c.KeyDelimiter == "" {
 		return "."
 	}

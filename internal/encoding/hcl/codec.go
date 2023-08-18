@@ -4,15 +4,21 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"github.com/spf13/viper/internal/encoding/codec"
+
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/printer"
 )
 
-// Codec implements the encoding.Encoder and encoding.Decoder interfaces for HCL encoding.
+// Codec implements the encoding.Codec interface for HCL encoding.
 // TODO: add printer config to the codec?
 type Codec struct{}
 
-func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
+func New(args ...interface{}) codec.Codec {
+	return &Codec{}
+}
+
+func (*Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
@@ -35,6 +41,6 @@ func (Codec) Encode(v map[string]interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (Codec) Decode(b []byte, v map[string]interface{}) error {
+func (*Codec) Decode(b []byte, v map[string]interface{}) error {
 	return hcl.Unmarshal(b, &v)
 }

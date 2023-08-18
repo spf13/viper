@@ -40,13 +40,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/viper/internal/encoding"
-	"github.com/spf13/viper/internal/encoding/dotenv"
-	"github.com/spf13/viper/internal/encoding/hcl"
 	"github.com/spf13/viper/internal/encoding/ini"
-	"github.com/spf13/viper/internal/encoding/javaproperties"
-	"github.com/spf13/viper/internal/encoding/json"
-	"github.com/spf13/viper/internal/encoding/toml"
-	"github.com/spf13/viper/internal/encoding/yaml"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.
@@ -219,9 +213,7 @@ type Viper struct {
 
 	logger Logger
 
-	// TODO: should probably be protected with a mutex
-	encoderRegistry *encoding.EncoderRegistry
-	decoderRegistry *encoding.DecoderRegistry
+	codecRegistry *encoding.CodecRegistry
 }
 
 // New returns an initialized Viper instance.
@@ -242,8 +234,31 @@ func New() *Viper {
 	v.typeByDefValue = false
 	v.logger = jwwLogger{}
 
-	v.resetEncoding()
+	v.resetEncodingWithLazyInitializationMode()
 
+	return v
+}
+
+// NewWithLazyMode is the lazy initialization mode for benchmark
+// todo: remove this API later when creating a PR
+func NewWithLazyMode() *Viper {
+	v := new(Viper)
+	v.keyDelim = "."
+	v.configName = "config"
+	v.configPermissions = os.FileMode(0o644)
+	v.fs = afero.NewOsFs()
+	v.config = make(map[string]interface{})
+	v.parents = []string{}
+	v.override = make(map[string]interface{})
+	v.defaults = make(map[string]interface{})
+	v.kvstore = make(map[string]interface{})
+	v.pflags = make(map[string]FlagValue)
+	v.env = make(map[string][]string)
+	v.aliases = make(map[string]string)
+	v.typeByDefValue = false
+	v.logger = jwwLogger{}
+
+	v.resetEncodingWithLazyInitializationMode()
 	return v
 }
 
@@ -290,7 +305,7 @@ func NewWithOptions(opts ...Option) *Viper {
 		opt.apply(v)
 	}
 
-	v.resetEncoding()
+	v.resetEncodingWithLazyInitializationMode()
 
 	return v
 }
@@ -304,82 +319,8 @@ func Reset() {
 	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore"}
 }
 
-// TODO: make this lazy initialization instead
-func (v *Viper) resetEncoding() {
-	encoderRegistry := encoding.NewEncoderRegistry()
-	decoderRegistry := encoding.NewDecoderRegistry()
-
-	{
-		codec := yaml.Codec{}
-
-		encoderRegistry.RegisterEncoder("yaml", codec)
-		decoderRegistry.RegisterDecoder("yaml", codec)
-
-		encoderRegistry.RegisterEncoder("yml", codec)
-		decoderRegistry.RegisterDecoder("yml", codec)
-	}
-
-	{
-		codec := json.Codec{}
-
-		encoderRegistry.RegisterEncoder("json", codec)
-		decoderRegistry.RegisterDecoder("json", codec)
-	}
-
-	{
-		codec := toml.Codec{}
-
-		encoderRegistry.RegisterEncoder("toml", codec)
-		decoderRegistry.RegisterDecoder("toml", codec)
-	}
-
-	{
-		codec := hcl.Codec{}
-
-		encoderRegistry.RegisterEncoder("hcl", codec)
-		decoderRegistry.RegisterDecoder("hcl", codec)
-
-		encoderRegistry.RegisterEncoder("tfvars", codec)
-		decoderRegistry.RegisterDecoder("tfvars", codec)
-	}
-
-	{
-		codec := ini.Codec{
-			KeyDelimiter: v.keyDelim,
-			LoadOptions:  v.iniLoadOptions,
-		}
-
-		encoderRegistry.RegisterEncoder("ini", codec)
-		decoderRegistry.RegisterDecoder("ini", codec)
-	}
-
-	{
-		codec := &javaproperties.Codec{
-			KeyDelimiter: v.keyDelim,
-		}
-
-		encoderRegistry.RegisterEncoder("properties", codec)
-		decoderRegistry.RegisterDecoder("properties", codec)
-
-		encoderRegistry.RegisterEncoder("props", codec)
-		decoderRegistry.RegisterDecoder("props", codec)
-
-		encoderRegistry.RegisterEncoder("prop", codec)
-		decoderRegistry.RegisterDecoder("prop", codec)
-	}
-
-	{
-		codec := &dotenv.Codec{}
-
-		encoderRegistry.RegisterEncoder("dotenv", codec)
-		decoderRegistry.RegisterDecoder("dotenv", codec)
-
-		encoderRegistry.RegisterEncoder("env", codec)
-		decoderRegistry.RegisterDecoder("env", codec)
-	}
-
-	v.encoderRegistry = encoderRegistry
-	v.decoderRegistry = decoderRegistry
+func (v *Viper) resetEncodingWithLazyInitializationMode() {
+	v.codecRegistry = encoding.NewCodecRegistry(v.keyDelim, v.iniLoadOptions)
 }
 
 type defaultRemoteProvider struct {
@@ -1754,7 +1695,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 
 	switch format := strings.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
-		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
+		err := v.codecRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
 		}
@@ -1769,7 +1710,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
-		b, err := v.encoderRegistry.Encode(configType, c)
+		b, err := v.codecRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
 		}
