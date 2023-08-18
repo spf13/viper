@@ -40,7 +40,7 @@ func deepSearch(m map[string]interface{}, path []string) map[string]interface{} 
 }
 
 // flattenAndMergeMap recursively flattens the given map into a new map
-// Code is based on the function with the same name in tha main package.
+// Code is based on the function with the same name in the main package.
 // TODO: move it to a common place
 func flattenAndMergeMap(shadow map[string]interface{}, m map[string]interface{}, prefix string, delimiter string) map[string]interface{} {
 	if shadow != nil && prefix != "" && shadow[prefix] != nil {
