@@ -205,7 +205,6 @@ type Viper struct {
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
 
-	parents        []string
 	config         map[string]interface{}
 	override       map[string]interface{}
 	defaults       map[string]interface{}
@@ -232,7 +231,6 @@ func New() *Viper {
 	v.configPermissions = os.FileMode(0o644)
 	v.fs = afero.NewOsFs()
 	v.config = make(map[string]interface{})
-	v.parents = []string{}
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
 	v.kvstore = make(map[string]interface{})
@@ -956,9 +954,8 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.parents = append(v.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
-		subv.envPrefix = v.envPrefix
+		subv.envPrefix = v.mergeWithEnvPrefix(key)
 		subv.envKeyReplacer = v.envKeyReplacer
 		subv.config = cast.ToStringMap(data)
 		return subv
@@ -1307,10 +1304,9 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 
 	// Env override next
 	if v.automaticEnvApplied {
-		envKey := strings.Join(append(v.parents, lcaseKey), ".")
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
-		if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+		if val, ok := v.getEnv(v.mergeWithEnvPrefix(lcaseKey)); ok {
 			return val
 		}
 		if nested && v.isPathShadowedInAutoEnv(path) != "" {
