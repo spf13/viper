@@ -26,7 +26,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Build
         run: go build .
@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.18', '1.19', '1.20']
+        go: ['1.18', '1.19', '1.20', '1.21']
 
     steps:
       - name: Checkout repository
@@ -74,12 +74,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Lint
         uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3.7.0
         with:
-          version: v1.53.3
+          version: v1.54.2
 
   dev:
     name: Developer environment
