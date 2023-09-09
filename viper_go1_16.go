@@ -6,27 +6,35 @@ package viper
 import (
 	"fmt"
 
+	"github.com/sagikazarmark/go-finder"
 	"github.com/spf13/afero"
 )
 
 // Search all configPaths for any config file.
 // Returns the first path that exists (and is a config file).
 func (v *Viper) findConfigFile() (string, error) {
-	finder := finder{
-		paths:            v.configPaths,
-		fileNames:        []string{v.configName},
-		extensions:       SupportedExts,
-		withoutExtension: v.configType != "",
+	var names []string
+
+	if v.configType != "" {
+		names = finder.NameWithOptionalExtensions(v.configName, SupportedExts...)
+	} else {
+		names = finder.NameWithExtensions(v.configName, SupportedExts...)
 	}
 
-	file, err := finder.Find(afero.NewIOFS(v.fs))
+	finder := finder.Finder{
+		Paths: v.configPaths,
+		Names: names,
+		Type:  finder.FileTypeFile,
+	}
+
+	results, err := finder.Find(afero.NewIOFS(v.fs))
 	if err != nil {
 		return "", err
 	}
 
-	if file == "" {
+	if len(results) == 0 {
 		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 	}
 
-	return file, nil
+	return results[0], nil
 }
