@@ -18,6 +18,7 @@ import (
 	"strings"
 	"unicode"
 
+	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/spf13/cast"
 )
 
@@ -104,7 +105,7 @@ func insensitiveArray(a []interface{}) {
 	}
 }
 
-func absPathify(logger Logger, inPath string) string {
+func absPathify(logger *slog.Logger, inPath string) string {
 	logger.Info("trying to resolve absolute path", "path", inPath)
 
 	if inPath == "$HOME" || strings.HasPrefix(inPath, "$HOME"+string(os.PathSeparator)) {

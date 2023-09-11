@@ -1,8 +1,10 @@
 package viper
 
 import (
+	"context"
 	"fmt"
 
+	slog "github.com/sagikazarmark/slog-shim"
 	jww "github.com/spf13/jwalterweatherman"
 )
 
@@ -74,4 +76,29 @@ func jwwLogMessage(msg string, keyvals ...interface{}) string {
 	}
 
 	return out
+}
+
+// WithLogger sets a custom logger.
+func WithLogger(l *slog.Logger) Option {
+	return optionFunc(func(v *Viper) {
+		v.logger = l
+	})
+}
+
+type discardHandler struct{}
+
+func (n *discardHandler) Enabled(_ context.Context, _ slog.Level) bool {
+	return false
+}
+
+func (n *discardHandler) Handle(_ context.Context, _ slog.Record) error {
+	return nil
+}
+
+func (n *discardHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return n
+}
+
+func (n *discardHandler) WithGroup(name string) slog.Handler {
+	return n
 }

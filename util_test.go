@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	slog "github.com/sagikazarmark/slog-shim"
 )
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
@@ -85,7 +87,7 @@ func TestAbsPathify(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := absPathify(jwwLogger{}, test.input)
+		got := absPathify(slog.Default(), test.input)
 		if got != test.output {
 			t.Errorf("Got %v\nexpected\n%q", got, test.output)
 		}
