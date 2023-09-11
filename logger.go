@@ -11,6 +11,8 @@ import (
 // Logger is a unified interface for various logging use cases and practices, including:
 //   - leveled logging
 //   - structured logging
+//
+// Deprecated: use `log/slog` instead.
 type Logger interface {
 	// Trace logs a Trace event.
 	//
