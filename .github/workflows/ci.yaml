@@ -45,6 +45,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         go: ['1.19', '1.20', '1.21']
+        tags: ['', 'finder']
 
     steps:
       - name: Checkout repository
@@ -56,11 +57,11 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Test
-        run: go test -race -v ./...
+        run: go test -race -v -tags '${{ matrix.tags }}' ./...
         if: runner.os != 'Windows'
 
       - name: Test (without race detector)
-        run: go test -v ./...
+        run: go test -v -tags '${{ matrix.tags }}' ./...
         if: runner.os == 'Windows'
 
   lint:
