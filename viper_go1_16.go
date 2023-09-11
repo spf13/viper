@@ -26,7 +26,7 @@ func (v *Viper) findConfigFile() (string, error) {
 		Type:  locafero.FileTypeFile,
 	}
 
-	results, err := locafero.Find(v.fs)
+	results, err := finder.Find(v.fs)
 	if err != nil {
 		return "", err
 	}
