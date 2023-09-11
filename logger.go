@@ -59,10 +59,10 @@ func (n *discardHandler) Handle(_ context.Context, _ slog.Record) error {
 	return nil
 }
 
-func (n *discardHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (n *discardHandler) WithAttrs(_ []slog.Attr) slog.Handler {
 	return n
 }
 
-func (n *discardHandler) WithGroup(name string) slog.Handler {
+func (n *discardHandler) WithGroup(_ string) slog.Handler {
 	return n
 }
