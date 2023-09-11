@@ -6,8 +6,7 @@ package viper
 import (
 	"fmt"
 
-	"github.com/sagikazarmark/go-finder"
-	"github.com/spf13/afero"
+	"github.com/sagikazarmark/locafero"
 )
 
 // Search all configPaths for any config file.
@@ -16,18 +15,18 @@ func (v *Viper) findConfigFile() (string, error) {
 	var names []string
 
 	if v.configType != "" {
-		names = finder.NameWithOptionalExtensions(v.configName, SupportedExts...)
+		names = locafero.NameWithOptionalExtensions(v.configName, SupportedExts...)
 	} else {
-		names = finder.NameWithExtensions(v.configName, SupportedExts...)
+		names = locafero.NameWithExtensions(v.configName, SupportedExts...)
 	}
 
-	finder := finder.Finder{
+	finder := locafero.Finder{
 		Paths: v.configPaths,
 		Names: names,
-		Type:  finder.FileTypeFile,
+		Type:  locafero.FileTypeFile,
 	}
 
-	results, err := finder.Find(afero.NewIOFS(v.fs))
+	results, err := locafero.Find(v.fs)
 	if err != nil {
 		return "", err
 	}
