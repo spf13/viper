@@ -35,6 +35,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
+	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
@@ -217,7 +218,7 @@ type Viper struct {
 
 	onConfigChange func(fsnotify.Event)
 
-	logger Logger
+	logger *slog.Logger
 
 	// TODO: should probably be protected with a mutex
 	encoderRegistry *encoding.EncoderRegistry
@@ -240,7 +241,7 @@ func New() *Viper {
 	v.env = make(map[string][]string)
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
-	v.logger = jwwLogger{}
+	v.logger = slog.New(&discardHandler{})
 
 	v.resetEncoding()
 
@@ -1838,7 +1839,7 @@ func mergeMaps(
 	for sk, sv := range src {
 		tk := keyExists(sk, tgt)
 		if tk == "" {
-			v.logger.Trace("", "tk", "\"\"", fmt.Sprintf("tgt[%s]", sk), sv)
+			v.logger.Debug("", "tk", "\"\"", fmt.Sprintf("tgt[%s]", sk), sv)
 			tgt[sk] = sv
 			if itgt != nil {
 				itgt[sk] = sv
@@ -1848,7 +1849,7 @@ func mergeMaps(
 
 		tv, ok := tgt[tk]
 		if !ok {
-			v.logger.Trace("", fmt.Sprintf("ok[%s]", tk), false, fmt.Sprintf("tgt[%s]", sk), sv)
+			v.logger.Debug("", fmt.Sprintf("ok[%s]", tk), false, fmt.Sprintf("tgt[%s]", sk), sv)
 			tgt[sk] = sv
 			if itgt != nil {
 				itgt[sk] = sv
@@ -1859,7 +1860,7 @@ func mergeMaps(
 		svType := reflect.TypeOf(sv)
 		tvType := reflect.TypeOf(tv)
 
-		v.logger.Trace(
+		v.logger.Debug(
 			"processing",
 			"key", sk,
 			"st", svType,
@@ -1870,7 +1871,7 @@ func mergeMaps(
 
 		switch ttv := tv.(type) {
 		case map[interface{}]interface{}:
-			v.logger.Trace("merging maps (must convert)")
+			v.logger.Debug("merging maps (must convert)")
 			tsv, ok := sv.(map[interface{}]interface{})
 			if !ok {
 				v.logger.Error(
@@ -1888,7 +1889,7 @@ func mergeMaps(
 			stv := castToMapStringInterface(ttv)
 			mergeMaps(ssv, stv, ttv)
 		case map[string]interface{}:
-			v.logger.Trace("merging maps")
+			v.logger.Debug("merging maps")
 			tsv, ok := sv.(map[string]interface{})
 			if !ok {
 				v.logger.Error(
@@ -1903,7 +1904,7 @@ func mergeMaps(
 			}
 			mergeMaps(tsv, ttv, nil)
 		default:
-			v.logger.Trace("setting value")
+			v.logger.Debug("setting value")
 			tgt[tk] = sv
 			if itgt != nil {
 				itgt[tk] = sv
