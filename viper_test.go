@@ -2693,12 +2693,13 @@ func TestIsPathShadowedInFlatMap(t *testing.T) {
 	path1 := []string{"foo", "bar"}
 	expected1 := "foo"
 
-	// "foo.bar" should shadowed by"foo"
+	// "foo.bar" should shadowed by "foo"
 	assert.Equal(t, expected1, v.isPathShadowedInFlatMap(path1, stringMap))
 	assert.Equal(t, expected1, v.isPathShadowedInFlatMap(path1, flagMap))
 
 	path2 := []string{"bar", "foo"}
 	expected2 := ""
+
 	// "bar.foo" should not shadowed by "foo"
 	assert.Equal(t, expected2, v.isPathShadowedInFlatMap(path2, stringMap))
 	assert.Equal(t, expected2, v.isPathShadowedInFlatMap(path2, flagMap))
