@@ -2704,6 +2704,25 @@ func TestIsPathShadowedInFlatMap(t *testing.T) {
 	assert.Equal(t, expected2, v.isPathShadowedInFlatMap(path2, flagMap))
 }
 
+func TestFlagShadow(t *testing.T) {
+	v := New()
+
+	v.SetDefault("foo.bar1.bar2", "default")
+
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("foo.bar1", "shadowed", "")
+	flags.VisitAll(func(flag *pflag.Flag) {
+		flag.Changed = true
+	})
+
+	v.BindPFlags(flags)
+
+	assert.Equal(t, "shadowed", v.GetString("foo.bar1"))
+	// the default "foo.bar1.bar2" value should shadowed by flag "foo.bar1" value
+	// and should return an empty string
+	assert.Equal(t, "", v.GetString("foo.bar1.bar2"))
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
