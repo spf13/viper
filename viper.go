@@ -197,6 +197,7 @@ type Viper struct {
 	configType        string
 	configPermissions os.FileMode
 	envPrefix         string
+	envPrefixStrict   bool
 
 	// Specific commands for ini parsing
 	iniLoadOptions ini.LoadOptions
@@ -279,6 +280,15 @@ type StringReplacer interface {
 func EnvKeyReplacer(r StringReplacer) Option {
 	return optionFunc(func(v *Viper) {
 		v.envKeyReplacer = r
+	})
+}
+
+func StrictEnvPrefix(in string) Option {
+	return optionFunc(func(v *Viper) {
+		if "" != in {
+			v.envPrefix = in
+			v.envPrefixStrict = true
+		}
 	})
 }
 
@@ -519,19 +529,24 @@ func SetEnvPrefix(in string) { v.SetEnvPrefix(in) }
 
 func (v *Viper) SetEnvPrefix(in string) {
 	if in != "" {
-		v.envPrefix = in
+		v.envPrefix = in + "_"
 	}
 }
 
 func GetEnvPrefix() string { return v.GetEnvPrefix() }
 
 func (v *Viper) GetEnvPrefix() string {
-	return v.envPrefix
+	p := v.envPrefix
+	if v.envPrefixStrict && "" != p {
+		// Removes automatic trailing underscore.
+		p = p[:len(p)-1]
+	}
+	return p
 }
 
 func (v *Viper) mergeWithEnvPrefix(in string) string {
 	if v.envPrefix != "" {
-		return strings.ToUpper(v.envPrefix + "_" + in)
+		return strings.ToUpper(v.envPrefix + in)
 	}
 
 	return strings.ToUpper(in)
@@ -959,6 +974,7 @@ func (v *Viper) Sub(key string) *Viper {
 		subv.parents = append(v.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
 		subv.envPrefix = v.envPrefix
+		subv.envPrefixStrict = v.envPrefixStrict
 		subv.envKeyReplacer = v.envKeyReplacer
 		subv.config = cast.ToStringMap(data)
 		return subv
