@@ -68,7 +68,7 @@ bin/golangci-lint:
 
 .PHONY: yamllint
 yamllint:
-	pip install --user yamllint
+	pip3 install --user yamllint
 
 # Add custom targets here
 -include custom.mk
