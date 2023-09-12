@@ -66,7 +66,7 @@ bin/golangci-lint:
 	@mkdir -p bin
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- v${GOLANGCI_VERSION}
 
-.PHONY: fmt
+.PHONY: yamllint
 yamllint:
 	pip install --user yamllint
 
