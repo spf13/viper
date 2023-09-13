@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -237,7 +236,7 @@ func initIni() {
 }
 
 // make directories for testing
-func initDirs(t *testing.T) (string, string, func()) {
+func initDirs(t *testing.T) (string, string) {
 	var (
 		testDirs = []string{`a a`, `b`, `C_`}
 		config   = `improbable`
@@ -247,38 +246,23 @@ func initDirs(t *testing.T) (string, string, func()) {
 		testDirs = append(testDirs, `d\d`)
 	}
 
-	root, err := ioutil.TempDir("", "")
-	require.NoError(t, err, "Failed to create temporary directory")
+	root := t.TempDir()
 
-	cleanup := true
-	defer func() {
-		if cleanup {
-			os.Chdir("..")
-			os.RemoveAll(root)
-		}
-	}()
-
-	assert.Nil(t, err)
-
-	err = os.Chdir(root)
+	err := os.Chdir(root)
 	require.Nil(t, err)
 
 	for _, dir := range testDirs {
 		err = os.Mkdir(dir, 0o750)
 		assert.Nil(t, err)
 
-		err = ioutil.WriteFile(
+		err = os.WriteFile(
 			path.Join(dir, config+".toml"),
 			[]byte("key = \"value is "+dir+"\"\n"),
 			0o640)
 		assert.Nil(t, err)
 	}
 
-	cleanup = false
-	return root, config, func() {
-		os.Chdir("..")
-		os.RemoveAll(root)
-	}
+	return root, config
 }
 
 // stubs for PFlag Values
@@ -1515,14 +1499,13 @@ func TestIsSet(t *testing.T) {
 }
 
 func TestDirsSearch(t *testing.T) {
-	root, config, cleanup := initDirs(t)
-	defer cleanup()
+	root, config := initDirs(t)
 
 	v := New()
 	v.SetConfigName(config)
 	v.SetDefault(`key`, `default`)
 
-	entries, err := ioutil.ReadDir(root)
+	entries, err := os.ReadDir(root)
 	assert.Nil(t, err)
 	for _, e := range entries {
 		if e.IsDir() {
@@ -1537,8 +1520,7 @@ func TestDirsSearch(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
-	_, config, cleanup := initDirs(t)
-	defer cleanup()
+	_, config := initDirs(t)
 
 	v := New()
 	v.SetConfigName(config)
@@ -1556,8 +1538,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
-	_, config, cleanup := initDirs(t)
-	defer cleanup()
+	_, config := initDirs(t)
 
 	v := New()
 	v.SetConfigName(config)
@@ -2438,36 +2419,28 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
 }
 
-func newViperWithConfigFile(t *testing.T) (*Viper, string, func()) {
-	watchDir, err := ioutil.TempDir("", "")
-	require.Nil(t, err)
+func newViperWithConfigFile(t *testing.T) (*Viper, string) {
+	watchDir := t.TempDir()
 	configFile := path.Join(watchDir, "config.yaml")
-	err = ioutil.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
+	err := os.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
 	require.Nil(t, err)
-	cleanup := func() {
-		os.RemoveAll(watchDir)
-	}
 	v := New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
 	require.Nil(t, err)
 	require.Equal(t, "bar", v.Get("foo"))
-	return v, configFile, cleanup
+	return v, configFile
 }
 
-func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func()) {
-	watchDir, err := ioutil.TempDir("", "")
-	require.Nil(t, err)
+func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
+	watchDir := t.TempDir()
 	dataDir1 := path.Join(watchDir, "data1")
-	err = os.Mkdir(dataDir1, 0o777)
+	err := os.Mkdir(dataDir1, 0o777)
 	require.Nil(t, err)
 	realConfigFile := path.Join(dataDir1, "config.yaml")
 	t.Logf("Real config file location: %s\n", realConfigFile)
-	err = ioutil.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
+	err = os.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
 	require.Nil(t, err)
-	cleanup := func() {
-		os.RemoveAll(watchDir)
-	}
 	// now, symlink the tm `data1` dir to `data` in the baseDir
 	os.Symlink(dataDir1, path.Join(watchDir, "data"))
 	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
@@ -2480,7 +2453,7 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string, func
 	err = v.ReadInConfig()
 	require.Nil(t, err)
 	require.Equal(t, "bar", v.Get("foo"))
-	return v, watchDir, configFile, cleanup
+	return v, watchDir, configFile
 }
 
 func TestWatchFile(t *testing.T) {
@@ -2491,8 +2464,7 @@ func TestWatchFile(t *testing.T) {
 
 	t.Run("file content changed", func(t *testing.T) {
 		// given a `config.yaml` file being watched
-		v, configFile, cleanup := newViperWithConfigFile(t)
-		defer cleanup()
+		v, configFile := newViperWithConfigFile(t)
 		_, err := os.Stat(configFile)
 		require.NoError(t, err)
 		t.Logf("test config file: %s\n", configFile)
@@ -2507,7 +2479,7 @@ func TestWatchFile(t *testing.T) {
 		})
 		v.WatchConfig()
 		// when overwriting the file and waiting for the custom change notification handler to be triggered
-		err = ioutil.WriteFile(configFile, []byte("foo: baz\n"), 0o640)
+		err = os.WriteFile(configFile, []byte("foo: baz\n"), 0o640)
 		wg.Wait()
 		// then the config value should have changed
 		require.Nil(t, err)
@@ -2519,8 +2491,7 @@ func TestWatchFile(t *testing.T) {
 		if runtime.GOOS != "linux" {
 			t.Skipf("Skipping test as symlink replacements don't work on non-linux environment...")
 		}
-		v, watchDir, _, _ := newViperWithSymlinkedConfigFile(t)
-		// defer cleanup()
+		v, watchDir, _ := newViperWithSymlinkedConfigFile(t)
 		wg := sync.WaitGroup{}
 		v.WatchConfig()
 		v.OnConfigChange(func(in fsnotify.Event) {
@@ -2533,7 +2504,7 @@ func TestWatchFile(t *testing.T) {
 		err := os.Mkdir(dataDir2, 0o777)
 		require.Nil(t, err)
 		configFile2 := path.Join(dataDir2, "config.yaml")
-		err = ioutil.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
+		err = os.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
 		require.Nil(t, err)
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
