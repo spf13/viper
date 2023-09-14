@@ -1944,24 +1944,22 @@ func (v *Viper) getKeyValueConfig() error {
 		val, err := v.getRemoteConfig(rp)
 		if err != nil {
 			v.logger.Error(fmt.Errorf("get remote config: %w", err).Error())
-
 			continue
 		}
-
 		v.kvstore = val
-
 		return nil
 	}
 	return RemoteConfigError("No Files Found")
 }
 
 func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}, error) {
+	config := make(map[string]interface{})
 	reader, err := RemoteConfig.Get(provider)
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	err = v.unmarshalReader(reader, config)
+	return config, err
 }
 
 // Retrieve the first found remote configuration.
