@@ -248,18 +248,16 @@ func initDirs(t *testing.T) (string, string) {
 
 	root := t.TempDir()
 
-	err := os.Chdir(root)
-	require.Nil(t, err)
-
 	for _, dir := range testDirs {
-		err = os.Mkdir(dir, 0o750)
-		assert.Nil(t, err)
+		innerDir := filepath.Join(root, dir)
+		err := os.Mkdir(innerDir, 0o750)
+		require.NoError(t, err)
 
 		err = os.WriteFile(
-			path.Join(dir, config+".toml"),
-			[]byte("key = \"value is "+dir+"\"\n"),
+			filepath.Join(innerDir, config+".toml"),
+			[]byte(`key = "value is `+dir+`"`+"\n"),
 			0o640)
-		assert.Nil(t, err)
+		require.NoError(t, err)
 	}
 
 	return root, config
@@ -1506,15 +1504,15 @@ func TestDirsSearch(t *testing.T) {
 	v.SetDefault(`key`, `default`)
 
 	entries, err := os.ReadDir(root)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	for _, e := range entries {
 		if e.IsDir() {
-			v.AddConfigPath(e.Name())
+			v.AddConfigPath(filepath.Join(root, e.Name()))
 		}
 	}
 
 	err = v.ReadInConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, `value is `+filepath.Base(v.configPaths[0]), v.GetString(`key`))
 }
