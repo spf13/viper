@@ -31,6 +31,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -210,7 +211,7 @@ type Viper struct {
 	config         map[string]interface{}
 	override       map[string]interface{}
 	defaults       map[string]interface{}
-	kvstore        map[string]interface{}
+	kvstore        atomic.Value
 	pflags         map[string]FlagValue
 	env            map[string][]string
 	aliases        map[string]string
@@ -236,7 +237,8 @@ func New() *Viper {
 	v.parents = []string{}
 	v.override = make(map[string]interface{})
 	v.defaults = make(map[string]interface{})
-	v.kvstore = make(map[string]interface{})
+	// v.kvstore = make(map[string]interface{})
+	v.kvstore.Store(make(map[string]interface{}))
 	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string][]string)
 	v.aliases = make(map[string]string)
@@ -1340,11 +1342,12 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) interface{} {
 	}
 
 	// K/V store next
-	val = v.searchMap(v.kvstore, path)
+	store := v.kvstore.Load().(map[string]interface{})
+	val = v.searchMap(store, path)
 	if val != nil {
 		return val
 	}
-	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
+	if nested && v.isPathShadowedInDeepMap(path, store) != "" {
 		return nil
 	}
 
@@ -1496,13 +1499,14 @@ func (v *Viper) registerAlias(alias string, key string) {
 			// if we alias something that exists in one of the maps to another
 			// name, we'll never be able to get that value using the original
 			// name, so move the config value to the new realkey.
+			store := v.kvstore.Load().(map[string]interface{})
 			if val, ok := v.config[alias]; ok {
 				delete(v.config, alias)
 				v.config[key] = val
 			}
-			if val, ok := v.kvstore[alias]; ok {
-				delete(v.kvstore, alias)
-				v.kvstore[key] = val
+			if val, ok := store[alias]; ok {
+				delete(store, alias)
+				store[key] = val
 			}
 			if val, ok := v.defaults[alias]; ok {
 				delete(v.defaults, alias)
@@ -1948,7 +1952,8 @@ func (v *Viper) getKeyValueConfig() error {
 			continue
 		}
 
-		v.kvstore = val
+		v.kvstore.Store(val)
+		// v.kvstore = val
 
 		return nil
 	}
@@ -1960,8 +1965,9 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	store := v.kvstore.Load().(map[string]interface{})
+	err = v.unmarshalReader(reader, store)
+	return store, err
 }
 
 // Retrieve the first found remote configuration.
@@ -1977,7 +1983,11 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
+				newStore := make(map[string]interface{})
+				oldStore := v.kvstore.Load().(map[string]interface{})
+				mergeMaps(oldStore, newStore, nil)
+				v.unmarshalReader(reader, newStore)
+				v.kvstore.Store(newStore)
 			}
 		}(respc)
 		return nil
@@ -1998,7 +2008,8 @@ func (v *Viper) watchKeyValueConfig() error {
 
 			continue
 		}
-		v.kvstore = val
+
+		v.kvstore.Store(val)
 		return nil
 	}
 	return RemoteConfigError("No Files Found")
@@ -2009,8 +2020,11 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]interface
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	newStore := make(map[string]interface{})
+	store := v.kvstore.Load().(map[string]interface{})
+	mergeMaps(store, newStore, nil)
+	err = v.unmarshalReader(reader, newStore)
+	return newStore, err
 }
 
 // AllKeys returns all keys holding a value, regardless of where they are set.
@@ -2019,13 +2033,14 @@ func AllKeys() []string { return v.AllKeys() }
 
 func (v *Viper) AllKeys() []string {
 	m := map[string]bool{}
+	store := v.kvstore.Load().(map[string]interface{})
 	// add all paths, by order of descending priority to ensure correct shadowing
 	m = v.flattenAndMergeMap(m, castMapStringToMapInterface(v.aliases), "")
 	m = v.flattenAndMergeMap(m, v.override, "")
 	m = v.mergeFlatMap(m, castMapFlagToMapInterface(v.pflags))
 	m = v.mergeFlatMap(m, castMapStringSliceToMapInterface(v.env))
 	m = v.flattenAndMergeMap(m, v.config, "")
-	m = v.flattenAndMergeMap(m, v.kvstore, "")
+	m = v.flattenAndMergeMap(m, store, "")
 	m = v.flattenAndMergeMap(m, v.defaults, "")
 
 	// convert set of paths to list
