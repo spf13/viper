@@ -11,6 +11,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -2423,6 +2424,132 @@ func TestParseNested(t *testing.T) {
 	assert.Equal(t, 1, len(items))
 	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
 	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
+}
+
+func TestGetTypeByDefValue(t *testing.T) {
+	const dobString = "1979-05-27T07:32:00Z"
+	dob, _ := time.Parse(time.RFC3339, dobString)
+
+	for _, tc := range []struct {
+		name string // name of the test case
+		key  string // key for the value
+		// First test that Getting the default value is what we expect it to be.
+		defaultProvide interface{} // the given default value
+		defaultWant    interface{} // what we expect Getting that default will return
+		// Then set the OS environment to a different value with its type
+		// inferred from the default value.
+		envProvide string      // the given string representation of the env value
+		envWant    interface{} // what we expect Getting that env will return
+	}{{
+		name:           "casting to bool",
+		key:            "bool_key",
+		defaultProvide: true,
+		defaultWant:    true,
+		envProvide:     "false",
+		envWant:        false,
+	}, {
+		name:           "casting to string",
+		key:            "string_key",
+		defaultProvide: "reticulating splines",
+		defaultWant:    "reticulating splines",
+		envProvide:     "gophers!",
+		envWant:        "gophers!",
+	}, {
+		name:           "casting to int64",
+		key:            "int64_key",
+		defaultProvide: int64(0xCAFE),
+		defaultWant:    int(0xCAFE),
+		envProvide:     "0xF00D",
+		envWant:        int(0xF00D),
+	}, {
+		name:           "casting to int32",
+		key:            "int32_key",
+		defaultProvide: int32(0xD00D),
+		defaultWant:    int(0xD00D),
+		envProvide:     "0xBABE",
+		envWant:        int(0xBABE),
+	}, {
+		name:           "casting to int16",
+		key:            "int16_key",
+		defaultProvide: int16(0xA),
+		defaultWant:    int(0xA),
+		envProvide:     "0xB",
+		envWant:        int(0xB),
+	}, {
+		name:           "casting to int8",
+		key:            "int8_key",
+		defaultProvide: int8(4),
+		defaultWant:    int(4),
+		envProvide:     "3",
+		envWant:        int(3),
+	}, {
+		name:           "casting to int",
+		key:            "int_key",
+		defaultProvide: int(0xCAFEF00D),
+		defaultWant:    int(0xCAFEF00D),
+		envProvide:     "5678",
+		envWant:        int(5678),
+	}, {
+		name:           "casting to float64",
+		key:            "float64_key",
+		defaultProvide: float64(math.Pi),
+		defaultWant:    float64(math.Pi),
+		envProvide:     "98.7650",
+		envWant:        float64(98.7650),
+	}, {
+		name: "casting to float32",
+		key:  "float32_key",
+		// First truncate, then cast to 64 bits to get proper equality.
+		defaultProvide: float32(math.Phi),
+		defaultWant:    float64(float32(math.Phi)),
+		envProvide:     "1.23450",
+		envWant:        float64(1.23450),
+	}, {
+		name:           "casting to time",
+		key:            "time_key",
+		defaultProvide: time.Unix(1234567890, 314159),
+		defaultWant:    time.Unix(1234567890, 314159),
+		envProvide:     dobString,
+		envWant:        dob,
+	}, {
+		name:           "casting to duration",
+		key:            "duration_key",
+		defaultProvide: time.Duration(42 * time.Minute),
+		defaultWant:    time.Duration(42 * time.Minute),
+		envProvide:     "3h4m5s",
+		envWant:        time.Duration(3*time.Hour + 4*time.Minute + 5*time.Second),
+	}, {
+		name:           "casting to string slice",
+		key:            "string_slice_key",
+		defaultProvide: []string{"hello", "world"},
+		defaultWant:    []string{"hello", "world"},
+		envProvide:     "aloha mars",
+		envWant:        []string{"aloha", "mars"},
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup.
+			viper := New()
+			viper.SetTypeByDefaultValue(true)
+			viper.SetDefault(tc.key, tc.defaultProvide)
+			viper.AutomaticEnv()
+
+			// Test default.
+			gotDefaultValue := viper.Get(tc.key)
+			assert.IsType(t, tc.defaultWant, gotDefaultValue, "when setting a default value")
+			assert.Equal(t, tc.defaultWant, gotDefaultValue, "when setting a default value")
+
+			// Test env (supercedes default, exemplifies type cast).
+			if err := os.Setenv(strings.ToUpper(tc.key), tc.envProvide); err != nil {
+				t.Fatalf("Setenv unexpectedly failed: %v", err)
+			}
+			viper.BindEnv(tc.key)
+			gotEnvValue := viper.Get(tc.key)
+			assert.IsType(t, tc.envWant, gotEnvValue, "when setting a env value")
+			assert.Equal(t, tc.envWant, gotEnvValue, "when setting an env value")
+
+			assert.IsType(t, gotDefaultValue, gotEnvValue) // sanity check
+		})
+	}
 }
 
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
