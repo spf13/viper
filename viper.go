@@ -1065,6 +1065,12 @@ func (v *Viper) GetStringSlice(key string) []string {
 	return cast.ToStringSlice(v.Get(key))
 }
 
+// GetStringMapStruct returns the value associated with the key as a slice of strings.
+func GetStringMapStruct(key string) map[string]struct{} { return v.GetStringMapStruct(key) }
+func (v *Viper) GetStringMapStruct(key string) map[string]struct{} {
+	return cast.ToStringMapStruct(v.Get(key))
+}
+
 // GetStringMap returns the value associated with the key as a map of interfaces.
 func GetStringMap(key string) map[string]interface{} { return v.GetStringMap(key) }
 

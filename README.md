@@ -551,6 +551,7 @@ The following functions and methods exist:
  * `GetIntSlice(key string) : []int`
  * `GetString(key string) : string`
  * `GetStringMap(key string) : map[string]interface{}`
+ * `GetStringMapStruct(key string) : map[string]struct{}`
  * `GetStringMapString(key string) : map[string]string`
  * `GetStringSlice(key string) : []string`
  * `GetTime(key string) : time.Time`
