@@ -3,3 +3,5 @@
 /build/
 /var/
 /vendor/
+go.mod
+go.sum
