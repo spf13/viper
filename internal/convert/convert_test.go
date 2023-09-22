@@ -52,7 +52,7 @@ func TestConvert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	// t.Error(tmp)
+	t.Error(tmp)
 
 }
 

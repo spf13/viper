@@ -20,14 +20,15 @@ var convertUtils = map[reflect.Kind]func(reflect.Value, reflect.Value) error{
 	reflect.Float64: converNormal,
 	reflect.Uint8:   converNormal,
 	reflect.Int8:    converNormal,
+	reflect.Bool:    converNormal,
 }
 
-//Convert
+//Convert 类型强制转换
 //示例
 /*
 	type Target struct {
-		A int `viper:"aint"`
-		B string `viper:"bstr"`
+		A int `json:"aint"`
+		B string `json:"bstr"`
 	}
 	src :=map[string]interface{}{
 		"aint":1224,
@@ -47,6 +48,11 @@ var _ = func() struct{} {
 }()
 
 func Convert(src interface{}, dst interface{}) (err error) {
+	defer func() {
+		if v := recover(); v != nil {
+			err = fmt.Errorf("panic recover:%v", v)
+		}
+	}()
 
 	dstRef := reflect.ValueOf(dst)
 	if dstRef.Kind() != reflect.Ptr {
@@ -82,7 +88,10 @@ func converNormal(src reflect.Value, dst reflect.Value) error {
 func convertSlice(src reflect.Value, dst reflect.Value) error {
 	if dst.Kind() != reflect.Array && dst.Kind() != reflect.Slice {
 		return fmt.Errorf("error type:%s", dst.Type().String())
+	} else if !src.IsValid() {
+		return nil
 	}
+
 	l := src.Len()
 	target := reflect.MakeSlice(dst.Type(), l, l)
 	if dst.CanSet() {
@@ -105,12 +114,26 @@ func convertSlice(src reflect.Value, dst reflect.Value) error {
 }
 
 func convertMap(src reflect.Value, dst reflect.Value) error {
+	//
+	if src.Kind() == reflect.Ptr || src.Kind() == reflect.Interface {
+		src = src.Elem()
+	}
 	if src.Kind() != reflect.Map || dst.Kind() != reflect.Struct {
-		if src.Kind() == reflect.Interface {
-			return convertMap(src.Elem(), dst)
-		} else {
-			return fmt.Errorf("src or dst type error,%s,%s", src.Type().String(), dst.Type().String())
+		if dst.Kind() == reflect.Map {
+			return converMapToMap(src, dst)
 		}
+		if !(dst.Kind() == reflect.Ptr && dst.Type().Elem().Kind() == reflect.Struct) {
+			if dst.Kind() == reflect.Interface && dst.CanSet() {
+				dst.Set(src)
+				return nil
+			}
+			return fmt.Errorf("src or dst type error:%s,%s", src.Kind().String(), dst.Type().String())
+		}
+		if !reflect.Indirect(dst).IsValid() {
+			v := reflect.New(dst.Type().Elem())
+			dst.Set(v)
+		}
+		dst = reflect.Indirect(dst)
 	}
 	dstType := dst.Type()
 	num := dstType.NumField()
@@ -123,8 +146,19 @@ func convertMap(src reflect.Value, dst reflect.Value) error {
 		if strings.Contains(k, ",") {
 			taglist := strings.Split(k, ",")
 			if taglist[0] == "" {
+				if len(taglist) == 2 &&
+					taglist[1] == "inline" {
+					v := dst.Field(i)
 
-				k = dstType.Field(i).Name
+					err := convertMap(src, v)
+					if err != nil {
+						return err
+					}
+					dst.Field(i).Set(v)
+					continue
+				} else {
+					k = dstType.Field(i).Name
+				}
 			} else {
 				k = taglist[0]
 
@@ -143,8 +177,14 @@ func convertMap(src reflect.Value, dst reflect.Value) error {
 				if err != nil {
 					return err
 				}
+			} else if v.Kind() == reflect.Slice {
+				err := convertSlice(src.MapIndex(key).Elem(), v)
+				if err != nil {
+					return err
+				}
+
 			} else {
-				if v.CanSet() {
+				if v.CanSet() && src.MapIndex(key).IsValid() && !src.MapIndex(key).IsZero() {
 					if v.Type() == src.MapIndex(key).Elem().Type() {
 						v.Set(src.MapIndex(key).Elem())
 					} else if src.MapIndex(key).Elem().CanConvert(v.Type()) {
@@ -155,12 +195,53 @@ func convertMap(src reflect.Value, dst reflect.Value) error {
 							return err
 						}
 					} else {
-						return fmt.Errorf("error type:d(%s)s(%s)", v.Type(), src.Type())
+						return fmt.Errorf("error type:d(%s)s(%s)", v.Type(), src.MapIndex(key).Elem().Type())
 					}
 				}
 			}
 		}
 	}
 
+	return nil
+}
+
+func converMapToMap(src reflect.Value, dst reflect.Value) error {
+	if src.Kind() != reflect.Map || dst.Kind() != reflect.Map {
+		return fmt.Errorf("type error: src(%v),dst(%v)", src.Kind(), src.Kind())
+	}
+	mv := reflect.MakeMap(dst.Type())
+	keys := src.MapKeys()
+	dt := dst.Type().Elem().Kind()
+	for _, key := range keys {
+		if dt == reflect.Struct {
+			me := reflect.New(dst.Type().Elem())
+			me = reflect.Indirect(me)
+			convertMap(src.MapIndex(key).Elem(), me)
+			mv.SetMapIndex(key, me)
+		} else if dt == reflect.Ptr {
+			me := reflect.New(dst.Type().Elem().Elem())
+			me = reflect.Indirect(me)
+			convertMap(src.MapIndex(key).Elem(), me)
+			mv.SetMapIndex(key, me.Addr())
+		} else if dt == reflect.Slice {
+			l := src.MapIndex(key).Elem().Len()
+			v := reflect.MakeSlice(dst.Type().Elem(), l, l)
+			err := convertSlice(src.MapIndex(key).Elem(), v)
+			if err != nil {
+				return err
+			}
+			mv.SetMapIndex(key, v)
+		} else {
+			if src.MapIndex(key).Elem().Kind() != dst.Type().Elem().Kind() &&
+				src.MapIndex(key).Elem().CanConvert(dst.Type().Elem()) {
+				v := src.MapIndex(key).Elem().Convert(dst.Type().Elem())
+				mv.SetMapIndex(key, v)
+				continue
+			}
+
+			mv.SetMapIndex(key, src.MapIndex(key).Elem())
+		}
+	}
+	dst.Set(mv)
 	return nil
 }
