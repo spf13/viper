@@ -1,9 +1,8 @@
 package javaproperties
 
 import (
-	"strings"
-
 	"github.com/spf13/cast"
+	insensitiveopt "github.com/spf13/viper/internal/insensitiveOpt"
 )
 
 // THIS CODE IS COPIED HERE: IT SHOULD NOT BE MODIFIED
@@ -64,7 +63,7 @@ func flattenAndMergeMap(shadow map[string]interface{}, m map[string]interface{},
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = val
+			shadow[insensitiveopt.ToLower(fullKey)] = val
 			continue
 		}
 		// recursively merge to shadow map

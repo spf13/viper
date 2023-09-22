@@ -486,6 +486,30 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, "leather", Get("clothing.jacket"))
 }
 
+func TestMapTo(t *testing.T) {
+	type Service struct {
+		Port int    `viper:"port"`
+		IP   string `viper:"ip"`
+	}
+
+	SetDefault("service", map[string]interface{}{
+		"ip":   "127.0.0.1",
+		"port": 1234,
+	})
+	SetDefault("version", "1.0.01")
+
+	var service Service
+	var version string
+	err := MapTo("service", &service)
+	assert.NoError(t, err)
+	assert.Equal(t, Get("service.port"), service.Port)
+	assert.Equal(t, Get("service.ip"), service.IP)
+	err = MapTo("version", &version)
+	assert.NoError(t, err)
+	assert.Equal(t, Get("version"), version)
+
+}
+
 func TestUnmarshaling(t *testing.T) {
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
