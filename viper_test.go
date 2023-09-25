@@ -1583,12 +1583,10 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 
 	subv = v.Sub("clothing")
-	assert.Equal(t, subv.parents[0], "clothing")
+	assert.Equal(t, subv.envPrefix, "CLOTHING")
 
 	subv = v.Sub("clothing").Sub("pants")
-	assert.Equal(t, len(subv.parents), 2)
-	assert.Equal(t, subv.parents[0], "clothing")
-	assert.Equal(t, subv.parents[1], "pants")
+	assert.Equal(t, subv.envPrefix, "CLOTHING_PANTS")
 }
 
 var hclWriteExpected = []byte(`"foos" = {
