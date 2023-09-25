@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -737,7 +736,7 @@ func TestEnvSubConfig(t *testing.T) {
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
-	ks := sort.StringSlice{
+	ks := []string{
 		"title",
 		"author.bio",
 		"author.e-mail",
@@ -841,11 +840,7 @@ func TestAllKeys(t *testing.T) {
 		"name_dotenv":  "Cake",
 	}
 
-	allkeys := sort.StringSlice(AllKeys())
-	allkeys.Sort()
-	ks.Sort()
-
-	assert.Equal(t, ks, allkeys)
+	assert.ElementsMatch(t, ks, AllKeys())
 	assert.Equal(t, all, AllSettings())
 }
 
@@ -860,11 +855,7 @@ func TestAllKeysWithEnv(t *testing.T) {
 	t.Setenv("ID", "13")
 	t.Setenv("FOO_BAR", "baz")
 
-	expectedKeys := sort.StringSlice{"id", "foo.bar"}
-	expectedKeys.Sort()
-	keys := sort.StringSlice(v.AllKeys())
-	keys.Sort()
-	assert.Equal(t, expectedKeys, keys)
+	assert.ElementsMatch(t, []string{"id", "foo.bar"}, v.AllKeys())
 }
 
 func TestAliasesOfAliases(t *testing.T) {
@@ -1528,7 +1519,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{"", ""}), reflect.TypeOf(err))
+	assert.IsType(t, err, ConfigFileNotFoundError{"", ""})
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1583,12 +1574,10 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, (*Viper)(nil), subv)
 
 	subv = v.Sub("clothing")
-	assert.Equal(t, subv.parents[0], "clothing")
+	assert.Equal(t, []string{"clothing"}, subv.parents)
 
 	subv = v.Sub("clothing").Sub("pants")
-	assert.Equal(t, len(subv.parents), 2)
-	assert.Equal(t, subv.parents[0], "clothing")
-	assert.Equal(t, subv.parents[1], "pants")
+	assert.Equal(t, []string{"clothing", "pants"}, subv.parents)
 }
 
 var hclWriteExpected = []byte(`"foos" = {
@@ -2399,7 +2388,7 @@ func TestParseNested(t *testing.T) {
 		t.Fatalf("unable to decode into struct, %v", err)
 	}
 
-	assert.Equal(t, 1, len(items))
+	assert.Len(t, items, 1)
 	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
 	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
 }
@@ -2421,11 +2410,11 @@ func newViperWithConfigFile(t *testing.T) (*Viper, string) {
 	watchDir := t.TempDir()
 	configFile := path.Join(watchDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	v := New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "bar", v.Get("foo"))
 	return v, configFile
 }
@@ -2434,11 +2423,11 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
 	watchDir := t.TempDir()
 	dataDir1 := path.Join(watchDir, "data1")
 	err := os.Mkdir(dataDir1, 0o777)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	realConfigFile := path.Join(dataDir1, "config.yaml")
 	t.Logf("Real config file location: %s\n", realConfigFile)
 	err = os.WriteFile(realConfigFile, []byte("foo: bar\n"), 0o640)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	// now, symlink the tm `data1` dir to `data` in the baseDir
 	os.Symlink(dataDir1, path.Join(watchDir, "data"))
 	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
@@ -2449,7 +2438,7 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
 	v := New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "bar", v.Get("foo"))
 	return v, watchDir, configFile
 }
@@ -2480,7 +2469,7 @@ func TestWatchFile(t *testing.T) {
 		err = os.WriteFile(configFile, []byte("foo: baz\n"), 0o640)
 		wg.Wait()
 		// then the config value should have changed
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 
@@ -2500,16 +2489,16 @@ func TestWatchFile(t *testing.T) {
 		// when link to another `config.yaml` file
 		dataDir2 := path.Join(watchDir, "data2")
 		err := os.Mkdir(dataDir2, 0o777)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		configFile2 := path.Join(dataDir2, "config.yaml")
 		err = os.WriteFile(configFile2, []byte("foo: baz\n"), 0o640)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		// change the symlink using the `ln -sfn` command
 		err = exec.Command("ln", "-sfn", dataDir2, path.Join(watchDir, "data")).Run()
-		require.Nil(t, err)
+		require.NoError(t, err)
 		wg.Wait()
 		// then
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "baz", v.Get("foo"))
 	})
 }

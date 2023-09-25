@@ -1,7 +1,6 @@
 package viper
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -148,10 +147,9 @@ func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string,
 
 	// loop through map
 	var m map[string]any
-	err := false
 	for _, k := range keys {
 		if val == nil {
-			assert.Fail(fmt.Sprintf("%s is not a map[string]any", ms))
+			assert.Failf("%s is not a map[string]any", ms)
 			return
 		}
 
@@ -162,13 +160,11 @@ func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string,
 		case map[string]any:
 			m = val
 		default:
-			assert.Fail(fmt.Sprintf("%s is not a map[string]any", ms))
+			assert.Failf("%s is not a map[string]any", ms)
 			return
 		}
 		ms = ms + "[\"" + k + "\"]"
 		val = m[k]
 	}
-	if !err {
-		assert.Equal(value, val)
-	}
+	assert.Equal(value, val)
 }
