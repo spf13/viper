@@ -544,19 +544,19 @@ go func(){
 In Viper, there are a few ways to get a value depending on the value’s type.
 The following functions and methods exist:
 
- * `Get(key string) : interface{}`
+ * `Get(key string) : any`
  * `GetBool(key string) : bool`
  * `GetFloat64(key string) : float64`
  * `GetInt(key string) : int`
  * `GetIntSlice(key string) : []int`
  * `GetString(key string) : string`
- * `GetStringMap(key string) : map[string]interface{}`
+ * `GetStringMap(key string) : map[string]any`
  * `GetStringMapString(key string) : map[string]string`
  * `GetStringSlice(key string) : []string`
  * `GetTime(key string) : time.Time`
  * `GetDuration(key string) : time.Duration`
  * `IsSet(key string) : bool`
- * `AllSettings() : map[string]interface{}`
+ * `AllSettings() : map[string]any`
 
 One important thing to recognize is that each Get function will return a zero
 value if it’s not found. To check if a given key exists, the `IsSet()` method
@@ -719,8 +719,8 @@ etc.
 
 There are two methods to do this:
 
- * `Unmarshal(rawVal interface{}) : error`
- * `UnmarshalKey(key string, rawVal interface{}) : error`
+ * `Unmarshal(rawVal any) : error`
+ * `UnmarshalKey(key string, rawVal any) : error`
 
 Example:
 
@@ -745,9 +745,9 @@ you have to change the delimiter:
 ```go
 v := viper.NewWithOptions(viper.KeyDelimiter("::"))
 
-v.SetDefault("chart::values", map[string]interface{}{
-	"ingress": map[string]interface{}{
-		"annotations": map[string]interface{}{
+v.SetDefault("chart::values", map[string]any{
+	"ingress": map[string]any{
+		"annotations": map[string]any{
 			"traefik.frontend.rule.type":                 "PathPrefix",
 			"traefik.ingress.kubernetes.io/ssl-redirect": "true",
 		},
@@ -756,7 +756,7 @@ v.SetDefault("chart::values", map[string]interface{}{
 
 type config struct {
 	Chart struct{
-		Values map[string]interface{}
+		Values map[string]any
 	}
 }
 

@@ -39,11 +39,11 @@ func (pe ConfigParseError) Unwrap() error {
 
 // toCaseInsensitiveValue checks if the value is a  map;
 // if so, create a copy and lower-case the keys recursively.
-func toCaseInsensitiveValue(value interface{}) interface{} {
+func toCaseInsensitiveValue(value any) any {
 	switch v := value.(type) {
-	case map[interface{}]interface{}:
+	case map[any]any:
 		value = copyAndInsensitiviseMap(cast.ToStringMap(v))
-	case map[string]interface{}:
+	case map[string]any:
 		value = copyAndInsensitiviseMap(v)
 	}
 
@@ -52,15 +52,15 @@ func toCaseInsensitiveValue(value interface{}) interface{} {
 
 // copyAndInsensitiviseMap behaves like insensitiviseMap, but creates a copy of
 // any map it makes case insensitive.
-func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
-	nm := make(map[string]interface{})
+func copyAndInsensitiviseMap(m map[string]any) map[string]any {
+	nm := make(map[string]any)
 
 	for key, val := range m {
 		lkey := strings.ToLower(key)
 		switch v := val.(type) {
-		case map[interface{}]interface{}:
+		case map[any]any:
 			nm[lkey] = copyAndInsensitiviseMap(cast.ToStringMap(v))
-		case map[string]interface{}:
+		case map[string]any:
 			nm[lkey] = copyAndInsensitiviseMap(v)
 		default:
 			nm[lkey] = v
@@ -70,23 +70,23 @@ func copyAndInsensitiviseMap(m map[string]interface{}) map[string]interface{} {
 	return nm
 }
 
-func insensitiviseVal(val interface{}) interface{} {
+func insensitiviseVal(val any) any {
 	switch v := val.(type) {
-	case map[interface{}]interface{}:
+	case map[any]any:
 		// nested map: cast and recursively insensitivise
 		val = cast.ToStringMap(val)
-		insensitiviseMap(val.(map[string]interface{}))
-	case map[string]interface{}:
+		insensitiviseMap(val.(map[string]any))
+	case map[string]any:
 		// nested map: recursively insensitivise
 		insensitiviseMap(v)
-	case []interface{}:
+	case []any:
 		// nested array: recursively insensitivise
 		insensitiveArray(v)
 	}
 	return val
 }
 
-func insensitiviseMap(m map[string]interface{}) {
+func insensitiviseMap(m map[string]any) {
 	for key, val := range m {
 		val = insensitiviseVal(val)
 		lower := strings.ToLower(key)
@@ -99,7 +99,7 @@ func insensitiviseMap(m map[string]interface{}) {
 	}
 }
 
-func insensitiveArray(a []interface{}) {
+func insensitiveArray(a []any) {
 	for i, val := range a {
 		a[i] = insensitiviseVal(val)
 	}
@@ -198,22 +198,22 @@ func parseSizeInBytes(sizeStr string) uint {
 // In case intermediate keys do not exist, or map to a non-map value,
 // a new map is created and inserted, and the search continues from there:
 // the initial map "m" may be modified!
-func deepSearch(m map[string]interface{}, path []string) map[string]interface{} {
+func deepSearch(m map[string]any, path []string) map[string]any {
 	for _, k := range path {
 		m2, ok := m[k]
 		if !ok {
 			// intermediate key does not exist
 			// => create it and continue from there
-			m3 := make(map[string]interface{})
+			m3 := make(map[string]any)
 			m[k] = m3
 			m = m3
 			continue
 		}
-		m3, ok := m2.(map[string]interface{})
+		m3, ok := m2.(map[string]any)
 		if !ok {
 			// intermediate key is a value
 			// => replace with a new map
-			m3 = make(map[string]interface{})
+			m3 = make(map[string]any)
 			m[k] = m3
 		}
 		// continue search from here

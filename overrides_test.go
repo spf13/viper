@@ -46,11 +46,11 @@ func TestNestedOverrides(t *testing.T) {
 	deepCheckValue(assert, v, overrideLayer, []string{"tom", "size"}, 4)
 
 	// Case 4: key:value overridden by a map
-	v = overrideDefault(assert, "tom.size", 4, "tom", map[string]interface{}{"age": 10}) // "tom.size" is first given "4" as default value, then "tom" is overridden by map{"age":10}
-	assert.Equal(4, v.Get("tom.size"))                                                   // "tom.size" should still be reachable
-	assert.Equal(10, v.Get("tom.age"))                                                   // new value should be there
-	deepCheckValue(assert, v, overrideLayer, []string{"tom", "age"}, 10)                 // new value should be there
-	v = override(assert, "tom.size", 4, "tom", map[string]interface{}{"age": 10})
+	v = overrideDefault(assert, "tom.size", 4, "tom", map[string]any{"age": 10}) // "tom.size" is first given "4" as default value, then "tom" is overridden by map{"age":10}
+	assert.Equal(4, v.Get("tom.size"))                                           // "tom.size" should still be reachable
+	assert.Equal(10, v.Get("tom.age"))                                           // new value should be there
+	deepCheckValue(assert, v, overrideLayer, []string{"tom", "age"}, 10)         // new value should be there
+	v = override(assert, "tom.size", 4, "tom", map[string]any{"age": 10})
 	assert.Nil(v.Get("tom.size"))
 	assert.Equal(10, v.Get("tom.age"))
 	deepCheckValue(assert, v, overrideLayer, []string{"tom", "age"}, 10)
@@ -75,11 +75,11 @@ func TestNestedOverrides(t *testing.T) {
 	}
 }
 
-func overrideDefault(assert *assert.Assertions, firstPath string, firstValue interface{}, secondPath string, secondValue interface{}) *Viper {
+func overrideDefault(assert *assert.Assertions, firstPath string, firstValue any, secondPath string, secondValue any) *Viper {
 	return overrideFromLayer(defaultLayer, assert, firstPath, firstValue, secondPath, secondValue)
 }
 
-func override(assert *assert.Assertions, firstPath string, firstValue interface{}, secondPath string, secondValue interface{}) *Viper {
+func override(assert *assert.Assertions, firstPath string, firstValue any, secondPath string, secondValue any) *Viper {
 	return overrideFromLayer(overrideLayer, assert, firstPath, firstValue, secondPath, secondValue)
 }
 
@@ -94,7 +94,7 @@ func override(assert *assert.Assertions, firstPath string, firstValue interface{
 //
 // After each assignment, the value is checked, retrieved both by its full path
 // and by its key sequence (successive maps).
-func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, firstValue interface{}, secondPath string, secondValue interface{}) *Viper {
+func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, firstValue any, secondPath string, secondValue any) *Viper {
 	v := New()
 	firstKeys := strings.Split(firstPath, v.keyDelim)
 	if assert == nil ||
@@ -128,14 +128,14 @@ func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, fir
 
 // deepCheckValue checks that all given keys correspond to a valid path in the
 // configuration map of the given layer, and that the final value equals the one given
-func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string, value interface{}) {
+func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string, value any) {
 	if assert == nil || v == nil ||
 		len(keys) == 0 || len(keys[0]) == 0 {
 		return
 	}
 
 	// init
-	var val interface{}
+	var val any
 	var ms string
 	switch l {
 	case defaultLayer:
@@ -147,22 +147,22 @@ func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string,
 	}
 
 	// loop through map
-	var m map[string]interface{}
+	var m map[string]any
 	err := false
 	for _, k := range keys {
 		if val == nil {
-			assert.Fail(fmt.Sprintf("%s is not a map[string]interface{}", ms))
+			assert.Fail(fmt.Sprintf("%s is not a map[string]any", ms))
 			return
 		}
 
 		// deep scan of the map to get the final value
 		switch val := val.(type) {
-		case map[interface{}]interface{}:
+		case map[any]any:
 			m = cast.ToStringMap(val)
-		case map[string]interface{}:
+		case map[string]any:
 			m = val
 		default:
-			assert.Fail(fmt.Sprintf("%s is not a map[string]interface{}", ms))
+			assert.Fail(fmt.Sprintf("%s is not a map[string]any", ms))
 			return
 		}
 		ms = ms + "[\"" + k + "\"]"

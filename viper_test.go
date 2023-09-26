@@ -496,8 +496,8 @@ func TestUnmarshaling(t *testing.T) {
 	assert.False(t, InConfig("state"))
 	assert.False(t, InConfig("clothing.hat"))
 	assert.Equal(t, "steve", Get("name"))
-	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, Get("clothing"))
+	assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
+	assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
 }
 
@@ -774,14 +774,14 @@ func TestAllKeys(t *testing.T) {
 		"name_dotenv",
 	}
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
-	all := map[string]interface{}{
-		"owner": map[string]interface{}{
+	all := map[string]any{
+		"owner": map[string]any{
 			"organization": "MongoDB",
 			"bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
 			"dob":          dob,
 		},
 		"title": "TOML Example",
-		"author": map[string]interface{}{
+		"author": map[string]any{
 			"e-mail": "fake@localhost",
 			"github": "https://github.com/Unknown",
 			"name":   "Unknown",
@@ -789,28 +789,28 @@ func TestAllKeys(t *testing.T) {
 		},
 		"ppu":  0.55,
 		"eyes": "brown",
-		"clothing": map[string]interface{}{
+		"clothing": map[string]any{
 			"trousers": "denim",
 			"jacket":   "leather",
-			"pants":    map[string]interface{}{"size": "large"},
+			"pants":    map[string]any{"size": "large"},
 		},
-		"default": map[string]interface{}{
+		"default": map[string]any{
 			"import_path": "gopkg.in/ini.v1",
 			"name":        "ini",
 			"version":     "v1",
 		},
 		"id": "0001",
-		"batters": map[string]interface{}{
-			"batter": []interface{}{
-				map[string]interface{}{"type": "Regular"},
-				map[string]interface{}{"type": "Chocolate"},
-				map[string]interface{}{"type": "Blueberry"},
-				map[string]interface{}{"type": "Devil's Food"},
+		"batters": map[string]any{
+			"batter": []any{
+				map[string]any{"type": "Regular"},
+				map[string]any{"type": "Chocolate"},
+				map[string]any{"type": "Blueberry"},
+				map[string]any{"type": "Devil's Food"},
 			},
 		},
 		"hacker": true,
 		"beard":  true,
-		"hobbies": []interface{}{
+		"hobbies": []any{
 			"skateboarding",
 			"snowboarding",
 			"go",
@@ -822,13 +822,13 @@ func TestAllKeys(t *testing.T) {
 		"p_id":   "0001",
 		"p_ppu":  "0.55",
 		"p_name": "Cake",
-		"p_batters": map[string]interface{}{
-			"batter": map[string]interface{}{"type": "Regular"},
+		"p_batters": map[string]any{
+			"batter": map[string]any{"type": "Regular"},
 		},
 		"p_type": "donut",
-		"foos": []map[string]interface{}{
+		"foos": []map[string]any{
 			{
-				"foo": []map[string]interface{}{
+				"foo": []map[string]any{
 					{"key": 1},
 					{"key": 2},
 					{"key": 3},
@@ -937,7 +937,7 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
 		// Custom Decode Hook Function
-		func(rf reflect.Kind, rt reflect.Kind, data interface{}) (interface{}, error) {
+		func(rf reflect.Kind, rt reflect.Kind, data any) (any, error) {
 			if rf != reflect.String || rt != reflect.Map {
 				return data, nil
 			}
@@ -1328,38 +1328,38 @@ func TestFindsNestedKeys(t *testing.T) {
 	initConfigs()
 	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
 
-	Set("super", map[string]interface{}{
-		"deep": map[string]interface{}{
+	Set("super", map[string]any{
+		"deep": map[string]any{
 			"nested": "value",
 		},
 	})
 
-	expected := map[string]interface{}{
-		"super": map[string]interface{}{
-			"deep": map[string]interface{}{
+	expected := map[string]any{
+		"super": map[string]any{
+			"deep": map[string]any{
 				"nested": "value",
 			},
 		},
-		"super.deep": map[string]interface{}{
+		"super.deep": map[string]any{
 			"nested": "value",
 		},
 		"super.deep.nested":  "value",
 		"owner.organization": "MongoDB",
-		"batters.batter": []interface{}{
-			map[string]interface{}{
+		"batters.batter": []any{
+			map[string]any{
 				"type": "Regular",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"type": "Chocolate",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"type": "Blueberry",
 			},
-			map[string]interface{}{
+			map[string]any{
 				"type": "Devil's Food",
 			},
 		},
-		"hobbies": []interface{}{
+		"hobbies": []any{
 			"skateboarding", "snowboarding", "go",
 		},
 		"TITLE_DOTENV": "DotEnv Example",
@@ -1367,25 +1367,25 @@ func TestFindsNestedKeys(t *testing.T) {
 		"NAME_DOTENV":  "Cake",
 		"title":        "TOML Example",
 		"newkey":       "remote",
-		"batters": map[string]interface{}{
-			"batter": []interface{}{
-				map[string]interface{}{
+		"batters": map[string]any{
+			"batter": []any{
+				map[string]any{
 					"type": "Regular",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"type": "Chocolate",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"type": "Blueberry",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"type": "Devil's Food",
 				},
 			},
 		},
 		"eyes": "brown",
 		"age":  35,
-		"owner": map[string]interface{}{
+		"owner": map[string]any{
 			"organization": "MongoDB",
 			"bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
 			"dob":          dob,
@@ -1396,10 +1396,10 @@ func TestFindsNestedKeys(t *testing.T) {
 		"name":      "Cake",
 		"hacker":    true,
 		"ppu":       0.55,
-		"clothing": map[string]interface{}{
+		"clothing": map[string]any{
 			"jacket":   "leather",
 			"trousers": "denim",
-			"pants": map[string]interface{}{
+			"pants": map[string]any{
 				"size": "large",
 			},
 		},
@@ -1408,9 +1408,9 @@ func TestFindsNestedKeys(t *testing.T) {
 		"clothing.trousers":   "denim",
 		"owner.dob":           dob,
 		"beard":               true,
-		"foos": []map[string]interface{}{
+		"foos": []map[string]any{
 			{
-				"foo": []map[string]interface{}{
+				"foo": []map[string]any{
 					{
 						"key": 1,
 					},
@@ -1444,8 +1444,8 @@ func TestReadBufConfig(t *testing.T) {
 	assert.False(t, v.InConfig("state"))
 	assert.False(t, v.InConfig("clothing.hat"))
 	assert.Equal(t, "steve", v.Get("name"))
-	assert.Equal(t, []interface{}{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[string]interface{}{"jacket": "leather", "trousers": "denim", "pants": map[string]interface{}{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
+	assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, v.Get("clothing"))
 	assert.Equal(t, 35, v.Get("age"))
 }
 
@@ -2180,11 +2180,11 @@ func TestMergeConfigMap(t *testing.T) {
 
 	assert(37890)
 
-	update := map[string]interface{}{
-		"Hello": map[string]interface{}{
+	update := map[string]any{
+		"Hello": map[string]any{
 			"Pop": 1234,
 		},
-		"World": map[interface{}]interface{}{
+		"World": map[any]any{
 			"Rock": 345,
 		},
 	}
@@ -2255,7 +2255,7 @@ clothing:
 	assert.Nil(t, Get("clothing.jacket.price"))
 	assert.Equal(t, polyester, GetString("clothing.shirt"))
 
-	clothingSettings := AllSettings()["clothing"].(map[string]interface{})
+	clothingSettings := AllSettings()["clothing"].(map[string]any)
 	assert.Equal(t, "leather", clothingSettings["jacket"])
 	assert.Equal(t, polyester, clothingSettings["shirt"])
 }
@@ -2267,7 +2267,7 @@ func TestDotParameter(t *testing.T) {
 	unmarshalReader(r, v.config)
 
 	actual := Get("batters.batter")
-	expected := []interface{}{map[string]interface{}{"type": "Small"}}
+	expected := []any{map[string]any{"type": "Small"}}
 	assert.Equal(t, expected, actual)
 }
 
@@ -2318,17 +2318,17 @@ R = 6
 
 func TestCaseInsensitiveSet(t *testing.T) {
 	Reset()
-	m1 := map[string]interface{}{
+	m1 := map[string]any{
 		"Foo": 32,
-		"Bar": map[interface{}]interface{}{
+		"Bar": map[any]any{
 			"ABc": "A",
 			"cDE": "B",
 		},
 	}
 
-	m2 := map[string]interface{}{
+	m2 := map[string]any{
 		"Foo": 52,
-		"Bar": map[interface{}]interface{}{
+		"Bar": map[any]any{
 			"bCd": "A",
 			"eFG": "B",
 		},
@@ -2559,13 +2559,13 @@ func TestKeyDelimiter(t *testing.T) {
 	err := v.unmarshalReader(r, v.config)
 	require.NoError(t, err)
 
-	values := map[string]interface{}{
-		"image": map[string]interface{}{
+	values := map[string]any{
+		"image": map[string]any{
 			"repository": "someImage",
 			"tag":        "1.0.0",
 		},
-		"ingress": map[string]interface{}{
-			"annotations": map[string]interface{}{
+		"ingress": map[string]any{
+			"annotations": map[string]any{
 				"traefik.frontend.rule.type":                 "PathPrefix",
 				"traefik.ingress.kubernetes.io/ssl-redirect": "true",
 			},
@@ -2579,13 +2579,13 @@ func TestKeyDelimiter(t *testing.T) {
 
 	type config struct {
 		Charts struct {
-			Values map[string]interface{}
+			Values map[string]any
 		}
 	}
 
 	expected := config{
 		Charts: struct {
-			Values map[string]interface{}
+			Values map[string]any
 		}{
 			Values: values,
 		},

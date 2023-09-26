@@ -26,19 +26,19 @@ key=value
 //
 // in case of INI it's slightly different from Viper's internal representation
 // (eg. top level keys land in a section called default)
-var decoded = map[string]interface{}{
-	"DEFAULT": map[string]interface{}{
+var decoded = map[string]any{
+	"DEFAULT": map[string]any{
 		"key": "value",
 	},
-	"map": map[string]interface{}{
+	"map": map[string]any{
 		"key": "value",
 	},
 }
 
 // Viper's internal representation
-var data = map[string]interface{}{
+var data = map[string]any{
 	"key": "value",
-	"map": map[string]interface{}{
+	"map": map[string]any{
 		"key": "value",
 	},
 }
@@ -60,11 +60,11 @@ func TestCodec_Encode(t *testing.T) {
 	t.Run("Default", func(t *testing.T) {
 		codec := Codec{}
 
-		data := map[string]interface{}{
-			"default": map[string]interface{}{
+		data := map[string]any{
+			"default": map[string]any{
 				"key": "value",
 			},
-			"map": map[string]interface{}{
+			"map": map[string]any{
 				"key": "value",
 			},
 		}
@@ -84,7 +84,7 @@ func TestCodec_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := codec.Decode([]byte(original), v)
 		if err != nil {
@@ -99,7 +99,7 @@ func TestCodec_Decode(t *testing.T) {
 	t.Run("InvalidData", func(t *testing.T) {
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := codec.Decode([]byte(`invalid data`), v)
 		if err == nil {

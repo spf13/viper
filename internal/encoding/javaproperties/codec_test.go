@@ -17,9 +17,9 @@ map.key = value
 `
 
 // Viper's internal representation
-var data = map[string]interface{}{
+var data = map[string]any{
 	"key": "value",
-	"map": map[string]interface{}{
+	"map": map[string]any{
 		"key": "value",
 	},
 }
@@ -41,7 +41,7 @@ func TestCodec_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := codec.Decode([]byte(original), v)
 		if err != nil {
@@ -58,7 +58,7 @@ func TestCodec_Decode(t *testing.T) {
 
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		codec.Decode([]byte(``), v)
 
@@ -71,7 +71,7 @@ func TestCodec_Decode(t *testing.T) {
 func TestCodec_DecodeEncode(t *testing.T) {
 	codec := Codec{}
 
-	v := map[string]interface{}{}
+	v := map[string]any{}
 
 	err := codec.Decode([]byte(original), v)
 	if err != nil {
