@@ -21,16 +21,16 @@ import (
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
 	var (
-		given = map[string]interface{}{
+		given = map[string]any{
 			"Foo": 32,
-			"Bar": map[interface{}]interface{}{
+			"Bar": map[any]any{
 				"ABc": "A",
 				"cDE": "B",
 			},
 		}
-		expected = map[string]interface{}{
+		expected = map[string]any{
 			"foo": 32,
-			"bar": map[string]interface{}{
+			"bar": map[string]any{
 				"abc": "A",
 				"cde": "B",
 			},
@@ -51,7 +51,7 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 		t.Fatal("Input map changed")
 	}
 
-	m := given["Bar"].(map[interface{}]interface{})
+	m := given["Bar"].(map[any]any)
 	if _, ok := m["ABc"]; !ok {
 		t.Fatal("Input map changed")
 	}

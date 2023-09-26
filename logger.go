@@ -16,30 +16,30 @@ type Logger interface {
 	//
 	// Even more fine-grained information than Debug events.
 	// Loggers not supporting this level should fall back to Debug.
-	Trace(msg string, keyvals ...interface{})
+	Trace(msg string, keyvals ...any)
 
 	// Debug logs a Debug event.
 	//
 	// A verbose series of information events.
 	// They are useful when debugging the system.
-	Debug(msg string, keyvals ...interface{})
+	Debug(msg string, keyvals ...any)
 
 	// Info logs an Info event.
 	//
 	// General information about what's happening inside the system.
-	Info(msg string, keyvals ...interface{})
+	Info(msg string, keyvals ...any)
 
 	// Warn logs a Warn(ing) event.
 	//
 	// Non-critical events that should be looked at.
-	Warn(msg string, keyvals ...interface{})
+	Warn(msg string, keyvals ...any)
 
 	// Error logs an Error event.
 	//
 	// Critical events that require immediate attention.
 	// Loggers commonly provide Fatal and Panic levels above Error level,
 	// but exiting and panicking is out of scope for a logging library.
-	Error(msg string, keyvals ...interface{})
+	Error(msg string, keyvals ...any)
 }
 
 // WithLogger sets a custom logger.

@@ -8,7 +8,7 @@ type encoder struct {
 	b []byte
 }
 
-func (e encoder) Encode(_ map[string]interface{}) ([]byte, error) {
+func (e encoder) Encode(_ map[string]any) ([]byte, error) {
 	return e.b, nil
 }
 
@@ -49,7 +49,7 @@ func TestEncoderRegistry_Decode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		b, err := registry.Encode("myformat", map[string]interface{}{"key": "value"})
+		b, err := registry.Encode("myformat", map[string]any{"key": "value"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,7 +62,7 @@ func TestEncoderRegistry_Decode(t *testing.T) {
 	t.Run("EncoderNotFound", func(t *testing.T) {
 		registry := NewEncoderRegistry()
 
-		_, err := registry.Encode("myformat", map[string]interface{}{"key": "value"})
+		_, err := registry.Encode("myformat", map[string]any{"key": "value"})
 		if err != ErrEncoderNotFound {
 			t.Fatalf("expected ErrEncoderNotFound, got: %v", err)
 		}

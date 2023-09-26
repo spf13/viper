@@ -6,10 +6,10 @@ import (
 )
 
 type decoder struct {
-	v map[string]interface{}
+	v map[string]any
 }
 
-func (d decoder) Decode(_ []byte, v map[string]interface{}) error {
+func (d decoder) Decode(_ []byte, v map[string]any) error {
 	for key, value := range d.v {
 		v[key] = value
 	}
@@ -46,7 +46,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		registry := NewDecoderRegistry()
 		decoder := decoder{
-			v: map[string]interface{}{
+			v: map[string]any{
 				"key": "value",
 			},
 		}
@@ -56,7 +56,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err = registry.Decode("myformat", []byte("key: value"), v)
 		if err != nil {
@@ -71,7 +71,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 	t.Run("DecoderNotFound", func(t *testing.T) {
 		registry := NewDecoderRegistry()
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := registry.Decode("myformat", nil, v)
 		if err != ErrDecoderNotFound {

@@ -45,24 +45,24 @@ const encoded = `"key" = "value"
 //
 // in case of HCL it's slightly different from Viper's internal representation
 // (eg. map is decoded into a list of maps)
-var decoded = map[string]interface{}{
+var decoded = map[string]any{
 	"key": "value",
-	"list": []interface{}{
+	"list": []any{
 		"item1",
 		"item2",
 		"item3",
 	},
-	"map": []map[string]interface{}{
+	"map": []map[string]any{
 		{
 			"key": "value",
 		},
 	},
-	"nested_map": []map[string]interface{}{
+	"nested_map": []map[string]any{
 		{
-			"map": []map[string]interface{}{
+			"map": []map[string]any{
 				{
 					"key": "value",
-					"list": []interface{}{
+					"list": []any{
 						"item1",
 						"item2",
 						"item3",
@@ -74,20 +74,20 @@ var decoded = map[string]interface{}{
 }
 
 // Viper's internal representation
-var data = map[string]interface{}{
+var data = map[string]any{
 	"key": "value",
-	"list": []interface{}{
+	"list": []any{
 		"item1",
 		"item2",
 		"item3",
 	},
-	"map": map[string]interface{}{
+	"map": map[string]any{
 		"key": "value",
 	},
-	"nested_map": map[string]interface{}{
-		"map": map[string]interface{}{
+	"nested_map": map[string]any{
+		"map": map[string]any{
 			"key": "value",
-			"list": []interface{}{
+			"list": []any{
 				"item1",
 				"item2",
 				"item3",
@@ -113,7 +113,7 @@ func TestCodec_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := codec.Decode([]byte(original), v)
 		if err != nil {
@@ -128,7 +128,7 @@ func TestCodec_Decode(t *testing.T) {
 	t.Run("InvalidData", func(t *testing.T) {
 		codec := Codec{}
 
-		v := map[string]interface{}{}
+		v := map[string]any{}
 
 		err := codec.Decode([]byte(`invalid data`), v)
 		if err == nil {
