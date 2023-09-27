@@ -222,6 +222,7 @@ These could be from a command line flag, or from your own application logic.
 ```go
 viper.Set("Verbose", true)
 viper.Set("LogFile", LogFile)
+viper.Set("host.port", 5899)   // set subset
 ```
 
 ### Registering and Using Aliases
