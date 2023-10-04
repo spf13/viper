@@ -1419,11 +1419,11 @@ func stringToStringConv(val string) any {
 	}
 	out := make(map[string]any, len(ss))
 	for _, pair := range ss {
-		kv := strings.SplitN(pair, "=", 2)
-		if len(kv) != 2 {
+		k, vv, found := strings.Cut(pair, "=")
+		if !found {
 			return nil
 		}
-		out[kv[0]] = kv[1]
+		out[k] = vv
 	}
 	return out
 }
@@ -1439,12 +1439,12 @@ func stringToIntConv(val string) any {
 	ss := strings.Split(val, ",")
 	out := make(map[string]any, len(ss))
 	for _, pair := range ss {
-		kv := strings.SplitN(pair, "=", 2)
-		if len(kv) != 2 {
+		k, vv, found := strings.Cut(pair, "=")
+		if !found {
 			return nil
 		}
 		var err error
-		out[kv[0]], err = strconv.Atoi(kv[1])
+		out[k], err = strconv.Atoi(vv)
 		if err != nil {
 			return nil
 		}
