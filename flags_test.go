@@ -8,6 +8,7 @@ import (
 )
 
 func TestBindFlagValueSet(t *testing.T) {
+	Reset()
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 	testValues := map[string]*string{

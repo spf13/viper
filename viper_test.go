@@ -472,6 +472,7 @@ func TestReadInConfig(t *testing.T) {
 }
 
 func TestDefault(t *testing.T) {
+	Reset()
 	SetDefault("age", 45)
 	assert.Equal(t, 45, Get("age"))
 
@@ -486,6 +487,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestUnmarshaling(t *testing.T) {
+	Reset()
 	SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
 
@@ -524,6 +526,8 @@ func TestDefaultPost(t *testing.T) {
 }
 
 func TestAliases(t *testing.T) {
+	initConfigs()
+	Set("age", 40)
 	RegisterAlias("years", "age")
 	assert.Equal(t, 40, Get("years"))
 	Set("years", 45)
@@ -531,6 +535,7 @@ func TestAliases(t *testing.T) {
 }
 
 func TestAliasInConfigFile(t *testing.T) {
+	initConfigs()
 	// the config file specifies "beard".  If we make this an alias for
 	// "hasbeard", we still want the old config file to work with beard.
 	RegisterAlias("beard", "hasbeard")
@@ -873,6 +878,7 @@ func TestRecursiveAliases(t *testing.T) {
 }
 
 func TestUnmarshal(t *testing.T) {
+	Reset()
 	SetDefault("port", 1313)
 	Set("name", "Steve")
 	Set("duration", "1s1ms")
@@ -1277,6 +1283,7 @@ func TestBindPFlagStringToInt(t *testing.T) {
 }
 
 func TestBoundCaseSensitivity(t *testing.T) {
+	initConfigs()
 	assert.Equal(t, "brown", Get("eyes"))
 
 	BindEnv("eYEs", "TURTLE_EYES")
