@@ -39,7 +39,7 @@ func TestBindFlagValueSet(t *testing.T) {
 	})
 
 	for name, expected := range mutatedTestValues {
-		assert.Equal(t, Get(name), expected)
+		assert.Equal(t, expected, Get(name))
 	}
 }
 
