@@ -13,10 +13,10 @@ package viper
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	slog "github.com/sagikazarmark/slog-shim"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCopyAndInsensitiviseMap(t *testing.T) {
@@ -39,22 +39,15 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 
 	got := copyAndInsensitiviseMap(given)
 
-	if !reflect.DeepEqual(got, expected) {
-		t.Fatalf("Got %q\nexpected\n%q", got, expected)
-	}
-
-	if _, ok := given["foo"]; ok {
-		t.Fatal("Input map changed")
-	}
-
-	if _, ok := given["bar"]; ok {
-		t.Fatal("Input map changed")
-	}
+	assert.Equal(t, expected, got)
+	_, ok := given["foo"]
+	assert.False(t, ok)
+	_, ok = given["bar"]
+	assert.False(t, ok)
 
 	m := given["Bar"].(map[any]any)
-	if _, ok := m["ABc"]; !ok {
-		t.Fatal("Input map changed")
-	}
+	_, ok = m["ABc"]
+	assert.True(t, ok)
 }
 
 func TestAbsPathify(t *testing.T) {
@@ -88,8 +81,6 @@ func TestAbsPathify(t *testing.T) {
 
 	for _, test := range tests {
 		got := absPathify(slog.Default(), test.input)
-		if got != test.output {
-			t.Errorf("Got %v\nexpected\n%q", got, test.output)
-		}
+		assert.Equal(t, test.output, got)
 	}
 }
