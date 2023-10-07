@@ -1,8 +1,10 @@
 package json
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // encoded form of the data
@@ -55,13 +57,9 @@ func TestCodec_Encode(t *testing.T) {
 	codec := Codec{}
 
 	b, err := codec.Encode(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if encoded != string(b) {
-		t.Fatalf("decoded value does not match the expected one\nactual:   %#v\nexpected: %#v", string(b), encoded)
-	}
+	assert.Equal(t, encoded, string(b))
 }
 
 func TestCodec_Decode(t *testing.T) {
@@ -71,13 +69,9 @@ func TestCodec_Decode(t *testing.T) {
 		v := map[string]any{}
 
 		err := codec.Decode([]byte(encoded), v)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
-		if !reflect.DeepEqual(data, v) {
-			t.Fatalf("decoded value does not match the expected one\nactual:   %#v\nexpected: %#v", v, data)
-		}
+		assert.Equal(t, data, v)
 	})
 
 	t.Run("InvalidData", func(t *testing.T) {
@@ -86,9 +80,7 @@ func TestCodec_Decode(t *testing.T) {
 		v := map[string]any{}
 
 		err := codec.Decode([]byte(`invalid data`), v)
-		if err == nil {
-			t.Fatal("expected decoding to fail")
-		}
+		require.Error(t, err)
 
 		t.Logf("decoding failed as expected: %s", err)
 	})

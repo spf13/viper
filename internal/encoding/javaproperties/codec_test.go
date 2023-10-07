@@ -1,8 +1,10 @@
 package javaproperties
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // original form of the data
@@ -28,13 +30,9 @@ func TestCodec_Encode(t *testing.T) {
 	codec := Codec{}
 
 	b, err := codec.Encode(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if encoded != string(b) {
-		t.Fatalf("decoded value does not match the expected one\nactual:   %#v\nexpected: %#v", string(b), encoded)
-	}
+	assert.Equal(t, encoded, string(b))
 }
 
 func TestCodec_Decode(t *testing.T) {
@@ -44,13 +42,9 @@ func TestCodec_Decode(t *testing.T) {
 		v := map[string]any{}
 
 		err := codec.Decode([]byte(original), v)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
-		if !reflect.DeepEqual(data, v) {
-			t.Fatalf("decoded value does not match the expected one\nactual:   %#v\nexpected: %#v", v, data)
-		}
+		assert.Equal(t, data, v)
 	})
 
 	t.Run("InvalidData", func(t *testing.T) {
@@ -62,9 +56,7 @@ func TestCodec_Decode(t *testing.T) {
 
 		codec.Decode([]byte(``), v)
 
-		if len(v) > 0 {
-			t.Fatalf("expected map to be empty when data is invalid\nactual: %#v", v)
-		}
+		assert.Empty(t, v)
 	})
 }
 
@@ -74,16 +66,10 @@ func TestCodec_DecodeEncode(t *testing.T) {
 	v := map[string]any{}
 
 	err := codec.Decode([]byte(original), v)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	b, err := codec.Encode(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if original != string(b) {
-		t.Fatalf("encoded value does not match the original\nactual:   %#v\nexpected: %#v", string(b), original)
-	}
+	assert.Equal(t, original, string(b))
 }

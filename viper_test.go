@@ -8,7 +8,6 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -507,9 +506,7 @@ func TestUnmarshalExact(t *testing.T) {
 	r := bytes.NewReader(yamlExampleWithExtras)
 	vip.ReadConfig(r)
 	err := vip.UnmarshalExact(target)
-	if err == nil {
-		t.Fatal("UnmarshalExact should error when populating a struct from a conf that contains unused fields")
-	}
+	assert.Error(t, err, "UnmarshalExact should error when populating a struct from a conf that contains unused fields")
 }
 
 func TestOverrides(t *testing.T) {
@@ -888,9 +885,7 @@ func TestUnmarshal(t *testing.T) {
 	var C config
 
 	err := Unmarshal(&C)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
+	require.NoError(t, err, "unable to decode into struct")
 
 	assert.Equal(
 		t,
@@ -905,9 +900,7 @@ func TestUnmarshal(t *testing.T) {
 
 	Set("port", 1234)
 	err = Unmarshal(&C)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
+	require.NoError(t, err, "unable to decode into struct")
 
 	assert.Equal(
 		t,
@@ -948,9 +941,7 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 	var C config
 
 	err := Unmarshal(&C, opt)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
+	require.NoError(t, err, "unable to decode into struct")
 
 	assert.Equal(t, &config{
 		Credentials: map[string]string{"foo": "bar"},
@@ -978,9 +969,7 @@ func TestBindPFlags(t *testing.T) {
 	}
 
 	err := v.BindPFlags(flagSet)
-	if err != nil {
-		t.Fatalf("error binding flag set, %v", err)
-	}
+	require.NoError(t, err, "error binding flag set")
 
 	flagSet.VisitAll(func(flag *pflag.Flag) {
 		flag.Value.Set(mutatedTestValues[flag.Name])
@@ -992,7 +981,6 @@ func TestBindPFlags(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestBindPFlagsStringSlice(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1019,17 +1007,14 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 			})
 
 			err := v.BindPFlags(flagSet)
-			if err != nil {
-				t.Fatalf("error binding flag set, %v", err)
-			}
+			require.NoError(t, err, "error binding flag set")
 
 			type TestStr struct {
 				StringSlice []string
 			}
 			val := &TestStr{}
-			if err := v.Unmarshal(val); err != nil {
-				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
-			}
+			err = v.Unmarshal(val)
+			require.NoError(t, err, "cannot unmarshal")
 			if changed {
 				assert.Equal(t, testValue.Expected, val.StringSlice)
 				assert.Equal(t, testValue.Expected, v.Get("stringslice"))
@@ -1040,7 +1025,6 @@ func TestBindPFlagsStringSlice(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestBindPFlagsStringArray(t *testing.T) {
 	tests := []struct {
 		Expected []string
@@ -1067,17 +1051,14 @@ func TestBindPFlagsStringArray(t *testing.T) {
 			})
 
 			err := v.BindPFlags(flagSet)
-			if err != nil {
-				t.Fatalf("error binding flag set, %v", err)
-			}
+			require.NoError(t, err, "error binding flag set")
 
 			type TestStr struct {
 				StringArray []string
 			}
 			val := &TestStr{}
-			if err := v.Unmarshal(val); err != nil {
-				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
-			}
+			err = v.Unmarshal(val)
+			require.NoError(t, err, "cannot unmarshal")
 			if changed {
 				assert.Equal(t, testValue.Expected, val.StringArray)
 				assert.Equal(t, testValue.Expected, v.Get("stringarray"))
@@ -1099,18 +1080,11 @@ func TestSliceFlagsReturnCorrectType(t *testing.T) {
 
 	all := v.AllSettings()
 
-	if _, ok := all["int"].([]int); !ok {
-		t.Errorf("unexpected type %T expected []int", all["int"])
-	}
-	if _, ok := all["str"].([]string); !ok {
-		t.Errorf("unexpected type %T expected []string", all["str"])
-	}
-	if _, ok := all["duration"].([]time.Duration); !ok {
-		t.Errorf("unexpected type %T expected []time.Duration", all["duration"])
-	}
+	assert.IsType(t, []int{}, all["int"])
+	assert.IsType(t, []string{}, all["str"])
+	assert.IsType(t, []time.Duration{}, all["duration"])
 }
 
-//nolint:dupl
 func TestBindPFlagsIntSlice(t *testing.T) {
 	tests := []struct {
 		Expected []int
@@ -1136,17 +1110,14 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 			})
 
 			err := v.BindPFlags(flagSet)
-			if err != nil {
-				t.Fatalf("error binding flag set, %v", err)
-			}
+			require.NoError(t, err, "error binding flag set")
 
 			type TestInt struct {
 				IntSlice []int
 			}
 			val := &TestInt{}
-			if err := v.Unmarshal(val); err != nil {
-				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
-			}
+			err = v.Unmarshal(val)
+			require.NoError(t, err, "cannot unmarshal")
 			if changed {
 				assert.Equal(t, testValue.Expected, val.IntSlice)
 				assert.Equal(t, testValue.Expected, v.Get("intslice"))
@@ -1209,17 +1180,14 @@ func TestBindPFlagStringToString(t *testing.T) {
 			})
 
 			err := v.BindPFlags(flagSet)
-			if err != nil {
-				t.Fatalf("error binding flag set, %v", err)
-			}
+			require.NoError(t, err, "error binding flag set")
 
 			type TestMap struct {
 				StringToString map[string]string
 			}
 			val := &TestMap{}
-			if err := v.Unmarshal(val); err != nil {
-				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
-			}
+			err = v.Unmarshal(val)
+			require.NoError(t, err, "cannot unmarshal")
 			if changed {
 				assert.Equal(t, testValue.Expected, val.StringToString)
 			} else {
@@ -1256,17 +1224,14 @@ func TestBindPFlagStringToInt(t *testing.T) {
 			})
 
 			err := v.BindPFlags(flagSet)
-			if err != nil {
-				t.Fatalf("error binding flag set, %v", err)
-			}
+			require.NoError(t, err, "error binding flag set")
 
 			type TestMap struct {
 				StringToInt map[string]int
 			}
 			val := &TestMap{}
-			if err := v.Unmarshal(val); err != nil {
-				t.Fatalf("%+#v cannot unmarshal: %s", testValue.Value, err)
-			}
+			err = v.Unmarshal(val)
+			require.NoError(t, err, "cannot unmarshal")
 			if changed {
 				assert.Equal(t, testValue.Expected, val.StringToInt)
 			} else {
@@ -1551,9 +1516,7 @@ var yamlInvalid = []byte(`hash: map
 
 func TestUnwrapParseErrors(t *testing.T) {
 	SetConfigType("yaml")
-	if !errors.As(ReadConfig(bytes.NewBuffer(yamlInvalid)), &ConfigParseError{}) {
-		t.Fatalf("not a ConfigParseError")
-	}
+	assert.ErrorAs(t, ReadConfig(bytes.NewBuffer(yamlInvalid)), &ConfigParseError{})
 }
 
 func TestSub(t *testing.T) {
@@ -1759,17 +1722,12 @@ func TestWriteConfig(t *testing.T) {
 			v.SetConfigType(tc.inConfigType)
 
 			err := v.ReadConfig(bytes.NewBuffer(tc.input))
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 			v.SetConfigType(tc.outConfigType)
-			if err := v.WriteConfigAs(tc.fileName); err != nil {
-				t.Fatal(err)
-			}
+			err = v.WriteConfigAs(tc.fileName)
+			require.NoError(t, err)
 			read, err := afero.ReadFile(fs, tc.fileName)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 			assert.Equal(t, tc.expectedContent, read)
 		})
 	}
@@ -1804,12 +1762,9 @@ func TestWriteConfigTOML(t *testing.T) {
 			v.SetConfigName(tc.configName)
 			v.SetConfigType(tc.configType)
 			err := v.ReadConfig(bytes.NewBuffer(tc.input))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := v.WriteConfigAs(tc.fileName); err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+			err = v.WriteConfigAs(tc.fileName)
+			require.NoError(t, err)
 
 			// The TOML String method does not order the contents.
 			// Therefore, we must read the generated file and compare the data.
@@ -1819,9 +1774,7 @@ func TestWriteConfigTOML(t *testing.T) {
 			v2.SetConfigType(tc.configType)
 			v2.SetConfigFile(tc.fileName)
 			err = v2.ReadInConfig()
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, v.GetString("title"), v2.GetString("title"))
 			assert.Equal(t, v.GetString("owner.bio"), v2.GetString("owner.bio"))
@@ -1859,12 +1812,9 @@ func TestWriteConfigDotEnv(t *testing.T) {
 			v.SetConfigName(tc.configName)
 			v.SetConfigType(tc.configType)
 			err := v.ReadConfig(bytes.NewBuffer(tc.input))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := v.WriteConfigAs(tc.fileName); err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+			err = v.WriteConfigAs(tc.fileName)
+			require.NoError(t, err)
 
 			// The TOML String method does not order the contents.
 			// Therefore, we must read the generated file and compare the data.
@@ -1874,9 +1824,7 @@ func TestWriteConfigDotEnv(t *testing.T) {
 			v2.SetConfigType(tc.configType)
 			v2.SetConfigFile(tc.fileName)
 			err = v2.ReadInConfig()
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, v.GetString("title_dotenv"), v2.GetString("title_dotenv"))
 			assert.Equal(t, v.GetString("type_dotenv"), v2.GetString("type_dotenv"))
@@ -1927,13 +1875,10 @@ func TestSafeWriteAsConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	v.SetFs(fs)
 	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	require.NoError(t, v.SafeWriteConfigAs("/test/c.yaml"))
-	if _, err = afero.ReadFile(fs, "/test/c.yaml"); err != nil {
-		t.Fatal(err)
-	}
+	_, err = afero.ReadFile(fs, "/test/c.yaml")
+	require.NoError(t, err)
 }
 
 func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
@@ -2011,163 +1956,78 @@ var jsonMergeExampleSrc = []byte(`
 func TestMergeConfig(t *testing.T) {
 	v := New()
 	v.SetConfigType("yml")
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt))
+	require.NoError(t, err)
 
-	if pop := v.GetInt("hello.pop"); pop != 37890 {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
+	assert.Equal(t, 37890, v.GetInt("hello.pop"))
+	assert.Equal(t, int32(37890), v.GetInt32("hello.pop"))
+	assert.Equal(t, int64(765432101234567), v.GetInt64("hello.largenum"))
+	assert.Equal(t, uint(37890), v.GetUint("hello.pop"))
+	assert.Equal(t, uint16(37890), v.GetUint16("hello.pop"))
+	assert.Equal(t, uint32(37890), v.GetUint32("hello.pop"))
+	assert.Equal(t, uint64(9223372036854775808), v.GetUint64("hello.num2pow63"))
+	assert.Len(t, v.GetStringSlice("hello.world"), 4)
+	assert.Empty(t, v.GetString("fu"))
 
-	if pop := v.GetInt32("hello.pop"); pop != int32(37890) {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
+	err = v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
 
-	if pop := v.GetInt64("hello.largenum"); pop != int64(765432101234567) {
-		t.Fatalf("int64 largenum != 765432101234567, = %d", pop)
-	}
-
-	if pop := v.GetUint("hello.pop"); pop != 37890 {
-		t.Fatalf("uint pop != 37890, = %d", pop)
-	}
-
-	if pop := v.GetUint16("hello.pop"); pop != uint16(37890) {
-		t.Fatalf("uint pop != 37890, = %d", pop)
-	}
-
-	if pop := v.GetUint32("hello.pop"); pop != 37890 {
-		t.Fatalf("uint32 pop != 37890, = %d", pop)
-	}
-
-	if pop := v.GetUint64("hello.num2pow63"); pop != 9223372036854775808 {
-		t.Fatalf("uint64 num2pow63 != 9223372036854775808, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
-
-	if fu := v.GetString("fu"); fu != "" {
-		t.Fatalf("fu != \"\", = %s", fu)
-	}
-
-	if err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 45000 {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if pop := v.GetInt32("hello.pop"); pop != int32(45000) {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if pop := v.GetInt64("hello.largenum"); pop != int64(7654321001234567) {
-		t.Fatalf("int64 largenum != 7654321001234567, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
-
-	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
-		t.Fatalf("len(universe) != 2, = %d", len(universe))
-	}
-
-	if ints := v.GetIntSlice("hello.ints"); len(ints) != 2 {
-		t.Fatalf("len(ints) != 2, = %d", len(ints))
-	}
-
-	if fu := v.GetString("fu"); fu != "bar" {
-		t.Fatalf("fu != \"bar\", = %s", fu)
-	}
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
+	assert.Equal(t, int32(45000), v.GetInt32("hello.pop"))
+	assert.Equal(t, int64(7654321001234567), v.GetInt64("hello.largenum"))
+	assert.Len(t, v.GetStringSlice("hello.world"), 4)
+	assert.Len(t, v.GetStringSlice("hello.universe"), 2)
+	assert.Len(t, v.GetIntSlice("hello.ints"), 2)
+	assert.Equal(t, "bar", v.GetString("fu"))
 }
 
 func TestMergeConfigOverrideType(t *testing.T) {
 	v := New()
 	v.SetConfigType("json")
-	if err := v.ReadConfig(bytes.NewBuffer(jsonMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
+	err := v.ReadConfig(bytes.NewBuffer(jsonMergeExampleTgt))
+	require.NoError(t, err)
 
-	if err := v.MergeConfig(bytes.NewBuffer(jsonMergeExampleSrc)); err != nil {
-		t.Fatal(err)
-	}
+	err = v.MergeConfig(bytes.NewBuffer(jsonMergeExampleSrc))
+	require.NoError(t, err)
 
-	if pop := v.GetString("hello.pop"); pop != "pop str" {
-		t.Fatalf("pop != \"pop str\", = %s", pop)
-	}
-
-	if foo := v.GetString("hello.foo"); foo != "foo str" {
-		t.Fatalf("foo != \"foo str\", = %s", foo)
-	}
+	assert.Equal(t, "pop str", v.GetString("hello.pop"))
+	assert.Equal(t, "foo str", v.GetString("hello.foo"))
 }
 
 func TestMergeConfigNoMerge(t *testing.T) {
 	v := New()
 	v.SetConfigType("yml")
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt))
+	require.NoError(t, err)
 
-	if pop := v.GetInt("hello.pop"); pop != 37890 {
-		t.Fatalf("pop != 37890, = %d", pop)
-	}
+	assert.Equal(t, 37890, v.GetInt("hello.pop"))
+	assert.Len(t, v.GetStringSlice("hello.world"), 4)
+	assert.Empty(t, v.GetString("fu"))
 
-	if world := v.GetStringSlice("hello.world"); len(world) != 4 {
-		t.Fatalf("len(world) != 4, = %d", len(world))
-	}
+	err = v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
 
-	if fu := v.GetString("fu"); fu != "" {
-		t.Fatalf("fu != \"\", = %s", fu)
-	}
-
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc)); err != nil {
-		t.Fatal(err)
-	}
-
-	if pop := v.GetInt("hello.pop"); pop != 45000 {
-		t.Fatalf("pop != 45000, = %d", pop)
-	}
-
-	if world := v.GetStringSlice("hello.world"); len(world) != 0 {
-		t.Fatalf("len(world) != 0, = %d", len(world))
-	}
-
-	if universe := v.GetStringSlice("hello.universe"); len(universe) != 2 {
-		t.Fatalf("len(universe) != 2, = %d", len(universe))
-	}
-
-	if ints := v.GetIntSlice("hello.ints"); len(ints) != 2 {
-		t.Fatalf("len(ints) != 2, = %d", len(ints))
-	}
-
-	if fu := v.GetString("fu"); fu != "bar" {
-		t.Fatalf("fu != \"bar\", = %s", fu)
-	}
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
+	assert.Empty(t, v.GetStringSlice("hello.world"))
+	assert.Len(t, v.GetStringSlice("hello.universe"), 2)
+	assert.Len(t, v.GetIntSlice("hello.ints"), 2)
+	assert.Equal(t, "bar", v.GetString("fu"))
 }
 
 func TestMergeConfigMap(t *testing.T) {
 	v := New()
 	v.SetConfigType("yml")
-	if err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt)); err != nil {
-		t.Fatal(err)
-	}
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt))
+	require.NoError(t, err)
 
-	assert := func(i int) {
+	assertFn := func(i int) {
 		large := v.GetInt64("hello.largenum")
 		pop := v.GetInt("hello.pop")
-		if large != 765432101234567 {
-			t.Fatal("Got large num:", large)
-		}
-
-		if pop != i {
-			t.Fatal("Got pop:", pop)
-		}
+		assert.Equal(t, int64(765432101234567), large)
+		assert.Equal(t, i, pop)
 	}
 
-	assert(37890)
+	assertFn(37890)
 
 	update := map[string]any{
 		"Hello": map[string]any{
@@ -2178,15 +2038,12 @@ func TestMergeConfigMap(t *testing.T) {
 		},
 	}
 
-	if err := v.MergeConfigMap(update); err != nil {
-		t.Fatal(err)
-	}
+	err = v.MergeConfigMap(update)
+	require.NoError(t, err)
 
-	if rock := v.GetInt("world.rock"); rock != 345 {
-		t.Fatal("Got rock:", rock)
-	}
+	assert.Equal(t, 345, v.GetInt("world.rock"))
 
-	assert(1234)
+	assertFn(1234)
 }
 
 func TestUnmarshalingWithAliases(t *testing.T) {
@@ -2207,9 +2064,7 @@ func TestUnmarshalingWithAliases(t *testing.T) {
 
 	var C config
 	err := v.Unmarshal(&C)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
+	require.NoError(t, err, "unable to decode into struct")
 
 	assert.Equal(t, &config{ID: 1, FirstName: "Steve", Surname: "Owen"}, &C)
 }
@@ -2218,9 +2073,7 @@ func TestSetConfigNameClearsFileCache(t *testing.T) {
 	SetConfigFile("/tmp/config.yaml")
 	SetConfigName("default")
 	f, err := v.getConfigFile()
-	if err == nil {
-		t.Fatalf("config file cache should have been cleared")
-	}
+	require.Error(t, err, "config file cache should have been cleared")
 	assert.Empty(t, f)
 }
 
@@ -2330,38 +2183,18 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	SetDefault("Number2", 52)
 
 	// Verify SetDefault
-	if v := Get("number2"); v != 52 {
-		t.Fatalf("Expected 52 got %q", v)
-	}
-
-	if v := Get("given2.foo"); v != 52 {
-		t.Fatalf("Expected 52 got %q", v)
-	}
-
-	if v := Get("given2.bar.bcd"); v != "A" {
-		t.Fatalf("Expected A got %q", v)
-	}
-
-	if _, ok := m2["Foo"]; !ok {
-		t.Fatal("Input map changed")
-	}
+	assert.Equal(t, 52, Get("number2"))
+	assert.Equal(t, 52, Get("given2.foo"))
+	assert.Equal(t, "A", Get("given2.bar.bcd"))
+	_, ok := m2["Foo"]
+	assert.True(t, ok)
 
 	// Verify Set
-	if v := Get("number1"); v != 42 {
-		t.Fatalf("Expected 42 got %q", v)
-	}
-
-	if v := Get("given1.foo"); v != 32 {
-		t.Fatalf("Expected 32 got %q", v)
-	}
-
-	if v := Get("given1.bar.abc"); v != "A" {
-		t.Fatalf("Expected A got %q", v)
-	}
-
-	if _, ok := m1["Foo"]; !ok {
-		t.Fatal("Input map changed")
-	}
+	assert.Equal(t, 42, Get("number1"))
+	assert.Equal(t, 32, Get("given1.foo"))
+	assert.Equal(t, "A", Get("given1.bar.abc"))
+	_, ok = m1["Foo"]
+	assert.True(t, ok)
 }
 
 func TestParseNested(t *testing.T) {
@@ -2384,9 +2217,7 @@ func TestParseNested(t *testing.T) {
 
 	var items []item
 	err := v.UnmarshalKey("parent", &items)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
+	require.NoError(t, err, "unable to decode into struct")
 
 	assert.Len(t, items, 1)
 	assert.Equal(t, 100*time.Millisecond, items[0].Delay)
