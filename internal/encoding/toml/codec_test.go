@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// original form of the data
+// original form of the data.
 const original = `# key-value pair
 key = "value"
 list = ["item1", "item2", "item3"]
@@ -25,7 +25,7 @@ list = [
 ]
 `
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `key = 'value'
 list = ['item1', 'item2', 'item3']
 
@@ -38,7 +38,7 @@ key = 'value'
 list = ['item1', 'item2', 'item3']
 `
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"list": []any{

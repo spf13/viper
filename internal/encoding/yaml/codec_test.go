@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// original form of the data
+// original form of the data.
 const original = `# key-value pair
 key: value
 list:
@@ -26,7 +26,7 @@ nested_map:
             - item3
 `
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `key: value
 list:
     - item1
@@ -43,10 +43,10 @@ nested_map:
             - item3
 `
 
-// decoded form of the data
+// decoded form of the data.
 //
-// in case of YAML it's slightly different from Viper's internal representation
-// (eg. map is decoded into a map with interface key)
+// In case of YAML it's slightly different from Viper's internal representation
+// (e.g. map is decoded into a map with interface key).
 var decoded = map[string]any{
 	"key": "value",
 	"list": []any{
@@ -69,7 +69,7 @@ var decoded = map[string]any{
 	},
 }
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"list": []any{

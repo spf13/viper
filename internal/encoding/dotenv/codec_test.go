@@ -5,16 +5,16 @@ import (
 	"testing"
 )
 
-// original form of the data
+// original form of the data.
 const original = `# key-value pair
 KEY=value
 `
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `KEY=value
 `
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"KEY": "value",
 }

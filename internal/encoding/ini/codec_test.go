@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// original form of the data
+// original form of the data.
 const original = `; key-value pair
 key=value ; key-value pair
 
@@ -15,17 +15,17 @@ key=%(key)s
 
 `
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `key=value
 
 [map]
 key=value
 `
 
-// decoded form of the data
+// decoded form of the data.
 //
-// in case of INI it's slightly different from Viper's internal representation
-// (eg. top level keys land in a section called default)
+// In case of INI it's slightly different from Viper's internal representation
+// (e.g. top level keys land in a section called default).
 var decoded = map[string]any{
 	"DEFAULT": map[string]any{
 		"key": "value",
@@ -35,7 +35,7 @@ var decoded = map[string]any{
 	},
 }
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"map": map[string]any{

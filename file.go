@@ -43,7 +43,7 @@ func (v *Viper) searchInPath(in string) (filename string) {
 	return ""
 }
 
-// Check if file Exists
+// exists checks if file exists.
 func exists(fs afero.Fs, path string) (bool, error) {
 	stat, err := fs.Stat(path)
 	if err == nil {

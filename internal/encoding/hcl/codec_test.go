@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// original form of the data
+// original form of the data.
 const original = `# key-value pair
 "key" = "value"
 
@@ -26,7 +26,7 @@ nested map
   "list" = ["item1", "item2", "item3"]
 }`
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `"key" = "value"
 
 "list" = ["item1", "item2", "item3"]
@@ -41,10 +41,10 @@ const encoded = `"key" = "value"
   "list" = ["item1", "item2", "item3"]
 }`
 
-// decoded form of the data
+// decoded form of the data.
 //
-// in case of HCL it's slightly different from Viper's internal representation
-// (eg. map is decoded into a list of maps)
+// In case of HCL it's slightly different from Viper's internal representation
+// (e.g. map is decoded into a list of maps).
 var decoded = map[string]any{
 	"key": "value",
 	"list": []any{
@@ -73,7 +73,7 @@ var decoded = map[string]any{
 	},
 }
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"list": []any{
