@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `{
   "key": "value",
   "list": [
@@ -30,7 +30,7 @@ const encoded = `{
   }
 }`
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"list": []any{

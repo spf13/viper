@@ -7,18 +7,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// original form of the data
+// original form of the data.
 const original = `#key-value pair
 key = value
 map.key = value
 `
 
-// encoded form of the data
+// encoded form of the data.
 const encoded = `key = value
 map.key = value
 `
 
-// Viper's internal representation
+// data is Viper's internal representation.
 var data = map[string]any{
 	"key": "value",
 	"map": map[string]any{

@@ -77,7 +77,7 @@ type remoteConfigFactory interface {
 	WatchChannel(rp RemoteProvider) (<-chan *RemoteResponse, chan bool)
 }
 
-// RemoteConfig is optional, see the remote package
+// RemoteConfig is optional, see the remote package.
 var RemoteConfig remoteConfigFactory
 
 // UnsupportedConfigError denotes encountering an unsupported
@@ -102,7 +102,7 @@ func (str UnsupportedRemoteProviderError) Error() string {
 // pull the configuration from the remote provider.
 type RemoteConfigError string
 
-// Error returns the formatted remote provider error
+// Error returns the formatted remote provider error.
 func (rce RemoteConfigError) Error() string {
 	return fmt.Sprintf("Remote Configurations Error: %s", string(rce))
 }
@@ -126,7 +126,7 @@ func (faee ConfigFileAlreadyExistsError) Error() string {
 }
 
 // A DecoderConfigOption can be passed to viper.Unmarshal to configure
-// mapstructure.DecoderConfig options
+// mapstructure.DecoderConfig options.
 type DecoderConfigOption func(*mapstructure.DecoderConfig)
 
 // DecodeHook returns a DecoderConfigOption which overrides the default
@@ -305,7 +305,7 @@ func Reset() {
 	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore", "nats"}
 }
 
-// TODO: make this lazy initialization instead
+// TODO: make this lazy initialization instead.
 func (v *Viper) resetEncoding() {
 	encoderRegistry := encoding.NewEncoderRegistry()
 	decoderRegistry := encoding.NewDecoderRegistry()
@@ -590,7 +590,7 @@ func (v *Viper) AddConfigPath(in string) {
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
-// "myapp"
+// "myapp".
 func AddRemoteProvider(provider, endpoint, path string) error {
 	return v.AddRemoteProvider(provider, endpoint, path)
 }
@@ -622,8 +622,8 @@ func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
 // path is the path in the k/v store to retrieve configuration
 // To retrieve a config file called myapp.json from /configs/myapp.json
 // you should set path to /configs and set config name (SetConfigName()) to
-// "myapp"
-// Secure Remote Providers are implemented with github.com/bketelsen/crypt
+// "myapp".
+// Secure Remote Providers are implemented with github.com/bketelsen/crypt.
 func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
 	return v.AddSecureRemoteProvider(provider, endpoint, path, secretkeyring)
 }
@@ -1115,7 +1115,7 @@ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 }
 
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
-// of time.Duration values & string slices
+// of time.Duration values & string slices.
 func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	c := &mapstructure.DecoderConfig{
 		Metadata:         nil,
@@ -1132,7 +1132,7 @@ func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure
 	return c
 }
 
-// A wrapper around mapstructure.Decode that mimics the WeakDecode functionality
+// decode is a wrapper around mapstructure.Decode that mimics the WeakDecode functionality.
 func decode(input any, config *mapstructure.DecoderConfig) error {
 	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
@@ -1405,7 +1405,7 @@ func readAsCSV(val string) ([]string, error) {
 }
 
 // mostly copied from pflag's implementation of this operation here https://github.com/spf13/pflag/blob/master/string_to_string.go#L79
-// alterations are: errors are swallowed, map[string]any is returned in order to enable cast.ToStringMap
+// alterations are: errors are swallowed, map[string]any is returned in order to enable cast.ToStringMap.
 func stringToStringConv(val string) any {
 	val = strings.Trim(val, "[]")
 	// An empty string would cause an empty map
@@ -1429,7 +1429,7 @@ func stringToStringConv(val string) any {
 }
 
 // mostly copied from pflag's implementation of this operation here https://github.com/spf13/pflag/blob/d5e0c0615acee7028e1e2740a11102313be88de1/string_to_int.go#L68
-// alterations are: errors are swallowed, map[string]any is returned in order to enable cast.ToStringMap
+// alterations are: errors are swallowed, map[string]any is returned in order to enable cast.ToStringMap.
 func stringToIntConv(val string) any {
 	val = strings.Trim(val, "[]")
 	// An empty string would cause an empty map
@@ -2012,7 +2012,7 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]any, erro
 }
 
 // AllKeys returns all keys holding a value, regardless of where they are set.
-// Nested keys are returned with a v.keyDelim separator
+// Nested keys are returned with a v.keyDelim separator.
 func AllKeys() []string { return v.AllKeys() }
 
 func (v *Viper) AllKeys() []string {

@@ -126,7 +126,7 @@ func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, fir
 }
 
 // deepCheckValue checks that all given keys correspond to a valid path in the
-// configuration map of the given layer, and that the final value equals the one given
+// configuration map of the given layer, and that the final value equals the one given.
 func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string, value any) {
 	if assert == nil || v == nil ||
 		len(keys) == 0 || len(keys[0]) == 0 {

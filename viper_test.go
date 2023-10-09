@@ -233,7 +233,7 @@ func initIni() {
 	unmarshalReader(r, v.config)
 }
 
-// make directories for testing
+// initDirs makes directories for testing.
 func initDirs(t *testing.T) (string, string) {
 	var (
 		testDirs = []string{`a a`, `b`, `C_`}
@@ -261,7 +261,7 @@ func initDirs(t *testing.T) (string, string) {
 	return root, config
 }
 
-// stubs for PFlag Values
+// stubs for PFlag Values.
 type stringValue string
 
 func newStringValue(val string, p *string) *stringValue {
