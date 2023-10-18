@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -32,8 +33,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"log/slog"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
