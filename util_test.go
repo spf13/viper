@@ -15,7 +15,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	slog "github.com/sagikazarmark/slog-shim"
+	"log/slog"
+
 	"github.com/stretchr/testify/assert"
 )
 

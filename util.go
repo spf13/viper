@@ -18,7 +18,8 @@ import (
 	"strings"
 	"unicode"
 
-	slog "github.com/sagikazarmark/slog-shim"
+	"log/slog"
+
 	"github.com/spf13/cast"
 )
 

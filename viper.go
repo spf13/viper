@@ -33,9 +33,10 @@ import (
 	"sync"
 	"time"
 
+	"log/slog"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
-	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
