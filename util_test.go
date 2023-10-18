@@ -11,11 +11,11 @@
 package viper
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 
-	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/stretchr/testify/assert"
 )
 
