@@ -7,9 +7,9 @@ hobbies:
     - snowboarding
     - go
 clothing:
-    jacket: leather
+    Jacket: leather
     trousers: denim
-    pants:
+    Pants:
         size: large
 age: 35
 eyes : brown

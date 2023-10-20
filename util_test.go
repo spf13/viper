@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCopyAndInsensitiviseMap(t *testing.T) {
+func TestCopyMap(t *testing.T) {
 	var (
 		given = map[string]any{
 			"Foo": 32,
@@ -35,19 +35,54 @@ func TestCopyAndInsensitiviseMap(t *testing.T) {
 				"cde": "B",
 			},
 		}
+		expectedPreserveCase = map[string]any{
+			"Foo": 32,
+			"Bar": map[string]any{
+				"ABc": "A",
+				"cDE": "B",
+			},
+		}
 	)
 
-	got := copyAndInsensitiviseMap(given)
+	t.Run("convert to lower-case", func(t *testing.T) {
+		got := CopyMap(given, false)
 
-	assert.Equal(t, expected, got)
-	_, ok := given["foo"]
-	assert.False(t, ok)
-	_, ok = given["bar"]
-	assert.False(t, ok)
+		assert.Equal(t, expected, got)
+		_, ok := given["foo"]
+		assert.False(t, ok)
+		_, ok = given["bar"]
+		assert.False(t, ok)
 
-	m := given["Bar"].(map[any]any)
-	_, ok = m["ABc"]
-	assert.True(t, ok)
+		m := given["Bar"].(map[any]any)
+		_, ok = m["ABc"]
+		assert.True(t, ok)
+	})
+
+	t.Run("preserve case", func(t *testing.T) {
+		got := CopyMap(given, true)
+
+		assert.Equal(t, expectedPreserveCase, got)
+		_, ok := given["foo"]
+		assert.False(t, ok)
+		_, ok = given["bar"]
+		assert.False(t, ok)
+
+		m := given["Bar"].(map[any]any)
+		_, ok = m["ABc"]
+		assert.True(t, ok)
+	})
+
+	t.Run("not a map", func(t *testing.T) {
+		var (
+			given    = []any{42, "xyz"}
+			expected = []any{42, "xyz"}
+		)
+		got := CopyMap(given, false)
+		assert.Equal(t, expected, got)
+
+		got = CopyMap(given, true)
+		assert.Equal(t, expected, got)
+	})
 }
 
 func TestAbsPathify(t *testing.T) {
