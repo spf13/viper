@@ -563,6 +563,9 @@ One important thing to recognize is that each Get function will return a zero
 value if it’s not found. To check if a given key exists, the `IsSet()` method
 has been provided.
 
+The zero value will also be returned if the value is set, but fails to parse
+as the requested type.
+
 Example:
 ```go
 viper.GetString("logfile") // case-insensitive Setting & Getting
