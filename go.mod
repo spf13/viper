@@ -3,7 +3,7 @@ module github.com/spf13/viper
 go 1.18
 
 require (
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.7
 	github.com/mitchellh/mapstructure v1.5.0
