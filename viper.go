@@ -439,7 +439,7 @@ func (v *Viper) WatchConfig() {
 	initWG := sync.WaitGroup{}
 	initWG.Add(1)
 	go func() {
-		watcher, err := newWatcher()
+		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
 			v.logger.Error(fmt.Sprintf("failed to create watcher: %s", err))
 			os.Exit(1)
