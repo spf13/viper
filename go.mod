@@ -8,8 +8,8 @@ require (
 	github.com/magiconair/properties v1.8.7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pelletier/go-toml/v2 v2.1.0
-	github.com/sagikazarmark/crypt v0.15.0
-	github.com/sagikazarmark/locafero v0.3.0
+	github.com/sagikazarmark/crypt v0.16.0
+	github.com/sagikazarmark/locafero v0.4.0
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cast v1.6.0
@@ -48,12 +48,10 @@ require (
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
-	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nats-io/jwt/v2 v2.4.1 // indirect
-	github.com/nats-io/nats.go v1.30.2 // indirect
+	github.com/nats-io/nats.go v1.31.0 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
