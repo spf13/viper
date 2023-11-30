@@ -97,7 +97,7 @@ func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, fir
 	v := New()
 	firstKeys := strings.Split(firstPath, v.keyDelim)
 	if assert == nil ||
-		len(firstKeys) == 0 || len(firstKeys[0]) == 0 {
+		len(firstKeys) == 0 || firstKeys[0] == "" {
 		return v
 	}
 
@@ -115,7 +115,7 @@ func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, fir
 
 	// Override and check new value
 	secondKeys := strings.Split(secondPath, v.keyDelim)
-	if len(secondKeys) == 0 || len(secondKeys[0]) == 0 {
+	if len(secondKeys) == 0 || secondKeys[0] == "" {
 		return v
 	}
 	v.Set(secondPath, secondValue)
@@ -129,7 +129,7 @@ func overrideFromLayer(l layer, assert *assert.Assertions, firstPath string, fir
 // configuration map of the given layer, and that the final value equals the one given.
 func deepCheckValue(assert *assert.Assertions, v *Viper, l layer, keys []string, value any) {
 	if assert == nil || v == nil ||
-		len(keys) == 0 || len(keys[0]) == 0 {
+		len(keys) == 0 || keys[0] == "" {
 		return
 	}
 

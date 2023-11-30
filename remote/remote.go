@@ -44,7 +44,7 @@ func (rc remoteConfigProvider) Watch(rp viper.RemoteProvider) (io.Reader, error)
 	return bytes.NewReader(resp), nil
 }
 
-func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *viper.RemoteResponse, chan bool) {
+func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (responseCh <-chan *viper.RemoteResponse, quitCh chan bool) {
 	cm, err := getConfigManager(rp)
 	if err != nil {
 		return nil, nil

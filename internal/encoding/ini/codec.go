@@ -19,7 +19,7 @@ type Codec struct {
 	LoadOptions  LoadOptions
 }
 
-func (c Codec) Encode(v map[string]any) ([]byte, error) {
+func (c *Codec) Encode(v map[string]any) ([]byte, error) {
 	cfg := ini.Empty()
 	ini.PrettyFormat = false
 
@@ -62,7 +62,7 @@ func (c Codec) Encode(v map[string]any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (c Codec) Decode(b []byte, v map[string]any) error {
+func (c *Codec) Decode(b []byte, v map[string]any) error {
 	cfg := ini.Empty(c.LoadOptions)
 
 	err := cfg.Append(b)
@@ -90,7 +90,7 @@ func (c Codec) Decode(b []byte, v map[string]any) error {
 	return nil
 }
 
-func (c Codec) keyDelimiter() string {
+func (c *Codec) keyDelimiter() string {
 	if c.KeyDelimiter == "" {
 		return "."
 	}
