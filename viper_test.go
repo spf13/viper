@@ -234,17 +234,15 @@ func initIni() {
 }
 
 // initDirs makes directories for testing.
-func initDirs(t *testing.T) (string, string) {
-	var (
-		testDirs = []string{`a a`, `b`, `C_`}
-		config   = `improbable`
-	)
+func initDirs(t *testing.T) (root, config string) {
+	testDirs := []string{`a a`, `b`, `C_`}
+	config = `improbable`
 
 	if runtime.GOOS != "windows" {
 		testDirs = append(testDirs, `d\d`)
 	}
 
-	root := t.TempDir()
+	root = t.TempDir()
 
 	for _, dir := range testDirs {
 		innerDir := filepath.Join(root, dir)
@@ -428,7 +426,7 @@ func TestReadInConfig(t *testing.T) {
 		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
 		require.NoError(t, err)
 
-		_, err = file.Write([]byte(`key: value`))
+		_, err = file.WriteString(`key: value`)
 		require.NoError(t, err)
 
 		file.Close()
@@ -453,7 +451,7 @@ func TestReadInConfig(t *testing.T) {
 		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
 		require.NoError(t, err)
 
-		_, err = file.Write([]byte(`key: value`))
+		_, err = file.WriteString(`key: value`)
 		require.NoError(t, err)
 
 		file.Close()
@@ -936,7 +934,8 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 			if raw == "" {
 				return m, nil
 			}
-			return m, json.Unmarshal([]byte(raw), &m)
+			err := json.Unmarshal([]byte(raw), &m)
+			return m, err
 		},
 	))
 
@@ -2343,12 +2342,12 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
 }
 
-func newViperWithConfigFile(t *testing.T) (*Viper, string) {
+func newViperWithConfigFile(t *testing.T) (v *Viper, configFile string) {
 	watchDir := t.TempDir()
-	configFile := path.Join(watchDir, "config.yaml")
+	configFile = path.Join(watchDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
 	require.NoError(t, err)
-	v := New()
+	v = New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
 	require.NoError(t, err)
@@ -2356,8 +2355,8 @@ func newViperWithConfigFile(t *testing.T) (*Viper, string) {
 	return v, configFile
 }
 
-func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
-	watchDir := t.TempDir()
+func newViperWithSymlinkedConfigFile(t *testing.T) (v *Viper, watchDir, configFile string) {
+	watchDir = t.TempDir()
 	dataDir1 := path.Join(watchDir, "data1")
 	err := os.Mkdir(dataDir1, 0o777)
 	require.NoError(t, err)
@@ -2368,11 +2367,11 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
 	// now, symlink the tm `data1` dir to `data` in the baseDir
 	os.Symlink(dataDir1, path.Join(watchDir, "data"))
 	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
-	configFile := path.Join(watchDir, "config.yaml")
+	configFile = path.Join(watchDir, "config.yaml")
 	os.Symlink(path.Join(watchDir, "data", "config.yaml"), configFile)
 	t.Logf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
 	// init Viper
-	v := New()
+	v = New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
 	require.NoError(t, err)
@@ -2612,6 +2611,8 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 }
 
 // Skip some tests on Windows that kept failing when Windows was added to the CI as a target.
+//
+//nolint:gocritic // sloppyTestFuncName
 func skipWindows(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Skip test on Windows")

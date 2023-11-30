@@ -345,7 +345,7 @@ func (v *Viper) resetEncoding() {
 	}
 
 	{
-		codec := ini.Codec{
+		codec := &ini.Codec{
 			KeyDelimiter: v.keyDelim,
 			LoadOptions:  v.iniLoadOptions,
 		}
@@ -957,7 +957,8 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
-		subv.parents = append(v.parents, strings.ToLower(key))
+		subv.parents = append([]string(nil), v.parents...)
+		subv.parents = append(subv.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
 		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
@@ -1434,7 +1435,7 @@ func readAsCSV(val string) ([]string, error) {
 func stringToStringConv(val string) any {
 	val = strings.Trim(val, "[]")
 	// An empty string would cause an empty map
-	if len(val) == 0 {
+	if val == "" {
 		return map[string]any{}
 	}
 	r := csv.NewReader(strings.NewReader(val))
@@ -1458,7 +1459,7 @@ func stringToStringConv(val string) any {
 func stringToIntConv(val string) any {
 	val = strings.Trim(val, "[]")
 	// An empty string would cause an empty map
-	if len(val) == 0 {
+	if val == "" {
 		return map[string]any{}
 	}
 	ss := strings.Split(val, ",")
@@ -1506,13 +1507,13 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 
 // RegisterAlias creates an alias that provides another accessor for the same key.
 // This enables one to change a name without breaking the application.
-func RegisterAlias(alias string, key string) { v.RegisterAlias(alias, key) }
+func RegisterAlias(alias, key string) { v.RegisterAlias(alias, key) }
 
-func (v *Viper) RegisterAlias(alias string, key string) {
+func (v *Viper) RegisterAlias(alias, key string) {
 	v.registerAlias(alias, strings.ToLower(key))
 }
 
-func (v *Viper) registerAlias(alias string, key string) {
+func (v *Viper) registerAlias(alias, key string) {
 	alias = strings.ToLower(alias)
 	if alias != key && alias != v.realKey(key) {
 		_, exists := v.aliases[alias]
@@ -2181,6 +2182,8 @@ func (v *Viper) SetConfigPermissions(perm os.FileMode) {
 }
 
 // IniLoadOptions sets the load options for ini parsing.
+//
+//nolint:gocritic // hugeParam: in is heavy (114 bytes); consider passing it by pointer
 func IniLoadOptions(in ini.LoadOptions) Option {
 	return optionFunc(func(v *Viper) {
 		v.iniLoadOptions = in
