@@ -956,12 +956,24 @@ func (v *Viper) Sub(key string) *Viper {
 		return nil
 	}
 
-	if reflect.TypeOf(data).Kind() == reflect.Map {
+	switch reflect.TypeOf(data).Kind() {
+	case reflect.Map:
 		subv.parents = append(v.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
 		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
 		subv.config = cast.ToStringMap(data)
+		return subv
+	case reflect.Slice, reflect.Array:
+    subv.parents = append(v.parents, strings.ToLower(key))
+		subv.automaticEnvApplied = v.automaticEnvApplied
+		subv.envPrefix = v.envPrefix
+		subv.envKeyReplacer = v.envKeyReplacer
+		dataValue := reflect.ValueOf(data)
+		subv.config = make(map[string]interface{}, dataValue.Len())
+		for x := 0; x < dataValue.Len(); x++ {
+			subv.config[cast.ToString(x)] = dataValue.Index(x).Interface()
+		}
 		return subv
 	}
 	return nil
