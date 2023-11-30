@@ -171,6 +171,41 @@ func initConfigs() {
 	unmarshalReader(r, v.config)
 }
 
+func initAllConfigs(v *Viper) {
+	var r io.Reader
+	v.SetConfigType("yaml")
+	r = bytes.NewReader(yamlExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("json")
+	r = bytes.NewReader(jsonExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("hcl")
+	r = bytes.NewReader(hclExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("properties")
+	r = bytes.NewReader(propertiesExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("toml")
+	r = bytes.NewReader(tomlExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("env")
+	r = bytes.NewReader(dotenvExample)
+	v.unmarshalReader(r, v.config)
+
+	v.SetConfigType("json")
+	remote := bytes.NewReader(remoteExample)
+	v.unmarshalReader(remote, v.kvstore)
+
+	v.SetConfigType("ini")
+	r = bytes.NewReader(iniExample)
+	v.unmarshalReader(r, v.config)
+}
+
 func initConfig(typ, config string) {
 	Reset()
 	SetConfigType(typ)
@@ -482,6 +517,23 @@ func TestDefault(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "leather", Get("clothing.jacket"))
+	assert.Equal(t, "leather", Get("clothing.Jacket"))
+}
+
+func TestDefault_CaseSensitive(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetDefault("age", 45)
+	assert.Equal(t, 45, v.Get("age"))
+
+	v.SetDefault("clothing.jacket", "slacks")
+	assert.Equal(t, "slacks", v.Get("clothing.jacket"))
+
+	v.SetConfigType("yaml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	assert.NoError(t, err)
+	assert.Equal(t, "slacks", v.Get("clothing.jacket"))
+	assert.Equal(t, "leather", v.Get("clothing.Jacket"))
 }
 
 func TestUnmarshaling(t *testing.T) {
@@ -497,6 +549,29 @@ func TestUnmarshaling(t *testing.T) {
 	assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, Get("hobbies"))
 	assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, Get("clothing"))
 	assert.Equal(t, 35, Get("age"))
+	// Lower-case key is found.
+	assert.Equal(t, true, Get("hacker"))
+	// Upper-case key is found.
+	assert.Equal(t, true, v.Get("Hacker"))
+}
+
+func TestUnmarshaling_CaseSensitive(t *testing.T) {
+	// Test preserving the case of keys read from a configuration
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	assert.True(t, v.InConfig("name"))
+	assert.True(t, v.InConfig("clothing.Jacket"))
+	assert.False(t, v.InConfig("state"))
+	assert.False(t, v.InConfig("clothing.hat"))
+	assert.Equal(t, "steve", v.Get("name"))
+	assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
+	assert.Equal(t, map[string]any{"Jacket": "leather", "trousers": "denim", "Pants": map[string]any{"size": "large"}}, v.Get("clothing"))
+	assert.Equal(t, 35, v.Get("age"))
+	assert.Equal(t, true, v.Get("Hacker"))
+	// Lower-case key is not found.
+	assert.Equal(t, nil, v.Get("hacker"))
 }
 
 func TestUnmarshalExact(t *testing.T) {
@@ -730,6 +805,36 @@ func TestEnvSubConfig(t *testing.T) {
 	assert.Equal(t, "large", subWithPrefix.Get("size"))
 }
 
+// This is an interesting case because the key passed to Viper.Get() is
+// converted to upper-case to perform a lookup in the environment variables.
+// So, this is a case for lookup where case-sensitivity is not strict.
+func TestEnvSubConfig_CaseSensitive(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetConfigType("yaml")
+	r := strings.NewReader(string(yamlExample))
+	if err := v.unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	v.AutomaticEnv()
+
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	t.Setenv("CLOTHING_PANTS_SIZE", "small")
+	subv := v.Sub("clothing").Sub("Pants")
+	assert.Equal(t, "small", subv.Get("size"))
+	assert.Equal(t, "small", v.Get("clothing.Pants.size"))
+	assert.Equal(t, "small", v.Get("clothing.pants.size"))
+
+	// again with EnvPrefix
+	v.SetEnvPrefix("foo") // will be uppercased automatically
+	subWithPrefix := v.Sub("clothing").Sub("Pants")
+	t.Setenv("FOO_CLOTHING_PANTS_SIZE", "large")
+	assert.Equal(t, "large", subWithPrefix.Get("size"))
+	assert.Equal(t, "large", v.Get("clothing.Pants.size"))
+	assert.Equal(t, "large", v.Get("clothing.pants.size"))
+}
+
 func TestAllKeys(t *testing.T) {
 	initConfigs()
 
@@ -839,6 +944,118 @@ func TestAllKeys(t *testing.T) {
 
 	assert.ElementsMatch(t, ks, AllKeys())
 	assert.Equal(t, all, AllSettings())
+}
+
+func TestAllKeys_CaseSensitive(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	initAllConfigs(v)
+
+	ks := []string{
+		"title",
+		"author.BIO",
+		"author.E-MAIL",
+		"author.GITHUB",
+		"author.NAME",
+		"newkey",
+		"owner.organization",
+		"owner.dob",
+		"owner.Bio",
+		"name",
+		"beard",
+		"ppu",
+		"batters.batter",
+		"hobbies",
+		"clothing.Jacket",
+		"clothing.trousers",
+		"DEFAULT.IMPORT_PATH",
+		"DEFAULT.NAME",
+		"DEFAULT.VERSION",
+		"clothing.Pants.size",
+		"age",
+		"Hacker",
+		"id",
+		"type",
+		"eyes",
+		"p_id",
+		"p_ppu",
+		"p_batters.batter.type",
+		"p_type",
+		"p_name",
+		"foos",
+		"TITLE_DOTENV",
+		"TYPE_DOTENV",
+		"NAME_DOTENV",
+	}
+	dob, _ := time.Parse(time.RFC3339, "1979-05-27T07:32:00Z")
+	all := map[string]any{
+		"owner": map[string]any{
+			"organization": "MongoDB",
+			"Bio":          "MongoDB Chief Developer Advocate & Hacker at Large",
+			"dob":          dob,
+		},
+		"title": "TOML Example",
+		"author": map[string]any{
+			"E-MAIL": "fake@localhost",
+			"GITHUB": "https://github.com/Unknown",
+			"NAME":   "Unknown",
+			"BIO":    "Gopher.\nCoding addict.\nGood man.\n",
+		},
+		"ppu":  0.55,
+		"eyes": "brown",
+		"clothing": map[string]any{
+			"trousers": "denim",
+			"Jacket":   "leather",
+			"Pants":    map[string]any{"size": "large"},
+		},
+		"DEFAULT": map[string]any{
+			"IMPORT_PATH": "gopkg.in/ini.v1",
+			"NAME":        "ini",
+			"VERSION":     "v1",
+		},
+		"id": "0001",
+		"batters": map[string]any{
+			"batter": []any{
+				map[string]any{"type": "Regular"},
+				map[string]any{"type": "Chocolate"},
+				map[string]any{"type": "Blueberry"},
+				map[string]any{"type": "Devil's Food"},
+			},
+		},
+		"Hacker": true,
+		"beard":  true,
+		"hobbies": []any{
+			"skateboarding",
+			"snowboarding",
+			"go",
+		},
+		"age":    35,
+		"type":   "donut",
+		"newkey": "remote",
+		"name":   "Cake",
+		"p_id":   "0001",
+		"p_ppu":  "0.55",
+		"p_name": "Cake",
+		"p_batters": map[string]any{
+			"batter": map[string]any{"type": "Regular"},
+		},
+		"p_type": "donut",
+		"foos": []map[string]any{
+			{
+				"foo": []map[string]any{
+					{"key": 1},
+					{"key": 2},
+					{"key": 3},
+					{"key": 4},
+				},
+			},
+		},
+		"TITLE_DOTENV": "DotEnv Example",
+		"TYPE_DOTENV":  "donut",
+		"NAME_DOTENV":  "Cake",
+	}
+
+	assert.ElementsMatch(t, ks, v.AllKeys())
+	assert.Equal(t, all, v.AllSettings())
 }
 
 func TestAllKeysWithEnv(t *testing.T) {
@@ -1526,6 +1743,8 @@ func TestSub(t *testing.T) {
 
 	subv := v.Sub("clothing")
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+	assert.Equal(t, v.Get("clothing.jacket"), subv.Get("jacket"))
+	assert.Equal(t, v.Get("clothing.jacket"), subv.Get("Jacket"))
 
 	subv = v.Sub("clothing.pants")
 	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("size"))
@@ -1541,6 +1760,35 @@ func TestSub(t *testing.T) {
 
 	subv = v.Sub("clothing").Sub("pants")
 	assert.Equal(t, []string{"clothing", "pants"}, subv.parents)
+}
+
+func TestSub_CaseSensitive(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+
+	subv := v.Sub("clothing")
+	assert.Equal(t, v.Get("clothing.pants.size"), subv.Get("pants.size"))
+	assert.Equal(t, v.Get("clothing.Jacket"), subv.Get("Jacket"))
+	assert.Equal(t, nil, subv.Get("jacket"))
+
+	subv = v.Sub("clothing.pants")
+	assert.Nil(t, subv)
+	subv = v.Sub("clothing.Pants")
+	//TODO: test Get with case-sensitive keys that are not found: "clothing.pants.size"
+	assert.Equal(t, v.Get("clothing.Pants.size"), subv.Get("size"))
+
+	subv = v.Sub("clothing.pants.size")
+	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("missing.key")
+	assert.Equal(t, (*Viper)(nil), subv)
+
+	subv = v.Sub("clothing")
+	assert.Equal(t, []string{"clothing"}, subv.parents)
+
+	subv = v.Sub("clothing").Sub("Pants")
+	assert.Equal(t, []string{"clothing", "Pants"}, subv.parents)
 }
 
 var hclWriteExpected = []byte(`"foos" = {
@@ -2046,6 +2294,44 @@ func TestMergeConfigMap(t *testing.T) {
 	assertFn(1234)
 }
 
+func TestMergeConfigMap_CaseSensitive(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetConfigType("yml")
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleTgt))
+	require.NoError(t, err)
+
+	assertFn := func(i int) {
+		large := v.GetInt64("hello.largenum")
+		pop := v.GetInt("hello.pop")
+		assert.Equal(t, int64(765432101234567), large)
+		assert.Equal(t, i, pop)
+	}
+
+	assertFn(37890)
+
+	update := map[string]any{
+		"hello": map[string]any{
+			"Pop": 98,
+			"pop": 76,
+		},
+		"Hello": map[string]any{
+			"Pop": 1234,
+		},
+		"World": map[any]any{
+			"Rock": 345,
+		},
+	}
+
+	err = v.MergeConfigMap(update)
+	require.NoError(t, err)
+
+	assert.Equal(t, 345, v.GetInt("World.Rock"))
+	assert.Equal(t, 1234, v.GetInt("Hello.Pop"))
+
+	assert.Equal(t, 98, v.GetInt("hello.Pop"))
+	assertFn(76)
+}
+
 func TestUnmarshalingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)
@@ -2158,6 +2444,51 @@ R = 6
 	}
 }
 
+func TestCaseSensitive(t *testing.T) {
+	for _, config := range []struct {
+		typ     string
+		content string
+	}{
+		{"yaml", `
+aBcD: 1
+eF:
+  gH: 2
+  iJk: 3
+  Lm:
+    nO: 4
+    P:
+      Q: 5
+      R: 6
+`},
+		{"json", `{
+  "aBcD": 1,
+  "eF": {
+    "iJk": 3,
+    "Lm": {
+      "P": {
+        "Q": 5,
+        "R": 6
+      },
+      "nO": 4
+    },
+    "gH": 2
+  }
+}`},
+		{"toml", `aBcD = 1
+[eF]
+gH = 2
+iJk = 3
+[eF.Lm]
+nO = 4
+[eF.Lm.P]
+Q = 5
+R = 6
+`},
+	} {
+		doTestCaseSensitive(t, config.typ, config.content)
+	}
+}
+
 func TestCaseInsensitiveSet(t *testing.T) {
 	Reset()
 	m1 := map[string]any{
@@ -2193,6 +2524,58 @@ func TestCaseInsensitiveSet(t *testing.T) {
 	assert.Equal(t, 42, Get("number1"))
 	assert.Equal(t, 32, Get("given1.foo"))
 	assert.Equal(t, "A", Get("given1.bar.abc"))
+	_, ok = m1["Foo"]
+	assert.True(t, ok)
+}
+
+func TestCaseSensitiveSet(t *testing.T) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+
+	m1 := map[string]any{
+		"Foo": 32,
+		"Bar": map[any]any{
+			"ABc": "A",
+			"cDE": "B",
+		},
+	}
+
+	m2 := map[string]any{
+		"Foo": 52,
+		"Bar": map[any]any{
+			"bCd": "A",
+			"eFG": "B",
+		},
+	}
+
+	v.Set("Given1", m1)
+	v.Set("Number1", 42)
+
+	v.SetDefault("Given2", m2)
+	v.SetDefault("Number2", 62)
+
+	// Verify SetDefault
+	assert.Equal(t, 62, v.Get("Number2"))
+	assert.Equal(t, nil, v.Get("number2"))
+	assert.Equal(t, 52, v.Get("Given2.Foo"))
+	assert.Equal(t, nil, v.Get("Given2.foo"))
+	assert.Equal(t, nil, v.Get("given2.Foo"))
+	assert.Equal(t, "A", v.Get("Given2.Bar.bCd"))
+	assert.Equal(t, nil, v.Get("Given2.Bar.bcd"))
+	assert.Equal(t, nil, v.Get("Given2.bar.bCd"))
+	assert.Equal(t, nil, v.Get("given2.Bar.bCd"))
+	_, ok := m2["Foo"]
+	assert.True(t, ok)
+
+	// Verify Set
+	assert.Equal(t, 42, v.Get("Number1"))
+	assert.Equal(t, nil, v.Get("number1"))
+	assert.Equal(t, 32, v.Get("Given1.Foo"))
+	assert.Equal(t, nil, v.Get("Given1.foo"))
+	assert.Equal(t, nil, v.Get("given1.Foo"))
+	assert.Equal(t, "A", v.Get("Given1.Bar.ABc"))
+	assert.Equal(t, nil, v.Get("Given1.Bar.abc"))
+	assert.Equal(t, nil, v.Get("Given1.bar.ABc"))
+	assert.Equal(t, nil, v.Get("given1.Bar.ABc"))
 	_, ok = m1["Foo"]
 	assert.True(t, ok)
 }
@@ -2235,6 +2618,30 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 3, cast.ToInt(Get("ef.ijk")))
 	assert.Equal(t, 4, cast.ToInt(Get("ef.lm.no")))
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
+}
+
+func doTestCaseSensitive(t *testing.T, typ, config string) {
+	v := NewWithOptions(CaseSensitiveKeys(true))
+	v.SetConfigType(typ)
+
+	r := strings.NewReader(config)
+	if err := v.unmarshalReader(r, v.config); err != nil {
+		panic(err)
+	}
+
+	v.Set("RfD", true)
+	assert.Equal(t, nil, v.Get("rfd"))
+	assert.Equal(t, true, v.Get("RfD"))
+	assert.Equal(t, 0, cast.ToInt(v.Get("abcd")))
+	assert.Equal(t, 1, cast.ToInt(v.Get("aBcD")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.gh")))
+	assert.Equal(t, 2, cast.ToInt(v.Get("eF.gH")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.ijk")))
+	assert.Equal(t, 3, cast.ToInt(v.Get("eF.iJk")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.lm.no")))
+	assert.Equal(t, 4, cast.ToInt(v.Get("eF.Lm.nO")))
+	assert.Equal(t, 0, cast.ToInt(v.Get("ef.lm.p.q")))
+	assert.Equal(t, 5, cast.ToInt(v.Get("eF.Lm.P.Q")))
 }
 
 func newViperWithConfigFile(t *testing.T) (*Viper, string) {

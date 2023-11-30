@@ -37,37 +37,40 @@ func (pe ConfigParseError) Unwrap() error {
 	return pe.err
 }
 
-// toCaseInsensitiveValue checks if the value is a  map;
-// if so, create a copy and lower-case the keys recursively.
-func toCaseInsensitiveValue(value any) any {
+// CopyMap returns a deep copy of a map[any]any or map[string]any.  If value is
+// not one of those map types, then it is returned as-is.  If preserveCase is
+// false, then all keys will be converted to lower-case in the copy that is
+// returned.
+func CopyMap(value any, preserveCase bool) any {
+	var copyMap func(map[string]any, bool) map[string]any
+	copyMap = func(m map[string]any, preserveCase bool) map[string]any {
+		nm := make(map[string]any)
+
+		for key, val := range m {
+			if !preserveCase {
+				key = strings.ToLower(key)
+			}
+			switch v := val.(type) {
+			case map[any]any:
+				nm[key] = copyMap(cast.ToStringMap(v), preserveCase)
+			case map[string]any:
+				nm[key] = copyMap(v, preserveCase)
+			default:
+				nm[key] = v
+			}
+		}
+
+		return nm
+	}
+
 	switch v := value.(type) {
 	case map[any]any:
-		value = copyAndInsensitiviseMap(cast.ToStringMap(v))
+		value = copyMap(cast.ToStringMap(v), preserveCase)
 	case map[string]any:
-		value = copyAndInsensitiviseMap(v)
+		value = copyMap(v, preserveCase)
 	}
 
 	return value
-}
-
-// copyAndInsensitiviseMap behaves like insensitiviseMap, but creates a copy of
-// any map it makes case insensitive.
-func copyAndInsensitiviseMap(m map[string]any) map[string]any {
-	nm := make(map[string]any)
-
-	for key, val := range m {
-		lkey := strings.ToLower(key)
-		switch v := val.(type) {
-		case map[any]any:
-			nm[lkey] = copyAndInsensitiviseMap(cast.ToStringMap(v))
-		case map[string]any:
-			nm[lkey] = copyAndInsensitiviseMap(v)
-		default:
-			nm[lkey] = v
-		}
-	}
-
-	return nm
 }
 
 func insensitiviseVal(val any) any {
