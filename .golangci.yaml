@@ -13,10 +13,10 @@ linters-settings:
             - diagnostic
             - experimental
             - opinionated
-            - performance
             - style
         disabled-checks:
             - importShadow
+            - unnamedResult
     golint:
         min-confidence: 0
     goimports:

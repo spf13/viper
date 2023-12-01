@@ -234,15 +234,17 @@ func initIni() {
 }
 
 // initDirs makes directories for testing.
-func initDirs(t *testing.T) (root, config string) {
-	testDirs := []string{`a a`, `b`, `C_`}
-	config = `improbable`
+func initDirs(t *testing.T) (string, string) {
+	var (
+		testDirs = []string{`a a`, `b`, `C_`}
+		config   = `improbable`
+	)
 
 	if runtime.GOOS != "windows" {
 		testDirs = append(testDirs, `d\d`)
 	}
 
-	root = t.TempDir()
+	root := t.TempDir()
 
 	for _, dir := range testDirs {
 		innerDir := filepath.Join(root, dir)
@@ -2236,12 +2238,12 @@ func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	assert.Equal(t, 5, cast.ToInt(Get("ef.lm.p.q")))
 }
 
-func newViperWithConfigFile(t *testing.T) (v *Viper, configFile string) {
+func newViperWithConfigFile(t *testing.T) (*Viper, string) {
 	watchDir := t.TempDir()
-	configFile = path.Join(watchDir, "config.yaml")
+	configFile := path.Join(watchDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte("foo: bar\n"), 0o640)
 	require.NoError(t, err)
-	v = New()
+	v := New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
 	require.NoError(t, err)
@@ -2249,8 +2251,8 @@ func newViperWithConfigFile(t *testing.T) (v *Viper, configFile string) {
 	return v, configFile
 }
 
-func newViperWithSymlinkedConfigFile(t *testing.T) (v *Viper, watchDir, configFile string) {
-	watchDir = t.TempDir()
+func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
+	watchDir := t.TempDir()
 	dataDir1 := path.Join(watchDir, "data1")
 	err := os.Mkdir(dataDir1, 0o777)
 	require.NoError(t, err)
@@ -2261,11 +2263,11 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (v *Viper, watchDir, configFi
 	// now, symlink the tm `data1` dir to `data` in the baseDir
 	os.Symlink(dataDir1, path.Join(watchDir, "data"))
 	// and link the `<watchdir>/datadir1/config.yaml` to `<watchdir>/config.yaml`
-	configFile = path.Join(watchDir, "config.yaml")
+	configFile := path.Join(watchDir, "config.yaml")
 	os.Symlink(path.Join(watchDir, "data", "config.yaml"), configFile)
 	t.Logf("Config file location: %s\n", path.Join(watchDir, "config.yaml"))
 	// init Viper
-	v = New()
+	v := New()
 	v.SetConfigFile(configFile)
 	err = v.ReadInConfig()
 	require.NoError(t, err)

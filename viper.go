@@ -345,7 +345,7 @@ func (v *Viper) resetEncoding() {
 	}
 
 	{
-		codec := &ini.Codec{
+		codec := ini.Codec{
 			KeyDelimiter: v.keyDelim,
 			LoadOptions:  v.iniLoadOptions,
 		}
@@ -2153,8 +2153,6 @@ func (v *Viper) SetConfigPermissions(perm os.FileMode) {
 }
 
 // IniLoadOptions sets the load options for ini parsing.
-//
-//nolint:gocritic // hugeParam: in is heavy (114 bytes); consider passing it by pointer
 func IniLoadOptions(in ini.LoadOptions) Option {
 	return optionFunc(func(v *Viper) {
 		v.iniLoadOptions = in
