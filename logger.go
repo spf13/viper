@@ -55,7 +55,6 @@ func (n *discardHandler) Enabled(_ context.Context, _ slog.Level) bool {
 	return false
 }
 
-//nolint:gocritic // hugeParam: _ is heavy (288 bytes); consider passing it by pointer
 func (n *discardHandler) Handle(_ context.Context, _ slog.Record) error {
 	return nil
 }
