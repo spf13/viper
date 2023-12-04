@@ -1111,7 +1111,28 @@ func Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 }
 
 func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
+	err := v.autoBindEnvs(rawVal)
+	if err != nil {
+		return fmt.Errorf("could not auto bind environment variables: %w", err)
+	}
+
 	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
+}
+
+func (v *Viper) autoBindEnvs(rawVal any) error {
+	envKeys := map[string]any{}
+	if err := mapstructure.Decode(rawVal, &envKeys); err != nil {
+		return fmt.Errorf("could not decode mapstructure: %w", err)
+	}
+
+	structKeys := v.flattenAndMergeMap(map[string]bool{}, envKeys, "")
+	for key, _ := range structKeys {
+		if err := v.BindEnv(key); err != nil {
+			return fmt.Errorf(`could not bind env "%s": %w`, key, err)
+		}
+	}
+
+	return nil
 }
 
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support

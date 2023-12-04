@@ -914,6 +914,37 @@ func TestUnmarshal(t *testing.T) {
 	)
 }
 
+func TestUnmarshalWithEnvs(t *testing.T) {
+	type config struct {
+		Port   int
+		Host   string
+		Nested struct {
+			Value        string
+			AnotherValue string
+			RenamedValue string `mapstructure:"another"`
+		}
+	}
+
+	t.Setenv("CONFIG_PORT", "8080")
+	t.Setenv("CONFIG_HOST", "http://localhost")
+	t.Setenv("CONFIG_NESTED_VALUE", "baz")
+	t.Setenv("CONFIG_NESTED_ANOTHER", "value")
+
+	v := New()
+	v.SetEnvPrefix("CONFIG")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	configObject := config{}
+	err := v.Unmarshal(&configObject)
+
+	require.NoError(t, err)
+	assert.Equal(t, 8080, configObject.Port)
+	assert.Equal(t, "http://localhost", configObject.Host)
+	assert.Equal(t, "baz", configObject.Nested.Value)
+	assert.Empty(t, configObject.Nested.AnotherValue)
+	assert.Equal(t, "value", configObject.Nested.RenamedValue)
+}
+
 func TestUnmarshalWithDecoderOptions(t *testing.T) {
 	Set("credentials", "{\"foo\":\"bar\"}")
 
