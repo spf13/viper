@@ -948,6 +948,105 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 	}, &C)
 }
 
+func TestUnmarshalWithAutomaticEnv(t *testing.T) {
+	t.Setenv("PORT", "1313")
+	t.Setenv("NAME", "Steve")
+	t.Setenv("DURATION", "1s1ms")
+	t.Setenv("MODES", "1,2,3")
+	t.Setenv("SECRET", "42")
+	t.Setenv("FILESYSTEM_SIZE", "4096")
+
+	type AuthConfig struct {
+		Secret string `mapstructure:"secret"`
+	}
+
+	type StorageConfig struct {
+		Size int `mapstructure:"size"`
+	}
+
+	type Configuration struct {
+		Port     int           `mapstructure:"port"`
+		Name     string        `mapstructure:"name"`
+		Duration time.Duration `mapstructure:"duration"`
+
+		// Infer name from struct
+		Modes []int
+
+		// Squash nested struct (omit prefix)
+		Authentication AuthConfig `mapstructure:",squash"`
+
+		// Different key
+		Storage StorageConfig `mapstructure:"filesystem"`
+
+		// Omitted field
+		Flag bool `mapstructure:"flag"`
+	}
+
+	v := New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	t.Run("OK", func(t *testing.T) {
+		var config Configuration
+		if err := v.Unmarshal(&config); err != nil {
+			t.Fatalf("unable to decode into struct, %v", err)
+		}
+
+		assert.Equal(
+			t,
+			Configuration{
+				Name:     "Steve",
+				Port:     1313,
+				Duration: time.Second + time.Millisecond,
+				Modes:    []int{1, 2, 3},
+				Authentication: AuthConfig{
+					Secret: "42",
+				},
+				Storage: StorageConfig{
+					Size: 4096,
+				},
+			},
+			config,
+		)
+	})
+
+	t.Run("Precedence", func(t *testing.T) {
+		var config Configuration
+
+		v.Set("port", 1234)
+		if err := v.Unmarshal(&config); err != nil {
+			t.Fatalf("unable to decode into struct, %v", err)
+		}
+
+		assert.Equal(
+			t,
+			Configuration{
+				Name:     "Steve",
+				Port:     1234,
+				Duration: time.Second + time.Millisecond,
+				Modes:    []int{1, 2, 3},
+				Authentication: AuthConfig{
+					Secret: "42",
+				},
+				Storage: StorageConfig{
+					Size: 4096,
+				},
+			},
+			config,
+		)
+	})
+
+	t.Run("Unset", func(t *testing.T) {
+		var config Configuration
+
+		err := v.Unmarshal(&config, func(config *mapstructure.DecoderConfig) {
+			config.ErrorUnset = true
+		})
+
+		assert.Error(t, err, "expected viper.Unmarshal to return error due to unset field 'FLAG'")
+	})
+}
+
 func TestBindPFlags(t *testing.T) {
 	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)

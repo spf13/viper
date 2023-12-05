@@ -1111,7 +1111,32 @@ func Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 }
 
 func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
-	return decode(v.AllSettings(), defaultDecoderConfig(rawVal, opts...))
+	// TODO: make this optional?
+	structKeys, err := v.decodeStructKeys(rawVal, opts...)
+	if err != nil {
+		return err
+	}
+
+	// TODO: struct keys should be enough?
+	return decode(v.getSettings(append(v.AllKeys(), structKeys...)), defaultDecoderConfig(rawVal, opts...))
+}
+
+func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
+	var structKeyMap map[string]any
+
+	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
+	if err != nil {
+		return nil, err
+	}
+
+	flattenedStructKeyMap := v.flattenAndMergeMap(map[string]bool{}, structKeyMap, "")
+
+	r := make([]string, 0, len(flattenedStructKeyMap))
+	for v := range flattenedStructKeyMap {
+		r = append(r, v)
+	}
+
+	return r, nil
 }
 
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
