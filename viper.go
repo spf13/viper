@@ -2098,9 +2098,13 @@ outer:
 func AllSettings() map[string]any { return v.AllSettings() }
 
 func (v *Viper) AllSettings() map[string]any {
+	return v.getSettings(v.AllKeys())
+}
+
+func (v *Viper) getSettings(keys []string) map[string]any {
 	m := map[string]any{}
 	// start from the list of keys, and construct the map one value at a time
-	for _, k := range v.AllKeys() {
+	for _, k := range keys {
 		value := v.Get(k)
 		if value == nil {
 			// should not happen, since AllKeys() returns only keys holding a value,
