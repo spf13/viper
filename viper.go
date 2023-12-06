@@ -827,10 +827,12 @@ func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]any) string 
 //	"foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInFlatMap(path []string, mi any) string {
 	// unify input map
-	var m map[string]any
-	switch mi.(type) {
-	case map[string]string, map[string]FlagValue:
-		m = cast.ToStringMap(mi)
+	var m map[string]interface{}
+	switch miv := mi.(type) {
+	case map[string]string:
+		m = castMapStringToMapInterface(miv)
+	case map[string]FlagValue:
+		m = castMapFlagToMapInterface(miv)
 	default:
 		return ""
 	}
