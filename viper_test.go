@@ -1052,6 +1052,32 @@ func TestUnmarshalWithAutomaticEnv(t *testing.T) {
 
 		assert.Error(t, err, "expected viper.Unmarshal to return error due to unset field 'FLAG'")
 	})
+
+	t.Run("Exact", func(t *testing.T) {
+		var config Configuration
+
+		v.Set("port", 1234)
+		if err := v.UnmarshalExact(&config); err != nil {
+			t.Fatalf("unable to decode into struct, %v", err)
+		}
+
+		assert.Equal(
+			t,
+			Configuration{
+				Name:     "Steve",
+				Port:     1234,
+				Duration: time.Second + time.Millisecond,
+				Modes:    []int{1, 2, 3},
+				Authentication: AuthConfig{
+					Secret: "42",
+				},
+				Storage: StorageConfig{
+					Size: 4096,
+				},
+			},
+			config,
+		)
+	})
 }
 
 func TestBindPFlags(t *testing.T) {
