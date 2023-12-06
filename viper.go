@@ -1179,7 +1179,14 @@ func (v *Viper) UnmarshalExact(rawVal any, opts ...DecoderConfigOption) error {
 	config := defaultDecoderConfig(rawVal, opts...)
 	config.ErrorUnused = true
 
-	return decode(v.AllSettings(), config)
+	// TODO: make this optional?
+	structKeys, err := v.decodeStructKeys(rawVal, opts...)
+	if err != nil {
+		return err
+	}
+
+	// TODO: struct keys should be enough?
+	return decode(v.getSettings(append(v.AllKeys(), structKeys...)), config)
 }
 
 // BindPFlags binds a full flag set to the configuration, using each flag's long
