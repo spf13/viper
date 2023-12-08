@@ -1127,6 +1127,13 @@ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
 	var structKeyMap map[string]any
 
+	rv := reflect.ValueOf(input)
+	for rv.Kind() == reflect.Ptr {
+		rv = reflect.Indirect(rv)
+	}
+
+	input = rv.Interface()
+
 	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
 	if err != nil {
 		return nil, err

@@ -1080,6 +1080,48 @@ func TestUnmarshalWithAutomaticEnv(t *testing.T) {
 	})
 }
 
+func TestUnmarshalIndirection(t *testing.T) {
+	v := New()
+
+	v.Set("foo", "bar")
+
+	type config struct {
+		Foo string
+	}
+
+	var C config
+
+	CC := &C
+	CCC := &CC
+
+	err := v.Unmarshal(&CCC)
+	require.NoError(t, err)
+
+	assert.Equal(t, config{"bar"}, C)
+}
+
+func TestUnmarshalInterface(t *testing.T) {
+	v := New()
+
+	v.Set("foo", "bar")
+
+	type someInterface interface {
+		Foo() string
+	}
+
+	type config struct {
+		Foo   string
+		Fooer someInterface
+	}
+
+	var C config
+
+	err := v.Unmarshal(&C)
+	require.NoError(t, err)
+
+	assert.Equal(t, config{Foo: "bar"}, C)
+}
+
 func TestBindPFlags(t *testing.T) {
 	v := New() // create independent Viper object
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
