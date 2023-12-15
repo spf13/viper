@@ -48,6 +48,7 @@ import (
 	"github.com/spf13/viper/internal/encoding/json"
 	"github.com/spf13/viper/internal/encoding/toml"
 	"github.com/spf13/viper/internal/encoding/yaml"
+	"github.com/spf13/viper/internal/features"
 )
 
 // ConfigMarshalError happens when failing to marshal the configuration.
@@ -1114,14 +1115,20 @@ func Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 }
 
 func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
-	// TODO: make this optional?
-	structKeys, err := v.decodeStructKeys(rawVal, opts...)
-	if err != nil {
-		return err
+	keys := v.AllKeys()
+
+	if features.BindStruct {
+		// TODO: make this optional?
+		structKeys, err := v.decodeStructKeys(rawVal, opts...)
+		if err != nil {
+			return err
+		}
+
+		keys = append(keys, structKeys...)
 	}
 
 	// TODO: struct keys should be enough?
-	return decode(v.getSettings(append(v.AllKeys(), structKeys...)), defaultDecoderConfig(rawVal, opts...))
+	return decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
 }
 
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
@@ -1179,14 +1186,20 @@ func (v *Viper) UnmarshalExact(rawVal any, opts ...DecoderConfigOption) error {
 	config := defaultDecoderConfig(rawVal, opts...)
 	config.ErrorUnused = true
 
-	// TODO: make this optional?
-	structKeys, err := v.decodeStructKeys(rawVal, opts...)
-	if err != nil {
-		return err
+	keys := v.AllKeys()
+
+	if features.BindStruct {
+		// TODO: make this optional?
+		structKeys, err := v.decodeStructKeys(rawVal, opts...)
+		if err != nil {
+			return err
+		}
+
+		keys = append(keys, structKeys...)
 	}
 
 	// TODO: struct keys should be enough?
-	return decode(v.getSettings(append(v.AllKeys(), structKeys...)), config)
+	return decode(v.getSettings(keys), config)
 }
 
 // BindPFlags binds a full flag set to the configuration, using each flag's long
