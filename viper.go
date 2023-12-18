@@ -1240,8 +1240,9 @@ func (v *Viper) BindFlagValue(key string, flag FlagValue) error {
 // If only a key is provided, it will use the env key matching the key, uppercased.
 // If more arguments are provided, they will represent the env variable names that
 // should bind to this key and will be taken in the specified order.
-// EnvPrefix will be used when set when env name is not provided.
-func BindEnv(input ...string) error { return v.BindEnv(input...) }
+// EnvPrefix will be used when set.
+func BindEnv(input ...string) error         { return v.BindEnv(input...) }
+func BindEnvNoPrefix(input ...string) error { return v.BindEnvNoPrefix(input...) }
 
 func (v *Viper) BindEnv(input ...string) error {
 	if len(input) == 0 {
@@ -1253,7 +1254,33 @@ func (v *Viper) BindEnv(input ...string) error {
 	if len(input) == 1 {
 		v.env[key] = append(v.env[key], v.mergeWithEnvPrefix(key))
 	} else {
-		v.env[key] = append(v.env[key], input[1:]...)
+		for _, otherKey := range input[1:] {
+			v.env[key] = append(v.env[key], v.mergeWithEnvPrefix(otherKey))
+		}
+	}
+
+	return nil
+}
+
+// BindEnvNoPrefix binds a Viper key to a ENV variable.
+// ENV variables are case sensitive.
+// If only a key is provided, it will use the env key matching the key, uppercased.
+// If more arguments are provided, they will represent the env variable names that
+// should bind to this key and will be taken in the specified order.
+// EnvPrefix will not be used even when set.
+func (v *Viper) BindEnvNoPrefix(input ...string) error {
+	if len(input) == 0 {
+		return fmt.Errorf("missing key to bind to")
+	}
+
+	key := strings.ToLower(input[0])
+
+	if len(input) == 1 {
+		v.env[key] = append(v.env[key], strings.ToUpper(key))
+	} else {
+		for _, otherKey := range input[1:] {
+			v.env[key] = append(v.env[key], strings.ToUpper(otherKey))
+		}
 	}
 
 	return nil
