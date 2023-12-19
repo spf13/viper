@@ -1158,13 +1158,36 @@ func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure
 		WeaklyTypedInput: true,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
+			// mapstructure.StringToSliceHookFunc(","),
+			stringToWeakSliceHookFunc(","),
 		),
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
 	return c
+}
+
+// As of mapstructure v2.0.0 StringToSliceHookFunc checks if the return type is a string slice.
+// This function removes that check.
+// TODO: implement a function that checks if the value can be converted to the return type and use it instead.
+func stringToWeakSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.String || t.Kind() != reflect.Slice {
+			return data, nil
+		}
+
+		raw := data.(string)
+		if raw == "" {
+			return []string{}, nil
+		}
+
+		return strings.Split(raw, sep), nil
+	}
 }
 
 // decode is a wrapper around mapstructure.Decode that mimics the WeakDecode functionality.
