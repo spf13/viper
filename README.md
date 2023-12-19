@@ -802,7 +802,7 @@ if err != nil {
 }
 ```
 
-Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
+Viper uses [github.com/go-viper/mapstructure](https://github.com/go-viper/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
 
 ### Decoding custom formats
 
