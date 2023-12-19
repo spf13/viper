@@ -4,9 +4,9 @@ go 1.20
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/go-viper/mapstructure/v2 v2.0.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.7
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/sagikazarmark/crypt v0.19.0
 	github.com/sagikazarmark/locafero v0.4.0
@@ -54,6 +54,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nats-io/nats.go v1.34.0 // indirect
