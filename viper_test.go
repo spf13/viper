@@ -2611,6 +2611,10 @@ name: Steve
 port: 8080
 auth:
   secret: 88888-88888
+modes:
+  - 1
+  - 2
+  - 3
 clients:
   - name: foo
   - name: bar
@@ -2641,6 +2645,7 @@ func TestSliceIndexAutomaticEnv(t *testing.T) {
 		Port    int
 		Name    string
 		Auth    AuthConfig
+		Modes   []int
 		Clients []ClientConfig
 		Proxy   ProxyConfig
 	}
@@ -2655,10 +2660,12 @@ func TestSliceIndexAutomaticEnv(t *testing.T) {
 	assert.Equal(t, "foo", v.GetString("clients.0.name"))
 	assert.Equal(t, "bar", v.GetString("clients.1.name"))
 	assert.Equal(t, "proxy_foo", v.GetString("proxy.clients.0.name"))
+	assert.Equal(t, []int{1, 2, 3}, v.GetIntSlice("modes"))
 
 	// Override with env variable
 	t.Setenv("NAME", "Steven")
 	t.Setenv("AUTH_SECRET", "99999-99999")
+	t.Setenv("MODES_2", "300")
 	t.Setenv("CLIENTS_1_NAME", "baz")
 	t.Setenv("PROXY_CLIENTS_0_NAME", "ProxyFoo")
 
@@ -2672,6 +2679,7 @@ func TestSliceIndexAutomaticEnv(t *testing.T) {
 	assert.Equal(t, "Steven", config.Name)
 	assert.Equal(t, 8080, config.Port)
 	assert.Equal(t, "99999-99999", config.Auth.Secret)
+	assert.Equal(t, []int{1, 2, 300}, config.Modes)
 	assert.Equal(t, "foo", config.Clients[0].Name)
 	assert.Equal(t, "baz", config.Clients[1].Name)
 	assert.Equal(t, "ProxyFoo", config.Proxy.Clients[0].Name)
