@@ -1149,19 +1149,11 @@ func unmarshalPostProcess(input any, opts ...DecoderConfigOption) error {
 		return err
 	}
 
-	v.postProcessingSliceFields(map[string]bool{}, structKeyMap, "")
+	v.postProcessingSliceFields(structKeyMap, "")
 	return nil
 }
 
-// TODO remove shadow
-func (v *Viper) postProcessingSliceFields(shadow map[string]bool, m map[string]any, prefix string) map[string]bool {
-	if shadow != nil && prefix != "" && shadow[prefix] {
-		// prefix is shadowed => nothing more to flatten
-		return shadow
-	}
-	if shadow == nil {
-		shadow = make(map[string]bool)
-	}
+func (v *Viper) postProcessingSliceFields(m map[string]any, prefix string) {
 
 	var m2 map[string]any
 	if prefix != "" {
@@ -1173,21 +1165,29 @@ func (v *Viper) postProcessingSliceFields(shadow map[string]bool, m map[string]a
 		if valValue.Kind() == reflect.Slice {
 			for i := 0; i < valValue.Len(); i++ {
 				item := valValue.Index(i)
-				if item.Kind() != reflect.Struct || !item.CanSet() {
+				iStr := strconv.FormatInt(int64(i), 10)
+
+				fmt.Printf("item %v\n", item)
+				if !item.CanSet() {
 					continue
 				}
-				itemType := item.Type()
-				for j := 0; j < item.NumField(); j++ {
-					field := itemType.Field(j)
-					// fmt.Printf("Field %d: Name=%s, Type=%v, Value=%v\n", j, field.Name, field.Type, item.Field(j).Interface())
+				if item.Kind() == reflect.Struct {
+					itemType := item.Type()
+					for j := 0; j < item.NumField(); j++ {
+						field := itemType.Field(j)
+						sliceKey := prefix + k + v.keyDelim + iStr + v.keyDelim + field.Name
+						// fmt.Printf("%s is slice\n", sliceKey)
 
-					sliceKey := fmt.Sprintf("%s%s%s%d%s%s", prefix, k, v.keyDelim, i, v.keyDelim, field.Name)
-					shadow[strings.ToLower(sliceKey)] = true
-					// fmt.Printf("%s is slice\n", sliceKey)
-
+						if val, ok := v.getEnv(v.mergeWithEnvPrefix(sliceKey)); ok {
+							// fmt.Printf("Val is %v\n", val)
+							item.Field(j).SetString(val)
+						}
+					}
+				} else {
+					sliceKey := prefix + k + v.keyDelim + iStr
 					if val, ok := v.getEnv(v.mergeWithEnvPrefix(sliceKey)); ok {
-						// fmt.Printf("Val is %v\n", val)
-						item.Field(j).SetString(val)
+						intValue, _ := strconv.ParseInt(val, 10, 32)
+						item.SetInt(intValue)
 					}
 				}
 			}
@@ -1202,9 +1202,8 @@ func (v *Viper) postProcessingSliceFields(shadow map[string]bool, m map[string]a
 			continue
 		}
 		// recursively merge to shadow map
-		shadow = v.postProcessingSliceFields(shadow, m2, fullKey)
+		v.postProcessingSliceFields(m2, fullKey)
 	}
-	return shadow
 }
 
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
