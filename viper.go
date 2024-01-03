@@ -1128,7 +1128,83 @@ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 	}
 
 	// TODO: struct keys should be enough?
-	return decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
+	err := decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
+
+	// Post processing for slice of maps
+	// if features.BindStruct {
+	err = unmarshalPostProcess(rawVal, opts...)
+	if err != nil {
+		return err
+	}
+	// }
+
+	return err
+}
+
+func unmarshalPostProcess(input any, opts ...DecoderConfigOption) error {
+	var structKeyMap map[string]any
+
+	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
+	if err != nil {
+		return err
+	}
+
+	v.postProcessingSliceFields(map[string]bool{}, structKeyMap, "")
+	return nil
+}
+
+// TODO remove shadow
+func (v *Viper) postProcessingSliceFields(shadow map[string]bool, m map[string]any, prefix string) map[string]bool {
+	if shadow != nil && prefix != "" && shadow[prefix] {
+		// prefix is shadowed => nothing more to flatten
+		return shadow
+	}
+	if shadow == nil {
+		shadow = make(map[string]bool)
+	}
+
+	var m2 map[string]any
+	if prefix != "" {
+		prefix += v.keyDelim
+	}
+	for k, val := range m {
+		fullKey := prefix + k
+		valValue := reflect.ValueOf(val)
+		if valValue.Kind() == reflect.Slice {
+			for i := 0; i < valValue.Len(); i++ {
+				item := valValue.Index(i)
+				if item.Kind() != reflect.Struct || !item.CanSet() {
+					continue
+				}
+				itemType := item.Type()
+				for j := 0; j < item.NumField(); j++ {
+					field := itemType.Field(j)
+					// fmt.Printf("Field %d: Name=%s, Type=%v, Value=%v\n", j, field.Name, field.Type, item.Field(j).Interface())
+
+					sliceKey := fmt.Sprintf("%s%s%s%d%s%s", prefix, k, v.keyDelim, i, v.keyDelim, field.Name)
+					shadow[strings.ToLower(sliceKey)] = true
+					// fmt.Printf("%s is slice\n", sliceKey)
+
+					if val, ok := v.getEnv(v.mergeWithEnvPrefix(sliceKey)); ok {
+						// fmt.Printf("Val is %v\n", val)
+						item.Field(j).SetString(val)
+					}
+				}
+			}
+		}
+
+		switch val := val.(type) {
+		case map[string]any:
+			m2 = val
+		case map[any]any:
+			m2 = cast.ToStringMap(val)
+		default:
+			continue
+		}
+		// recursively merge to shadow map
+		shadow = v.postProcessingSliceFields(shadow, m2, fullKey)
+	}
+	return shadow
 }
 
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
