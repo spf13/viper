@@ -689,6 +689,53 @@ func (v *Viper) searchMap(source map[string]any, path []string) any {
 	return nil
 }
 
+func (v *Viper) searchAndReplaceSliceValueWithEnv(source any, envKey string) any {
+	switch v1 := source.(type) {
+	case []any:
+		var newSlices []any
+		for i, value := range v1 {
+			envKey := envKey + v.keyDelim + strconv.Itoa(i)
+			switch v2 := value.(type) {
+			case map[string]any:
+				val := v.searchAndReplaceSliceValueWithEnv(v2, envKey)
+				newSlices = append(newSlices, val)
+			default:
+				if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newSlices = append(newSlices, val)
+				} else {
+					newSlices = append(newSlices, v2)
+				}
+			}
+		}
+		return newSlices
+	case map[string]any:
+		var newMapValue map[string]any = make(map[string]any)
+
+		for k, v2 := range v1 {
+			envKey := envKey + v.keyDelim + k
+			switch v3 := v2.(type) {
+			case map[string]any:
+				val := v.searchAndReplaceSliceValueWithEnv(v3, envKey)
+				newMapValue[k] = val
+
+			default:
+				if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newMapValue[k] = val
+				} else {
+					newMapValue[k] = v3
+				}
+			}
+		}
+		return newMapValue
+	default:
+		if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return val
+		} else {
+			return source
+		}
+	}
+}
+
 // searchIndexableWithPathPrefixes recursively searches for a value for path in source map/slice.
 //
 // While searchMap() considers each path element as a single map key or slice index, this
@@ -904,6 +951,11 @@ func (v *Viper) Get(key string) any {
 	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
+	}
+
+	// Check for Env override again, to handle slices
+	if v.automaticEnvApplied {
+		val = v.searchAndReplaceSliceValueWithEnv(val, lcaseKey)
 	}
 
 	if v.typeByDefValue {
@@ -1128,82 +1180,7 @@ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 	}
 
 	// TODO: struct keys should be enough?
-	err := decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
-
-	// Post processing for slice of maps
-	// if features.BindStruct {
-	err = unmarshalPostProcess(rawVal, opts...)
-	if err != nil {
-		return err
-	}
-	// }
-
-	return err
-}
-
-func unmarshalPostProcess(input any, opts ...DecoderConfigOption) error {
-	var structKeyMap map[string]any
-
-	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
-	if err != nil {
-		return err
-	}
-
-	v.postProcessingSliceFields(structKeyMap, "")
-	return nil
-}
-
-func (v *Viper) postProcessingSliceFields(m map[string]any, prefix string) {
-
-	var m2 map[string]any
-	if prefix != "" {
-		prefix += v.keyDelim
-	}
-	for k, val := range m {
-		fullKey := prefix + k
-		valValue := reflect.ValueOf(val)
-		if valValue.Kind() == reflect.Slice {
-			for i := 0; i < valValue.Len(); i++ {
-				item := valValue.Index(i)
-				iStr := strconv.FormatInt(int64(i), 10)
-
-				fmt.Printf("item %v\n", item)
-				if !item.CanSet() {
-					continue
-				}
-				if item.Kind() == reflect.Struct {
-					itemType := item.Type()
-					for j := 0; j < item.NumField(); j++ {
-						field := itemType.Field(j)
-						sliceKey := prefix + k + v.keyDelim + iStr + v.keyDelim + field.Name
-						// fmt.Printf("%s is slice\n", sliceKey)
-
-						if val, ok := v.getEnv(v.mergeWithEnvPrefix(sliceKey)); ok {
-							// fmt.Printf("Val is %v\n", val)
-							item.Field(j).SetString(val)
-						}
-					}
-				} else {
-					sliceKey := prefix + k + v.keyDelim + iStr
-					if val, ok := v.getEnv(v.mergeWithEnvPrefix(sliceKey)); ok {
-						intValue, _ := strconv.ParseInt(val, 10, 32)
-						item.SetInt(intValue)
-					}
-				}
-			}
-		}
-
-		switch val := val.(type) {
-		case map[string]any:
-			m2 = val
-		case map[any]any:
-			m2 = cast.ToStringMap(val)
-		default:
-			continue
-		}
-		// recursively merge to shadow map
-		v.postProcessingSliceFields(m2, fullKey)
-	}
+	return decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
 }
 
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
