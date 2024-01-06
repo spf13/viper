@@ -689,47 +689,53 @@ func (v *Viper) searchMap(source map[string]any, path []string) any {
 	return nil
 }
 
+// searchMapWithAliases recursively searches for slice field in source map and
+// replace them with the environment variable value if it exists.
+//
+// Returns replaced values.
 func (v *Viper) searchAndReplaceSliceValueWithEnv(source any, envKey string) any {
-	switch v1 := source.(type) {
+	switch sourceValue := source.(type) {
 	case []any:
-		var newSlices []any
-		for i, value := range v1 {
+		var newSliceValues []any
+		for i, sliceValue := range sourceValue {
 			envKey := envKey + v.keyDelim + strconv.Itoa(i)
-			switch v2 := value.(type) {
+			switch existingValue := sliceValue.(type) {
 			case map[string]any:
-				val := v.searchAndReplaceSliceValueWithEnv(v2, envKey)
-				newSlices = append(newSlices, val)
+				newVal := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				newSliceValues = append(newSliceValues, newVal)
+
 			default:
-				if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
-					newSlices = append(newSlices, val)
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newSliceValues = append(newSliceValues, newVal)
 				} else {
-					newSlices = append(newSlices, v2)
+					newSliceValues = append(newSliceValues, existingValue)
 				}
 			}
 		}
-		return newSlices
+		return newSliceValues
+
 	case map[string]any:
-		var newMapValue map[string]any = make(map[string]any)
-
-		for k, v2 := range v1 {
-			envKey := envKey + v.keyDelim + k
-			switch v3 := v2.(type) {
+		var newMapValues map[string]any = make(map[string]any)
+		for key, mapValue := range sourceValue {
+			envKey := envKey + v.keyDelim + key
+			switch existingValue := mapValue.(type) {
 			case map[string]any:
-				val := v.searchAndReplaceSliceValueWithEnv(v3, envKey)
-				newMapValue[k] = val
+				newVal := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				newMapValues[key] = newVal
 
 			default:
-				if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
-					newMapValue[k] = val
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newMapValues[key] = newVal
 				} else {
-					newMapValue[k] = v3
+					newMapValues[key] = existingValue
 				}
 			}
 		}
-		return newMapValue
+		return newMapValues
+
 	default:
-		if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
-			return val
+		if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return newVal
 		} else {
 			return source
 		}
