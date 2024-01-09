@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -2695,4 +2696,61 @@ func skipWindows(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Skip test on Windows")
 	}
+}
+
+// Test the ConfigMarshalError
+func TestConfigMarshalError(t *testing.T) {
+	// test a generic error
+	err1 := fmt.Errorf("test error")
+	assert.NotErrorIs(t, err1, &ConfigMarshalError{})
+	// test the wrapped generic error
+	err2 := ConfigMarshalError{err: err1}
+	assert.ErrorIs(t, err2, &ConfigMarshalError{})
+	assert.ErrorIs(t, err2.Unwrap(), err1)
+}
+
+func TestUnsupportedConfigError(t *testing.T) {
+	err1 := fmt.Errorf("test error")
+	err2 := UnsupportedConfigError("some string")
+	assert.NotErrorIs(t, err2, err1)
+	assert.NotErrorIs(t, err1, err2)
+	assert.ErrorIs(t, err2, UnsupportedConfigError("some string"))
+	assert.NotErrorIs(t, err2, UnsupportedConfigError("other string"))
+}
+
+func TestUnsupportedRemoteProviderError(t *testing.T) {
+	err1 := fmt.Errorf("test error")
+	err2 := UnsupportedRemoteProviderError("some string")
+	assert.NotErrorIs(t, err1, err2)
+	assert.NotErrorIs(t, err2, err1)
+	assert.ErrorIs(t, err2, UnsupportedRemoteProviderError("some string"))
+	assert.NotErrorIs(t, err2, UnsupportedRemoteProviderError("other string"))
+}
+
+func TestRemoteConfigError(t *testing.T) {
+	err1 := fmt.Errorf("test error")
+	err2 := RemoteConfigError("some string")
+	assert.NotErrorIs(t, err1, err2)
+	assert.NotErrorIs(t, err2, err1)
+	assert.ErrorIs(t, err2, RemoteConfigError("some string"))
+	assert.NotErrorIs(t, err2, RemoteConfigError("other string"))
+}
+
+func TestConfigFileNotFoundError(t *testing.T) {
+	err1 := fmt.Errorf("test error")
+	err2 := ConfigFileNotFoundError{name: "name", locations: "locations"}
+	assert.NotErrorIs(t, err1, err2)
+	assert.NotErrorIs(t, err2, err1)
+	assert.ErrorIs(t, err2, &ConfigFileNotFoundError{})
+	assert.ErrorIs(t, err2, &ConfigFileNotFoundError{name: "name", locations: "locations"})
+	assert.ErrorIs(t, err2, &ConfigFileNotFoundError{name: "other name", locations: "other locations"})
+}
+
+func TestConfigFileAlreadyExistsError(t *testing.T) {
+	err1 := fmt.Errorf("test error")
+	err2 := ConfigFileAlreadyExistsError("some string")
+	assert.NotErrorIs(t, err1, err2)
+	assert.NotErrorIs(t, err2, err1)
+	assert.ErrorIs(t, err2, ConfigFileAlreadyExistsError("some string"))
+	assert.NotErrorIs(t, err2, ConfigFileAlreadyExistsError("other string"))
 }
