@@ -2097,6 +2097,10 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]any, pre
 	if shadow == nil {
 		shadow = make(map[string]bool)
 	}
+	if len(m) == 0 && prefix != ""{
+		shadow[strings.ToLower(prefix)]=true
+		return shadow
+	}
 
 	var m2 map[string]any
 	if prefix != "" {
