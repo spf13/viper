@@ -27,8 +27,9 @@ func (v *Viper) findConfigFile() (string, error) {
 func (v *Viper) searchInPath(in string) (filename string) {
 	v.logger.Debug("searching for config in path", "path", in)
 	if v.configType != "" {
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
-			return filepath.Join(in, v.configName)
+		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+v.configType)); b {
+			v.logger.Debug("found file", "file", filepath.Join(in, v.configName+"."+v.configType))
+			return filepath.Join(in, v.configName+"."+v.configType)
 		}
 	}
 
