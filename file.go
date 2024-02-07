@@ -26,17 +26,17 @@ func (v *Viper) findConfigFile() (string, error) {
 
 func (v *Viper) searchInPath(in string) (filename string) {
 	v.logger.Debug("searching for config in path", "path", in)
+	if v.configType != "" {
+		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
+			return filepath.Join(in, v.configName)
+		}
+	}
+
 	for _, ext := range SupportedExts {
 		v.logger.Debug("checking if file exists", "file", filepath.Join(in, v.configName+"."+ext))
 		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
 			v.logger.Debug("found file", "file", filepath.Join(in, v.configName+"."+ext))
 			return filepath.Join(in, v.configName+"."+ext)
-		}
-	}
-
-	if v.configType != "" {
-		if b, _ := exists(v.fs, filepath.Join(in, v.configName)); b {
-			return filepath.Join(in, v.configName)
 		}
 	}
 
