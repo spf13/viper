@@ -39,7 +39,7 @@ Many Go projects are built using Viper including:
 go get github.com/spf13/viper
 ```
 
-**Note:** Viper uses [Go Modules](https://github.com/golang/go/wiki/Modules) to manage dependencies.
+**Note:** Viper uses [Go Modules](https://go.dev/wiki/Modules) to manage dependencies.
 
 
 ## What is Viper?
