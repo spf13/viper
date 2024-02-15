@@ -2427,7 +2427,7 @@ func TestWatchFile(t *testing.T) {
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		var wgDoneOnce sync.Once // OnConfigChange is called twice on Windows
-		v.OnConfigChange(func(in fsnotify.Event) {
+		v.OnConfigChange(func(_ fsnotify.Event) {
 			t.Logf("config file changed")
 			wgDoneOnce.Do(func() {
 				wg.Done()
@@ -2450,7 +2450,7 @@ func TestWatchFile(t *testing.T) {
 		v, watchDir, _ := newViperWithSymlinkedConfigFile(t)
 		wg := sync.WaitGroup{}
 		v.WatchConfig()
-		v.OnConfigChange(func(in fsnotify.Event) {
+		v.OnConfigChange(func(_ fsnotify.Event) {
 			t.Logf("config file changed")
 			wg.Done()
 		})
@@ -2689,8 +2689,6 @@ func BenchmarkGetBoolFromMap(b *testing.B) {
 }
 
 // Skip some tests on Windows that kept failing when Windows was added to the CI as a target.
-//
-//nolint:gocritic // sloppyTestFuncName
 func skipWindows(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Skip test on Windows")
