@@ -1879,3 +1879,18 @@ func TestKnownKeys(t *testing.T) {
 		t.Error("SetKnown didn't mark key as known")
 	}
 }
+
+func TestIsKnown(t *testing.T) {
+	v := New()
+
+	v.SetDefault("default", 45)
+	assert.True(t, v.IsKnown("default"))
+
+	v.SetKnown("known")
+	assert.True(t, v.IsKnown("known"))
+
+	v.SetKnown("UpperKnown")
+	assert.True(t, v.IsKnown("UpperKnown"))
+
+	assert.False(t, v.IsKnown("unknown"))
+}
