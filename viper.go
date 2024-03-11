@@ -1265,6 +1265,14 @@ func (v *Viper) GetKnownKeys() map[string]interface{} {
 	return ret
 }
 
+// IsKnown returns whether the given key has been set as a known key
+func IsKnown(key string) bool { return v.IsKnown(key) }
+func (v *Viper) IsKnown(key string) bool {
+	key = strings.ToLower(key)
+	_, exists := v.knownKeys[key]
+	return exists
+}
+
 // Set sets the value for the key in the override register.
 // Set is case-insensitive for a key.
 // Will be used instead of values obtained via
