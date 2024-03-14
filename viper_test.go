@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 
 	"github.com/spf13/viper/internal/features"
 	"github.com/spf13/viper/internal/testutil"
@@ -652,6 +653,25 @@ func TestEmptyEnv_Allowed(t *testing.T) {
 
 	assert.Equal(t, "", Get("type"))
 	assert.Equal(t, "Cake", Get("name"))
+}
+
+func TestAllEnvVar(t *testing.T) {
+	initJSON()
+
+	SetEnvPrefix("foo") // will be uppercased automatically
+	BindEnv("id")
+	BindEnv("f", "FOOD", "BAR")
+
+	expectedEnvVariables := []byte(`f:
+    - FOO_FOOD
+    - FOO_BAR
+id:
+    - FOO_ID
+`)
+	yamlEnv, _ := yaml.Marshal(AllEnvVar())
+	assert.Equal(t, string(expectedEnvVariables), string(yamlEnv))
+
+	AutomaticEnv()
 }
 
 func TestEnvPrefix(t *testing.T) {
