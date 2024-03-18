@@ -2668,6 +2668,7 @@ func TestSliceIndexAutomaticEnv(t *testing.T) {
 	t.Setenv("MODES_2", "300")
 	t.Setenv("CLIENTS_1_NAME", "baz")
 	t.Setenv("PROXY_CLIENTS_0_NAME", "ProxyFoo")
+	t.Setenv("PROXY_CLIENTS_3_NAME", "ProxyNew")
 
 	SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	AutomaticEnv()
@@ -2683,6 +2684,7 @@ func TestSliceIndexAutomaticEnv(t *testing.T) {
 	assert.Equal(t, "foo", config.Clients[0].Name)
 	assert.Equal(t, "baz", config.Clients[1].Name)
 	assert.Equal(t, "ProxyFoo", config.Proxy.Clients[0].Name)
+	assert.Equal(t, "ProxyNew", config.Proxy.Clients[3].Name)
 }
 
 func TestIsPathShadowedInFlatMap(t *testing.T) {
