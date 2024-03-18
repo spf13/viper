@@ -33,6 +33,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deckarep/golang-set"
 	"github.com/fsnotify/fsnotify"
 	"github.com/mitchellh/mapstructure"
 	slog "github.com/sagikazarmark/slog-shim"
@@ -2080,6 +2081,32 @@ func (v *Viper) AllKeys() []string {
 		a = append(a, x)
 	}
 	return a
+}
+
+// Get the set of all top level keys.
+func TopLevelKeys() []string { return v.TopLevelKeys() }
+func (v *Viper) TopLevelKeys() []string {
+	s := mapset.NewSetFromSlice(v.getMapKeys(castMapStringToMapInterface(v.aliases)))
+	s = s.Union(mapset.NewSetFromSlice(v.getMapKeys(v.override)))
+	s = s.Union(mapset.NewSetFromSlice(v.getMapKeys(castMapFlagToMapInterface(v.pflags))))
+	s = s.Union(mapset.NewSetFromSlice(v.getMapKeys(castMapStringToMapInterface(v.env))))
+	s = s.Union(mapset.NewSetFromSlice(v.getMapKeys(v.config)))
+	s = s.Union(mapset.NewSetFromSlice(v.getMapKeys(v.defaults)))
+
+	// convert interface{} to string
+	keys := []string{}
+	for _, k := range s.ToSlice() {
+		keys = append(keys, k.(string))
+	}
+	return keys
+}
+
+func (v *Viper) getMapKeys(m map[string]interface{}) []interface{} {
+	keys := []interface{}{}
+	for key := range m {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 // flattenAndMergeMap recursively flattens the given map into a map[string]bool
