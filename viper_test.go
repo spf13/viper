@@ -659,10 +659,10 @@ func TestEnvPrefix(t *testing.T) {
 
 	SetEnvPrefix("foo") // will be uppercased automatically
 	BindEnv("id")
-	BindEnv("f", "FOOD") // not using prefix
+	BindEnv("f", "FOOD")
 
 	t.Setenv("FOO_ID", "13")
-	t.Setenv("FOOD", "apple")
+	t.Setenv("FOO_FOOD", "apple")
 	t.Setenv("FOO_NAME", "crunk")
 
 	assert.Equal(t, "13", Get("id"))
@@ -691,6 +691,48 @@ func TestAutoEnvWithPrefix(t *testing.T) {
 	SetEnvPrefix("Baz")
 
 	t.Setenv("BAZ_BAR", "13")
+
+	assert.Equal(t, "13", Get("bar"))
+}
+
+func TestAutoEnvWithPrefixAndOthers(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	replacer := strings.NewReplacer("-", "_", ".", "_")
+	SetEnvKeyReplacer(replacer)
+	SetEnvPrefix("foo")
+	BindEnv([]string{"bar", "baz.id", "qux"}...)
+
+	t.Setenv("FOO_BAZ_ID", "13")
+
+	assert.Equal(t, "13", Get("bar"))
+}
+
+func TestAutoEnvWithPrefixAndOthersNoPrefixArray(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	replacer := strings.NewReplacer("-", "_", ".", "_")
+	SetEnvKeyReplacer(replacer)
+	SetEnvPrefix("foo")
+	BindEnvNoPrefix([]string{"bar", "OTHER"}...)
+
+	t.Setenv("OTHER", "13")
+
+	assert.Equal(t, "13", Get("bar"))
+}
+
+func TestAutoEnvWithPrefixAndOthersNoPrefixSingle(t *testing.T) {
+	Reset()
+
+	AutomaticEnv()
+	replacer := strings.NewReplacer("-", "_", ".", "_")
+	SetEnvKeyReplacer(replacer)
+	SetEnvPrefix("foo")
+	BindEnvNoPrefix([]string{"bar"}...)
+
+	t.Setenv("BAR", "13")
 
 	assert.Equal(t, "13", Get("bar"))
 }
