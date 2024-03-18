@@ -1527,6 +1527,14 @@ func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
 }
 
+// SetKeyDelimiter sets the delimiter used for determining key parts on the viper
+// object.
+func SetKeyDelimiter(d string) { v.SetKeyDelimiter(d) }
+
+func (v *Viper) SetKeyDelimiter(d string) {
+	v.keyDelim = d
+}
+
 // RegisterAlias creates an alias that provides another accessor for the same key.
 // This enables one to change a name without breaking the application.
 func RegisterAlias(alias, key string) { v.RegisterAlias(alias, key) }
