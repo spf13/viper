@@ -48,6 +48,12 @@ import (
 // beard: true
 // `)
 
+var yamlExampleWithEnv = []byte(`
+home: '${HOME_STUFF}'
+undefined: '${UNDEFINED}'
+theclown: ${HOME_STUFF}
+`)
+
 var yamlExampleWithExtras = []byte(`Existing: true
 Bogus: true
 `)
@@ -706,6 +712,23 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 	SetEnvKeyReplacer(replacer)
 
 	assert.Equal(t, "30s", Get("refresh-interval"))
+}
+
+func TestGetStringEnv(t *testing.T) {
+	Reset()
+	home := "."
+	os.Setenv("HOME_STUFF", home)
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExampleWithEnv))
+	value := v.GetStringEnv("home")
+	// defined env variables are interpolated
+	assert.Equal(t, ".", value)
+	value = v.GetStringEnv("theclown")
+	assert.Equal(t, ".", value)
+	// undefined env variables are untouched
+	undefined_value := v.GetStringEnv("undefined")
+	assert.Equal(t, "${UNDEFINED}", undefined_value)
 }
 
 func TestEnvKeyReplacer(t *testing.T) {

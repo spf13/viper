@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 	"unicode"
+	"regexp"
 
 	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/spf13/cast"
@@ -220,4 +221,18 @@ func deepSearch(m map[string]any, path []string) map[string]any {
 		m = m3
 	}
 	return m
+}
+// We look up a environmental variable if it looks like '${HOME}'
+func lookupEnvByValue(s string) string {
+	match, err := regexp.MatchString("(\\$[A-Za-z_-]+|\\${[A-Za-z_-]+})", s)
+	if (err != nil) {
+		fmt.Println(match, err)
+	}
+	if (match) {	
+		env := os.ExpandEnv(s)
+		if ( env != "" ) {
+			return  env
+		}
+	}
+	return s
 }
