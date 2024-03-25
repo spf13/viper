@@ -224,6 +224,8 @@ type Viper struct {
 	// TODO: should probably be protected with a mutex
 	encoderRegistry *encoding.EncoderRegistry
 	decoderRegistry *encoding.DecoderRegistry
+
+	onRemoteConfigChange func()
 }
 
 // New returns an initialized Viper instance.
@@ -1959,6 +1961,12 @@ func mergeMaps(src, tgt map[string]any, itgt map[any]any) {
 	}
 }
 
+func OnRemoteConfigChange(run func()) { v.OnRemoteConfigChange(run) }
+
+func (v *Viper) OnRemoteConfigChange(run func()) {
+	v.onRemoteConfigChange = run
+}
+
 // ReadRemoteConfig attempts to get configuration from a remote source
 // and read it in the remote configuration registry.
 func ReadRemoteConfig() error { return v.ReadRemoteConfig() }
@@ -2024,6 +2032,10 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
 				v.unmarshalReader(reader, v.kvstore)
+
+				if v.onRemoteConfigChange != nil {
+					v.onRemoteConfigChange()
+				}
 			}
 		}(respc)
 		return nil
