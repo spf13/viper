@@ -1791,13 +1791,6 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	return f.Sync()
 }
 
-// commenting since it is unused.
-// Unmarshal a Reader into a map.
-// Should probably be an unexported function.
-// func unmarshalReader(in io.Reader, c map[string]any) error {
-// 	return v.unmarshalReader(in, c)
-// }
-
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
