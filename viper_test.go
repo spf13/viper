@@ -137,7 +137,6 @@ Good man.
 """  # Succeeding comment`)
 
 func initConfigs(v *Viper) {
-
 	var r io.Reader
 	v.SetConfigType("yaml")
 	r = bytes.NewReader(yamlExample)
@@ -497,9 +496,7 @@ func TestAliasInConfigFile(t *testing.T) {
 }
 
 func TestYML(t *testing.T) {
-
 	v := New()
-
 	v.SetConfigType("yaml")
 
 	// Read the YAML data into Viper configuration
@@ -530,7 +527,6 @@ func TestProperties(t *testing.T) {
 }
 
 func TestTOML(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("toml")
 
@@ -550,7 +546,6 @@ func TestDotEnv(t *testing.T) {
 }
 
 func TestHCL(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("hcl")
 	// Read the properties data into Viper configuration
@@ -577,7 +572,6 @@ func TestIni(t *testing.T) {
 }
 
 func TestRemotePrecedence(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("json")
 	// Read the properties data into Viper configuration v.config
@@ -585,7 +579,7 @@ func TestRemotePrecedence(t *testing.T) {
 
 	assert.Equal(t, "0001", v.Get("id"))
 
-	//update the kvstore with the remoteExample which should overite the key in v.config
+	// update the kvstore with the remoteExample which should overite the key in v.config
 	remote := bytes.NewReader(remoteExample)
 	require.NoError(t, v.unmarshalReader(remote, v.kvstore), "Error reading json data in to kvstore")
 
@@ -595,11 +589,9 @@ func TestRemotePrecedence(t *testing.T) {
 	v.Set("newkey", "newvalue")
 	assert.NotEqual(t, "remote", v.Get("newkey"))
 	assert.Equal(t, "newvalue", v.Get("newkey"))
-
 }
 
 func TestEnv(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("json")
 	// Read the properties data into Viper configuration v.config
@@ -651,7 +643,6 @@ func TestEmptyEnv(t *testing.T) {
 }
 
 func TestEmptyEnv_Allowed(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("json")
 	// Read the properties data into Viper configuration v.config
@@ -702,19 +693,14 @@ func TestAutoEnv(t *testing.T) {
 }
 
 func TestAutoEnvWithPrefix(t *testing.T) {
-
 	v := New()
 	v.AutomaticEnv()
-
 	v.SetEnvPrefix("Baz")
-
 	t.Setenv("BAZ_BAR", "13")
-
 	assert.Equal(t, "13", v.Get("bar"))
 }
 
 func TestSetEnvKeyReplacer(t *testing.T) {
-
 	v := New()
 	v.AutomaticEnv()
 
@@ -728,16 +714,12 @@ func TestSetEnvKeyReplacer(t *testing.T) {
 
 func TestEnvKeyReplacer(t *testing.T) {
 	v := NewWithOptions(EnvKeyReplacer(strings.NewReplacer("-", "_")))
-
 	v.AutomaticEnv()
-
 	t.Setenv("REFRESH_INTERVAL", "30s")
-
 	assert.Equal(t, "30s", v.Get("refresh-interval"))
 }
 
 func TestEnvSubConfig(t *testing.T) {
-
 	v := New()
 	v.SetConfigType("yaml")
 	// Read the properties data into Viper configuration v.config
