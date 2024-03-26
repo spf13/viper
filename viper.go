@@ -61,6 +61,17 @@ func (e ConfigMarshalError) Error() string {
 	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
 }
 
+// Unwrap returns the wrapped error.
+func (e ConfigMarshalError) Unwrap() error {
+	return e.err
+}
+
+// Is adds a check to see if the specified target is an error of this type, see [errors.Is]
+func (e ConfigMarshalError) Is(err error) bool {
+	_, ok := err.(*ConfigMarshalError)
+	return ok
+}
+
 var v *Viper
 
 type RemoteResponse struct {
@@ -116,6 +127,12 @@ type ConfigFileNotFoundError struct {
 // Error returns the formatted configuration error.
 func (fnfe ConfigFileNotFoundError) Error() string {
 	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
+}
+
+// Is adds a check to see if the specified target is an error of this type, see [errors.Is]
+func (e ConfigFileNotFoundError) Is(err error) bool {
+	_, ok := err.(*ConfigFileNotFoundError)
+	return ok
 }
 
 // ConfigFileAlreadyExistsError denotes failure to write new configuration file.

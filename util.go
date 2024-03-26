@@ -37,6 +37,12 @@ func (pe ConfigParseError) Unwrap() error {
 	return pe.err
 }
 
+// Is adds a check to see if the specified target is an error of this type, see [errors.Is]
+func (pe ConfigParseError) Is(err error) bool {
+	_, ok := err.(*ConfigParseError)
+	return ok
+}
+
 // toCaseInsensitiveValue checks if the value is a  map;
 // if so, create a copy and lower-case the keys recursively.
 func toCaseInsensitiveValue(value any) any {
