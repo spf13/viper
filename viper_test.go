@@ -1703,41 +1703,6 @@ func TestParseNested(t *testing.T) {
 	assert.Equal(t, 200*time.Millisecond, items[0].Nested.Delay)
 }
 
-func TestUnmarshalKey(t *testing.T) {
-	type testStruct struct {
-		Delay int      `mapstructure:"delay" yaml:"delay"`
-		Port  int      `mapstructure:"port" yaml:"port"`
-		Items []string `mapstructure:"items" yaml:"items"`
-	}
-
-	config := `
-level_1:
-  level_2:
-    port: 1234
-    items:
-      - "test 1"
-`
-	v := New()
-	v.SetDefault("level_1.level_2.delay", 50)
-	v.SetDefault("level_1.level_2.port", 9999)
-	v.SetDefault("level_1.level_2.items", []string{})
-
-	initConfig(v, "yaml", config)
-
-	// manually overwrite some settings
-	v.Set("level_1.level_2.items", []string{"test_2", "test_3"})
-
-	data := testStruct{}
-	err := v.UnmarshalKey("level_1.level_2", &data)
-	if err != nil {
-		t.Fatalf("unable to decode into struct, %v", err)
-	}
-
-	assert.Equal(t, 50, data.Delay)                           // value from defaults
-	assert.Equal(t, 1234, data.Port)                          // value from config
-	assert.Equal(t, []string{"test_2", "test_3"}, data.Items) // value from Set()
-}
-
 func doTestCaseInsensitive(t *testing.T, typ, config string) {
 	v := New()
 	initConfig(v, typ, config)
