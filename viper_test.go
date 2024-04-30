@@ -432,7 +432,7 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, "leather", v.Get("clothing.jacket"))
 }
 
-func TestUnmarshaling(t *testing.T) {
+func TestUnmarshalling(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
 	r := bytes.NewReader(yamlExample)
@@ -2191,7 +2191,7 @@ func TestMergeConfigMap(t *testing.T) {
 	assertFn(1234)
 }
 
-func TestUnmarshalingWithAliases(t *testing.T) {
+func TestUnmarshallingWithAliases(t *testing.T) {
 	v := New()
 	v.SetDefault("ID", 1)
 	v.Set("name", "Steve")

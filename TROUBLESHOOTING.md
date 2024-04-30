@@ -1,8 +1,8 @@
 # Troubleshooting
 
-## Unmarshaling doesn't work
+## Unmarshalling doesn't work
 
-The most common reason for this issue is improper use of struct tags (eg. `yaml` or `json`). Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default. Please refer to the library's documentation for using other struct tags.
+The most common reason for this issue is improper use of struct tags (eg. `yaml` or `json`). Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshalling values which uses `mapstructure` tags by default. Please refer to the library's documentation for using other struct tags.
 
 ## Cannot find package
 

@@ -718,9 +718,9 @@ The resulting code is easy to test, since it's decoupled from the main config st
 and easier to reuse (for the same reason).
 
 
-### Unmarshaling
+### Unmarshalling
 
-You also have the option of Unmarshaling all or a specific value to a struct, map,
+You also have the option of Unmarshalling all or a specific value to a struct, map,
 etc.
 
 There are two methods to do this:
@@ -771,7 +771,7 @@ var C config
 v.Unmarshal(&C)
 ```
 
-Viper also supports unmarshaling into embedded structs:
+Viper also supports unmarshalling into embedded structs:
 
 ```go
 /*
@@ -802,7 +802,7 @@ if err != nil {
 }
 ```
 
-Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default.
+Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshalling values which uses `mapstructure` tags by default.
 
 ### Decoding custom formats
 

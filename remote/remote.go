@@ -51,7 +51,7 @@ func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *vi
 	}
 	quit := make(chan bool)
 	quitwc := make(chan bool)
-	viperResponsCh := make(chan *viper.RemoteResponse)
+	viperResponseCh := make(chan *viper.RemoteResponse)
 	cryptoResponseCh := cm.Watch(rp.Path(), quit)
 	// need this function to convert the Channel response form crypt.Response to viper.Response
 	go func(cr <-chan *crypt.Response, vr chan<- *viper.RemoteResponse, quitwc <-chan bool, quit chan<- bool) {
@@ -67,9 +67,9 @@ func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *vi
 				}
 			}
 		}
-	}(cryptoResponseCh, viperResponsCh, quitwc, quit)
+	}(cryptoResponseCh, viperResponseCh, quitwc, quit)
 
-	return viperResponsCh, quitwc
+	return viperResponseCh, quitwc
 }
 
 func getConfigManager(rp viper.RemoteProvider) (crypt.ConfigManager, error) {
