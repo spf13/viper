@@ -2000,6 +2000,12 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]any, error)
 	if err != nil {
 		return nil, err
 	}
+
+	providerType := strings.Split(provider.Path(), ".")[len(strings.Split(provider.Path(), "."))-1]
+	if v.getConfigType() == "" && stringInSlice(providerType, SupportedExts) {
+		SetConfigType(providerType)
+	}
+
 	err = v.unmarshalReader(reader, v.kvstore)
 	return v.kvstore, err
 }
