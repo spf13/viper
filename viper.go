@@ -297,13 +297,35 @@ func NewWithOptions(opts ...Option) *Viper {
 	return v
 }
 
+// Supported Exts and Supported Remote Providers
+const (
+	JSON       = "json"
+	TOML       = "toml"
+	YAML       = "yaml"
+	YML        = "yml"
+	PROPERTIES = "properties"
+	PROPS      = "props"
+	PROP       = "prop"
+	HCL        = "hcl"
+	TFVARS     = "tfvars"
+	DOTENV     = "dotenv"
+	ENV        = "env"
+	INI        = "ini"
+
+	ETCD      = "etcd"
+	ETCD3     = "etcd3"
+	CONSUL    = "consul"
+	FIRESTORE = "firestore"
+	NATS      = "nats"
+)
+
 // Reset is intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
-	SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore", "nats"}
+	SupportedExts = []string{JSON, TOML, YAML, YML, PROPERTIES, PROPS, PROP, HCL, TFVARS, DOTENV, ENV, INI}
+	SupportedRemoteProviders = []string{ETCD, ETCD3, CONSUL, FIRESTORE, NATS}
 }
 
 // TODO: make this lazy initialization instead.
@@ -314,35 +336,35 @@ func (v *Viper) resetEncoding() {
 	{
 		codec := yaml.Codec{}
 
-		encoderRegistry.RegisterEncoder("yaml", codec)
-		decoderRegistry.RegisterDecoder("yaml", codec)
+		encoderRegistry.RegisterEncoder(YAML, codec)
+		decoderRegistry.RegisterDecoder(YAML, codec)
 
-		encoderRegistry.RegisterEncoder("yml", codec)
-		decoderRegistry.RegisterDecoder("yml", codec)
+		encoderRegistry.RegisterEncoder(YML, codec)
+		decoderRegistry.RegisterDecoder(YML, codec)
 	}
 
 	{
 		codec := json.Codec{}
 
-		encoderRegistry.RegisterEncoder("json", codec)
-		decoderRegistry.RegisterDecoder("json", codec)
+		encoderRegistry.RegisterEncoder(JSON, codec)
+		decoderRegistry.RegisterDecoder(JSON, codec)
 	}
 
 	{
 		codec := toml.Codec{}
 
-		encoderRegistry.RegisterEncoder("toml", codec)
-		decoderRegistry.RegisterDecoder("toml", codec)
+		encoderRegistry.RegisterEncoder(TOML, codec)
+		decoderRegistry.RegisterDecoder(TOML, codec)
 	}
 
 	{
 		codec := hcl.Codec{}
 
-		encoderRegistry.RegisterEncoder("hcl", codec)
-		decoderRegistry.RegisterDecoder("hcl", codec)
+		encoderRegistry.RegisterEncoder(HCL, codec)
+		decoderRegistry.RegisterDecoder(HCL, codec)
 
-		encoderRegistry.RegisterEncoder("tfvars", codec)
-		decoderRegistry.RegisterDecoder("tfvars", codec)
+		encoderRegistry.RegisterEncoder(TFVARS, codec)
+		decoderRegistry.RegisterDecoder(TFVARS, codec)
 	}
 
 	{
@@ -351,8 +373,8 @@ func (v *Viper) resetEncoding() {
 			LoadOptions:  v.iniLoadOptions,
 		}
 
-		encoderRegistry.RegisterEncoder("ini", codec)
-		decoderRegistry.RegisterDecoder("ini", codec)
+		encoderRegistry.RegisterEncoder(INI, codec)
+		decoderRegistry.RegisterDecoder(INI, codec)
 	}
 
 	{
@@ -360,24 +382,24 @@ func (v *Viper) resetEncoding() {
 			KeyDelimiter: v.keyDelim,
 		}
 
-		encoderRegistry.RegisterEncoder("properties", codec)
-		decoderRegistry.RegisterDecoder("properties", codec)
+		encoderRegistry.RegisterEncoder(PROPERTIES, codec)
+		decoderRegistry.RegisterDecoder(PROPERTIES, codec)
 
-		encoderRegistry.RegisterEncoder("props", codec)
-		decoderRegistry.RegisterDecoder("props", codec)
+		encoderRegistry.RegisterEncoder(PROPS, codec)
+		decoderRegistry.RegisterDecoder(PROPS, codec)
 
-		encoderRegistry.RegisterEncoder("prop", codec)
-		decoderRegistry.RegisterDecoder("prop", codec)
+		encoderRegistry.RegisterEncoder(PROP, codec)
+		decoderRegistry.RegisterDecoder(PROP, codec)
 	}
 
 	{
 		codec := &dotenv.Codec{}
 
-		encoderRegistry.RegisterEncoder("dotenv", codec)
-		decoderRegistry.RegisterDecoder("dotenv", codec)
+		encoderRegistry.RegisterEncoder(DOTENV, codec)
+		decoderRegistry.RegisterDecoder(DOTENV, codec)
 
-		encoderRegistry.RegisterEncoder("env", codec)
-		decoderRegistry.RegisterDecoder("env", codec)
+		encoderRegistry.RegisterEncoder(ENV, codec)
+		decoderRegistry.RegisterDecoder(ENV, codec)
 	}
 
 	v.encoderRegistry = encoderRegistry
@@ -419,10 +441,10 @@ type RemoteProvider interface {
 }
 
 // SupportedExts are universally supported extensions.
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
+var SupportedExts = []string{JSON, TOML, YAML, YML, PROPERTIES, PROPS, PROP, HCL, TFVARS, DOTENV, ENV, INI}
 
 // SupportedRemoteProviders are universally supported remote providers.
-var SupportedRemoteProviders = []string{"etcd", "etcd3", "consul", "firestore", "nats"}
+var SupportedRemoteProviders = []string{ETCD, ETCD3, CONSUL, FIRESTORE, NATS}
 
 // OnConfigChange sets the event handler that is called when a config file changes.
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }
@@ -1796,7 +1818,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	buf.ReadFrom(in)
 
 	switch format := strings.ToLower(v.getConfigType()); format {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
+	case YAML, YML, JSON, TOML, HCL, TFVARS, INI, PROPERTIES, PROPS, PROP, DOTENV, ENV:
 		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
@@ -1811,7 +1833,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
+	case YAML, YML, JSON, TOML, HCL, TFVARS, INI, PROPERTIES, PROPS, PROP, DOTENV, ENV:
 		b, err := v.encoderRegistry.Encode(configType, c)
 		if err != nil {
 			return ConfigMarshalError{err}
