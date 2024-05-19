@@ -11,6 +11,7 @@
 package viper
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -83,4 +84,14 @@ func TestAbsPathify(t *testing.T) {
 		got := absPathify(slog.Default(), test.input)
 		assert.Equal(t, test.output, got)
 	}
+}
+
+func TestConfigParseError(t *testing.T) {
+	// test a generic error
+	err1 := fmt.Errorf("test error")
+	assert.NotErrorIs(t, err1, &ConfigParseError{})
+	// test the wrapped generic error
+	err2 := ConfigParseError{err: err1}
+	assert.ErrorIs(t, err2, &ConfigParseError{})
+	assert.ErrorIs(t, err2.Unwrap(), err1)
 }
