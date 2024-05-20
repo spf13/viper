@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -1801,8 +1802,19 @@ func (v *Viper) AllKeys() []string {
 	for x := range m {
 		a = append(a, x)
 	}
-	return a
+	sort.Strings(a)
+	return ReverseStringSlice(a)
 }
+
+func ReverseStringSlice(array []string) []string {
+	length := len(array)
+	result := make([]string, length)
+	for i, elem := range array {
+		result[length-1-i] = elem
+	}
+	return result
+}
+
 
 // flattenAndMergeMap recursively flattens the given map into a map[string]bool
 // of key paths (used as a set, easier to manipulate than a []string):
