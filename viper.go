@@ -1026,8 +1026,8 @@ func (v *Viper) find(lcaseKey string, skipDefault bool) interface{} {
 	path = strings.Split(lcaseKey, v.keyDelim)
 	nested = len(path) > 1
 
-	// Set() override first
-	val = v.searchMap(v.override, path)
+	// Set() writes to override, so check override first
+	val = v.searchMapWithPathPrefixes(v.override, path)
 	if val != nil {
 		return val
 	}
