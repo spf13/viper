@@ -2000,8 +2000,13 @@ func (v *Viper) getRemoteConfig(provider RemoteProvider) (map[string]any, error)
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	kvstore := make(map[string]interface{})
+	err = v.unmarshalReader(reader, kvstore)
+	if err != nil {
+		return nil, err
+	}
+	v.kvstore = kvstore
+	return v.kvstore, nil
 }
 
 // Retrieve the first found remote configuration.
@@ -2017,7 +2022,13 @@ func (v *Viper) watchKeyValueConfigOnChannel() error {
 			for {
 				b := <-rc
 				reader := bytes.NewReader(b.Value)
-				v.unmarshalReader(reader, v.kvstore)
+				kvstore := make(map[string]interface{})
+				err := v.unmarshalReader(reader, kvstore)
+				if err != nil {
+					v.logger.Warn(fmt.Errorf("watch remote config: %w", err).Error())
+					continue
+				}
+				v.kvstore = kvstore
 			}
 		}(respc)
 		return nil
@@ -2049,8 +2060,13 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]any, erro
 	if err != nil {
 		return nil, err
 	}
-	err = v.unmarshalReader(reader, v.kvstore)
-	return v.kvstore, err
+	kvstore := make(map[string]interface{})
+	err = v.unmarshalReader(reader, kvstore)
+	if err != nil {
+		return nil, err
+	}
+	v.kvstore = kvstore
+	return v.kvstore, nil
 }
 
 // AllKeys returns all keys holding a value, regardless of where they are set.
