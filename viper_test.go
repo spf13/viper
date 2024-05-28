@@ -49,6 +49,24 @@ eyes : brown
 beard: true
 `)
 
+var yamlExampleWithURLKey = []byte(`Hacker: true
+name: steve
+hobbies:
+- skateboarding
+- snowboarding
+- go
+clothing:
+  jacket: leather
+  trousers: denim
+  pants:
+    size: large
+  http://example.com:
+    review
+age: 35
+eyes : brown
+beard: true
+`)
+
 var yamlExampleWithExtras = []byte(`Existing: true
 Bogus: true
 `)
@@ -152,6 +170,10 @@ func initConfig(v *Viper, typ, config string) {
 
 func initYAML(v *Viper) {
 	initConfig(v, "yaml", string(yamlExample))
+}
+
+func initYAMLWithURLKey(v *Viper) {
+	initConfig(v, "yaml", string(yamlExampleWithURLKey))
 }
 
 func initJSON(v *Viper) {
@@ -1893,4 +1915,29 @@ func TestIsKnown(t *testing.T) {
 	assert.True(t, v.IsKnown("UpperKnown"))
 
 	assert.False(t, v.IsKnown("unknown"))
+}
+
+func copyMap(m map[string]interface{}) map[string]interface{} {
+	res := make(map[string]interface{})
+	for k, v := range m {
+		res[k] = v
+	}
+	return res
+}
+
+func TestAssignToMapThenGet(t *testing.T) {
+	v := New()
+	initYAMLWithURLKey(v)
+
+	// NOTE: copyMap is necessary here for the test to demonstrate the actual issue
+	// Without copying this map, this block of code will modify the v.defaults layer
+	// which hides the bug that v.Get should return the v.override value
+	clothingElem := copyMap(v.Get("clothing").(map[string]interface{}))
+	clothingElem["http://example.com"] = "recommendation"
+ 	v.Set("clothing", clothingElem)
+
+	// demonstart that v.Get returns the overriden value, despite having a url in the
+	// key path, and the key not being set directly, but rather being set as a map key
+	expected := `recommendation`
+	require.Equal(t, expected, v.Get("clothing.http://example.com"))
 }
