@@ -2053,6 +2053,12 @@ func (v *Viper) watchRemoteConfig(provider RemoteProvider) (map[string]any, erro
 	return v.kvstore, err
 }
 
+func AllEnvVar() map[string][]string { return v.AllEnvVar() }
+
+func (v *Viper) AllEnvVar() map[string][]string {
+	return v.env
+}
+
 // AllKeys returns all keys holding a value, regardless of where they are set.
 // Nested keys are returned with a v.keyDelim separator.
 func AllKeys() []string { return v.AllKeys() }
