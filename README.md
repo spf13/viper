@@ -420,7 +420,7 @@ flags, or environment variables.
 
 Viper supports multiple hosts. To use, pass a list of endpoints separated by `;`. For example `http://127.0.0.1:4001;http://127.0.0.1:4002`.
 
-Viper uses [crypt](https://github.com/bketelsen/crypt) to retrieve
+Viper uses [crypt](https://github.com/sagikazarmark/crypt) to retrieve
 configuration from the K/V store, which means that you can store your
 configuration values encrypted and have them automatically decrypted if you have
 the correct gpg keyring.  Encryption is optional.
@@ -432,7 +432,7 @@ independently of it.
 K/V store. `crypt` defaults to etcd on http://127.0.0.1:4001.
 
 ```bash
-$ go get github.com/bketelsen/crypt/bin/crypt
+$ go get github.com/sagikazarmark/crypt/bin/crypt
 $ crypt set -plaintext /config/hugo.json /Users/hugo/settings/config.json
 ```
 
