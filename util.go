@@ -12,13 +12,13 @@ package viper
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"unicode"
 
-	slog "github.com/sagikazarmark/slog-shim"
 	"github.com/spf13/cast"
 )
 

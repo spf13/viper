@@ -2,8 +2,7 @@ package viper
 
 import (
 	"context"
-
-	slog "github.com/sagikazarmark/slog-shim"
+	"log/slog"
 )
 
 // Logger is a unified interface for various logging use cases and practices, including:
