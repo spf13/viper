@@ -10,7 +10,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/sagikazarmark/crypt v0.20.0
 	github.com/sagikazarmark/locafero v0.4.0
-	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/pflag v1.0.5
