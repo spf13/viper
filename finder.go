@@ -20,16 +20,16 @@ type Finder interface {
 
 // Finders combines multiple finders into one.
 func Finders(finders ...Finder) Finder {
-	return &CombinedFinder{finders: finders}
+	return &combinedFinder{finders: finders}
 }
 
-// CombinedFinder is a Finder that combines multiple finders.
-type CombinedFinder struct {
+// combinedFinder is a Finder that combines multiple finders.
+type combinedFinder struct {
 	finders []Finder
 }
 
 // Find implements the [Finder] interface.
-func (c *CombinedFinder) Find(fsys afero.Fs) ([]string, error) {
+func (c *combinedFinder) Find(fsys afero.Fs) ([]string, error) {
 	var results []string
 	var errs []error
 
