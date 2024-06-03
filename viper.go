@@ -158,6 +158,8 @@ type Viper struct {
 	// The filesystem to read config from.
 	fs afero.Fs
 
+	finder Finder
+
 	// A set of remote providers to search for the configuration
 	remoteProviders []*defaultRemoteProvider
 
@@ -506,6 +508,12 @@ func (v *Viper) ConfigFileUsed() string { return v.configFile }
 func AddConfigPath(in string) { v.AddConfigPath(in) }
 
 func (v *Viper) AddConfigPath(in string) {
+	if v.finder != nil {
+		v.logger.Warn("call to AddConfigPath is ineffective when a custom finder is configured")
+
+		return
+	}
+
 	if in != "" {
 		absin := absPathify(v.logger, in)
 
@@ -1955,6 +1963,12 @@ func (v *Viper) SetFs(fs afero.Fs) {
 func SetConfigName(in string) { v.SetConfigName(in) }
 
 func (v *Viper) SetConfigName(in string) {
+	if v.finder != nil {
+		v.logger.Warn("call to SetConfigName is ineffective when a custom finder is configured")
+
+		return
+	}
+
 	if in != "" {
 		v.configName = in
 		v.configFile = ""
