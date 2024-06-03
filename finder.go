@@ -1,0 +1,47 @@
+package viper
+
+import (
+	"errors"
+
+	"github.com/spf13/afero"
+)
+
+// WithFinder sets a custom [Finder].
+func WithFinder(f Finder) Option {
+	return optionFunc(func(v *Viper) {
+		v.finder = f
+	})
+}
+
+// Finder looks for files and directories in an [afero.Fs] filesystem.
+type Finder interface {
+	Find(fsys afero.Fs) ([]string, error)
+}
+
+// Finders combines multiple finders into one.
+func Finders(finders ...Finder) Finder {
+	return &CombinedFinder{finders: finders}
+}
+
+// CombinedFinder is a Finder that combines multiple finders.
+type CombinedFinder struct {
+	finders []Finder
+}
+
+// Find implements the [Finder] interface.
+func (c *CombinedFinder) Find(fsys afero.Fs) ([]string, error) {
+	var results []string
+	var errs []error
+
+	for _, finder := range c.finders {
+		r, err := finder.Find(fsys)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		results = append(results, r...)
+	}
+
+	return results, errors.Join(errs...)
+}

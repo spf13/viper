@@ -1,4 +1,4 @@
-//go:build !finder
+//go:build !viper_finder
 
 package viper
 
