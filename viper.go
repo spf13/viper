@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1932,6 +1933,7 @@ func (v *Viper) AllSettings() map[string]any {
 
 func (v *Viper) getSettings(keys []string) map[string]any {
 	m := map[string]any{}
+	sort.Strings(keys)
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
 		value := v.Get(k)
