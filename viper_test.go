@@ -364,6 +364,34 @@ func TestGetConfigFile(t *testing.T) {
 		// are not considered
 		assert.Error(t, err)
 	})
+
+	t.Run("using a finder", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
+		require.NoError(t, err)
+
+		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
+		require.NoError(t, err)
+
+		finder := locafero.Finder{
+			Paths: []string{"/etc/viper"},
+			Names: locafero.NameWithExtensions("config", SupportedExts...),
+			Type:  locafero.FileTypeFile,
+		}
+
+		v := NewWithOptions(WithFinder(finder))
+
+		v.SetFs(fs)
+
+		// These should be ineffective
+		v.AddConfigPath("/etc/something_else")
+		v.SetConfigName("not-config")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, testutil.AbsFilePath(t, "/etc/viper/config.yaml"), filename)
+		assert.NoError(t, err)
+	})
 }
 
 func TestReadInConfig(t *testing.T) {
@@ -423,8 +451,13 @@ func TestReadInConfig(t *testing.T) {
 		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
-		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
+		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
 		require.NoError(t, err)
+
+		_, err = file.WriteString(`key: value`)
+		require.NoError(t, err)
+
+		file.Close()
 
 		finder := locafero.Finder{
 			Paths: []string{"/etc/viper"},
@@ -440,9 +473,10 @@ func TestReadInConfig(t *testing.T) {
 		v.AddConfigPath("/etc/something_else")
 		v.SetConfigName("not-config")
 
-		filename, err := v.getConfigFile()
-		assert.Equal(t, testutil.AbsFilePath(t, "/etc/viper/config.yaml"), filename)
-		assert.NoError(t, err)
+		err = v.ReadInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
 	})
 }
 
