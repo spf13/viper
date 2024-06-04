@@ -368,10 +368,10 @@ func TestGetConfigFile(t *testing.T) {
 	t.Run("using a finder", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
+		err := fs.Mkdir("/etc/viper", 0o777)
 		require.NoError(t, err)
 
-		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
+		_, err = fs.Create("/etc/viper/config.yaml")
 		require.NoError(t, err)
 
 		finder := locafero.Finder{
@@ -389,7 +389,7 @@ func TestGetConfigFile(t *testing.T) {
 		v.SetConfigName("not-config")
 
 		filename, err := v.getConfigFile()
-		assert.Equal(t, testutil.AbsFilePath(t, "/etc/viper/config.yaml"), filename)
+		assert.Equal(t, "/etc/viper/config.yaml", filename)
 		assert.NoError(t, err)
 	})
 }
