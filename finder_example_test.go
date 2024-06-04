@@ -1,5 +1,3 @@
-//go:build viper_finder
-
 package viper_test
 
 import (
