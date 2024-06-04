@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.8.7
 	github.com/pelletier/go-toml/v2 v2.2.2
 	github.com/sagikazarmark/crypt v0.20.0
-	github.com/sagikazarmark/locafero v0.5.0
+	github.com/sagikazarmark/locafero v0.6.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/pflag v1.0.5
