@@ -682,6 +682,13 @@ func TestEnvPrefix(t *testing.T) {
 	assert.Equal(t, "crunk", v.Get("name"))
 }
 
+func TestEnvPrefixStrict(t *testing.T) {
+	v := NewWithOptions(StrictEnvPrefix("foo"))
+	v.BindEnv("id")
+	t.Setenv("FOOID", "ok")
+	assert.Equal(t, "ok", v.Get("id"))
+}
+
 func TestAutoEnv(t *testing.T) {
 	v := New()
 
