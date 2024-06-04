@@ -53,6 +53,8 @@ func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
 		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
 	}
 
+	// We call clean on the final result to ensure that the path is in its canonical form.
+	// This is mostly for consistent path handling and to make sure tests pass.
 	return results[0], nil
 }
 
