@@ -509,9 +509,7 @@ func AddConfigPath(in string) { v.AddConfigPath(in) }
 
 func (v *Viper) AddConfigPath(in string) {
 	if v.finder != nil {
-		v.logger.Warn("call to AddConfigPath is ineffective when a custom finder is configured")
-
-		return
+		v.logger.Warn("ineffective call to function: custom finder takes precedence", slog.String("function", "AddConfigPath"))
 	}
 
 	if in != "" {
@@ -1964,9 +1962,7 @@ func SetConfigName(in string) { v.SetConfigName(in) }
 
 func (v *Viper) SetConfigName(in string) {
 	if v.finder != nil {
-		v.logger.Warn("call to SetConfigName is ineffective when a custom finder is configured")
-
-		return
+		v.logger.Warn("ineffective call to function: custom finder takes precedence", slog.String("function", "SetConfigName"))
 	}
 
 	if in != "" {
