@@ -16,21 +16,7 @@ func ExperimentalFinder() Option {
 	})
 }
 
-func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
-	results, err := finder.Find(v.fs)
-	if err != nil {
-		return "", err
-	}
-
-	if len(results) == 0 {
-		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
-	}
-
-	return results[0], nil
-}
-
-// Search all configPaths for any config file.
-// Returns the first path that exists (and is a config file).
+// Search for a config file.
 func (v *Viper) findConfigFile() (string, error) {
 	finder := v.finder
 
@@ -54,6 +40,25 @@ func (v *Viper) findConfigFile() (string, error) {
 		return v.findConfigFileWithFinder(finder)
 	}
 
+	return v.findConfigFileOld()
+}
+
+func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
+	results, err := finder.Find(v.fs)
+	if err != nil {
+		return "", err
+	}
+
+	if len(results) == 0 {
+		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+	}
+
+	return results[0], nil
+}
+
+// Search all configPaths for any config file.
+// Returns the first path that exists (and is a config file).
+func (v *Viper) findConfigFileOld() (string, error) {
 	v.logger.Info("searching for config in paths", "paths", v.configPaths)
 
 	for _, cp := range v.configPaths {
