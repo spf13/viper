@@ -13,6 +13,19 @@ import (
 // Search all configPaths for any config file.
 // Returns the first path that exists (and is a config file).
 func (v *Viper) findConfigFile() (string, error) {
+	if v.finder != nil {
+		results, err := v.finder.Find(v.fs)
+		if err != nil {
+			return "", err
+		}
+
+		if len(results) == 0 {
+			return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+		}
+
+		return results[0], nil
+	}
+
 	v.logger.Info("searching for config in paths", "paths", v.configPaths)
 
 	for _, cp := range v.configPaths {
