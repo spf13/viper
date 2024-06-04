@@ -218,6 +218,8 @@ func New() *Viper {
 
 	v.resetEncoding()
 
+	v.experimentalFinder = features.Finder
+
 	return v
 }
 

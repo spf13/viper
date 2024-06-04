@@ -1,5 +1,3 @@
-//go:build !viper_finder
-
 package viper
 
 import (
@@ -7,23 +5,53 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sagikazarmark/locafero"
 	"github.com/spf13/afero"
 )
+
+// ExperimentalFinder tells Viper to use the new Finder interface for finding configuration files.
+func ExperimentalFinder() Option {
+	return optionFunc(func(v *Viper) {
+		v.experimentalFinder = true
+	})
+}
+
+func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
+	results, err := finder.Find(v.fs)
+	if err != nil {
+		return "", err
+	}
+
+	if len(results) == 0 {
+		return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+	}
+
+	return results[0], nil
+}
 
 // Search all configPaths for any config file.
 // Returns the first path that exists (and is a config file).
 func (v *Viper) findConfigFile() (string, error) {
-	if v.finder != nil {
-		results, err := v.finder.Find(v.fs)
-		if err != nil {
-			return "", err
+	finder := v.finder
+
+	if finder == nil && v.experimentalFinder {
+		var names []string
+
+		if v.configType != "" {
+			names = locafero.NameWithOptionalExtensions(v.configName, SupportedExts...)
+		} else {
+			names = locafero.NameWithExtensions(v.configName, SupportedExts...)
 		}
 
-		if len(results) == 0 {
-			return "", ConfigFileNotFoundError{v.configName, fmt.Sprintf("%s", v.configPaths)}
+		finder = locafero.Finder{
+			Paths: v.configPaths,
+			Names: names,
+			Type:  locafero.FileTypeFile,
 		}
+	}
 
-		return results[0], nil
+	if finder != nil {
+		return v.findConfigFileWithFinder(finder)
 	}
 
 	v.logger.Info("searching for config in paths", "paths", v.configPaths)

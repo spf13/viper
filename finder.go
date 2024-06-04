@@ -13,13 +13,6 @@ func WithFinder(f Finder) Option {
 	})
 }
 
-// ExperimentalFinder tells Viper to use the new Finder interface for finding configuration files.
-func ExperimentalFinder() Option {
-	return optionFunc(func(v *Viper) {
-		v.experimentalFinder = true
-	})
-}
-
 // Finder looks for files and directories in an [afero.Fs] filesystem.
 type Finder interface {
 	Find(fsys afero.Fs) ([]string, error)
