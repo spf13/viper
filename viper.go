@@ -195,7 +195,8 @@ type Viper struct {
 	encoderRegistry *encoding.EncoderRegistry
 	decoderRegistry *encoding.DecoderRegistry
 
-	experimentalFinder bool
+	experimentalFinder     bool
+	experimentalBindStruct bool
 }
 
 // New returns an initialized Viper instance.
@@ -219,6 +220,7 @@ func New() *Viper {
 	v.resetEncoding()
 
 	v.experimentalFinder = features.Finder
+	v.experimentalBindStruct = features.BindStruct
 
 	return v
 }
@@ -1002,7 +1004,7 @@ func Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 	keys := v.AllKeys()
 
-	if features.BindStruct {
+	if v.experimentalBindStruct {
 		// TODO: make this optional?
 		structKeys, err := v.decodeStructKeys(rawVal, opts...)
 		if err != nil {
@@ -1096,7 +1098,7 @@ func (v *Viper) UnmarshalExact(rawVal any, opts ...DecoderConfigOption) error {
 
 	keys := v.AllKeys()
 
-	if features.BindStruct {
+	if v.experimentalBindStruct {
 		// TODO: make this optional?
 		structKeys, err := v.decodeStructKeys(rawVal, opts...)
 		if err != nil {
