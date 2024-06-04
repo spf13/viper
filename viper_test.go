@@ -22,6 +22,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/sagikazarmark/locafero"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
@@ -414,6 +415,34 @@ func TestReadInConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, "value", v.Get("key"))
+	})
+
+	t.Run("find file using a finder", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
+		require.NoError(t, err)
+
+		_, err = fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
+		require.NoError(t, err)
+
+		finder := locafero.Finder{
+			Paths: []string{"/etc/viper"},
+			Names: locafero.NameWithExtensions("config", SupportedExts...),
+			Type:  locafero.FileTypeFile,
+		}
+
+		v := NewWithOptions(WithFinder(finder))
+
+		v.SetFs(fs)
+
+		// These should be ineffective
+		v.AddConfigPath("/etc/something_else")
+		v.SetConfigName("not-config")
+
+		filename, err := v.getConfigFile()
+		assert.Equal(t, testutil.AbsFilePath(t, "/etc/viper/config.yaml"), filename)
+		assert.NoError(t, err)
 	})
 }
 
