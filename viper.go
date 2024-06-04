@@ -194,6 +194,8 @@ type Viper struct {
 	// TODO: should probably be protected with a mutex
 	encoderRegistry *encoding.EncoderRegistry
 	decoderRegistry *encoding.DecoderRegistry
+
+	experimentalFinder bool
 }
 
 // New returns an initialized Viper instance.
