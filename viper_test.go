@@ -29,7 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/spf13/viper/internal/features"
 	"github.com/spf13/viper/internal/testutil"
 )
 
@@ -1067,10 +1066,6 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 }
 
 func TestUnmarshalWithAutomaticEnv(t *testing.T) {
-	if !features.BindStruct {
-		t.Skip("binding struct is not enabled")
-	}
-
 	t.Setenv("PORT", "1313")
 	t.Setenv("NAME", "Steve")
 	t.Setenv("DURATION", "1s1ms")
@@ -1104,7 +1099,7 @@ func TestUnmarshalWithAutomaticEnv(t *testing.T) {
 		Flag bool `mapstructure:"flag"`
 	}
 
-	v := New()
+	v := NewWithOptions(ExperimentalBindStruct())
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 
