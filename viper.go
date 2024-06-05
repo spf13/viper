@@ -271,6 +271,23 @@ func NewWithOptions(opts ...Option) *Viper {
 	return v
 }
 
+// SetOptions sets the options on the global Viper instance.
+//
+// Be careful when using this function: subsequent calls may override options you set.
+// It's always better to use a local Viper instance.
+func SetOptions(opts ...Option) {
+	keyDelim := v.keyDelim
+
+	for _, opt := range opts {
+		opt.apply(v)
+	}
+
+	// reset encoding if key delimiter changed
+	if keyDelim != v.keyDelim {
+		v.resetEncoding()
+	}
+}
+
 // Reset is intended for testing, will reset all to default settings.
 // In the public interface for the viper package so applications
 // can use it in their testing as well.
