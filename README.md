@@ -836,13 +836,15 @@ func yamlStringSettings() string {
 
 ## Viper or Vipers?
 
-Viper comes ready to use out of the box. There is no configuration or
-initialization needed to begin using Viper. Since most applications will want
-to use a single central repository for their configuration, the viper package
-provides this. It is similar to a singleton.
+Viper comes with a global instance (singleton) out of the box.
 
-In all of the examples above, they demonstrate using viper in its singleton
-style approach.
+Although it makes setting up configuration easy,
+using it is generally discouraged as it makes testing harder and can lead to unexpected behavior.
+
+The best practice is to initialize a Viper instance and pass that around when necessary.
+
+The global instance _MAY_ be deprecated in the future.
+See [#1855](https://github.com/spf13/viper/issues/1855) for more details.
 
 ### Working with multiple vipers
 
