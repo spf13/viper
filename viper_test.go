@@ -1658,6 +1658,12 @@ func TestReadConfig(t *testing.T) {
 		assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, v.Get("clothing"))
 		assert.Equal(t, 35, v.Get("age"))
 	})
+
+	t.Run("missing config type", func(t *testing.T) {
+		v := New()
+		err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+		require.Error(t, err)
+	})
 }
 
 func TestIsSet(t *testing.T) {
@@ -2130,6 +2136,7 @@ func TestSafeWriteAsConfig(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
 	v.SetFs(fs)
+	v.SetConfigType("yaml")
 	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
 	require.NoError(t, err)
 	require.NoError(t, v.SafeWriteConfigAs("/test/c.yaml"))
