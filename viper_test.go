@@ -1641,20 +1641,23 @@ func TestFindsNestedKeys(t *testing.T) {
 	}
 }
 
-func TestReadBufConfig(t *testing.T) {
-	v := New()
-	v.SetConfigType("yaml")
-	v.ReadConfig(bytes.NewBuffer(yamlExample))
-	t.Log(v.AllKeys())
+func TestReadConfig(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		v := New()
+		v.SetConfigType("yaml")
+		err := v.ReadConfig(bytes.NewBuffer(yamlExample))
+		require.NoError(t, err)
+		t.Log(v.AllKeys())
 
-	assert.True(t, v.InConfig("name"))
-	assert.True(t, v.InConfig("clothing.jacket"))
-	assert.False(t, v.InConfig("state"))
-	assert.False(t, v.InConfig("clothing.hat"))
-	assert.Equal(t, "steve", v.Get("name"))
-	assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
-	assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, v.Get("clothing"))
-	assert.Equal(t, 35, v.Get("age"))
+		assert.True(t, v.InConfig("name"))
+		assert.True(t, v.InConfig("clothing.jacket"))
+		assert.False(t, v.InConfig("state"))
+		assert.False(t, v.InConfig("clothing.hat"))
+		assert.Equal(t, "steve", v.Get("name"))
+		assert.Equal(t, []any{"skateboarding", "snowboarding", "go"}, v.Get("hobbies"))
+		assert.Equal(t, map[string]any{"jacket": "leather", "trousers": "denim", "pants": map[string]any{"size": "large"}}, v.Get("clothing"))
+		assert.Equal(t, 35, v.Get("age"))
+	})
 }
 
 func TestIsSet(t *testing.T) {
