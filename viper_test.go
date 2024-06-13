@@ -52,6 +52,23 @@ var yamlExampleWithExtras = []byte(`Existing: true
 Bogus: true
 `)
 
+var yamlTopLevelKeys = []byte(`
+restuarants:
+  types:
+    sushi:
+      name: sushi2go
+      rating: 10
+      price: average
+    italian:
+      name: "pizza place"
+      rating: 7
+      price: average
+    thai:
+      name: "thai garden"
+      rating: 9
+      price: high
+`)
+
 type testUnmarshalExtra struct {
 	Existing bool
 }
@@ -969,6 +986,35 @@ func TestAllKeysWithEnv(t *testing.T) {
 	t.Setenv("FOO_BAR", "baz")
 
 	assert.ElementsMatch(t, []string{"id", "foo.bar"}, v.AllKeys())
+}
+
+func TestTopLevelKeys(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	r := bytes.NewReader(yamlTopLevelKeys)
+	err := v.ReadConfig(r)
+	assert.NoError(t, err)
+	fmt.Printf("%#v\n", v.config)
+	s := v.Sub("restuarants.types")
+	for _, i := range s.TopLevelKeys() {
+		ss := s.Sub(i)
+		switch i {
+		case "sushi":
+			assert.Equal(t, ss.GetString("name"), "sushi2go")
+			assert.Equal(t, ss.GetString("price"), "average")
+			assert.Equal(t, ss.GetInt("rating"), 10)
+		case "italian":
+			assert.Equal(t, ss.GetString("name"), "pizza place")
+			assert.Equal(t, ss.GetString("price"), "average")
+			assert.Equal(t, ss.GetInt("rating"), 7)
+		case "thai":
+			assert.Equal(t, ss.GetString("name"), "thai garden")
+			assert.Equal(t, ss.GetString("price"), "high")
+			assert.Equal(t, ss.GetInt("rating"), 9)
+		default:
+			t.Fatalf("unexpected key, %q", i)
+		}
+	}
 }
 
 func TestAliasesOfAliases(t *testing.T) {
