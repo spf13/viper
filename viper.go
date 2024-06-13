@@ -1711,7 +1711,9 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
+	if _, err := buf.ReadFrom(in); err != nil {
+		return ConfigParseError{err}
+	}
 
 	switch format := strings.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
