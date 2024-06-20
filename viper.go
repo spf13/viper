@@ -35,19 +35,19 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/go-viper/encoding/dotenv"
+	"github.com/go-viper/encoding/hcl"
+	"github.com/go-viper/encoding/ini"
+	"github.com/go-viper/encoding/javaproperties"
+	"github.com/go-viper/encoding/toml"
+	"github.com/go-viper/encoding/yaml"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 
 	"github.com/spf13/viper/internal/encoding"
-	"github.com/spf13/viper/internal/encoding/dotenv"
-	"github.com/spf13/viper/internal/encoding/hcl"
-	"github.com/spf13/viper/internal/encoding/ini"
-	"github.com/spf13/viper/internal/encoding/javaproperties"
 	"github.com/spf13/viper/internal/encoding/json"
-	"github.com/spf13/viper/internal/encoding/toml"
-	"github.com/spf13/viper/internal/encoding/yaml"
 	"github.com/spf13/viper/internal/features"
 )
 

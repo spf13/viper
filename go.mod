@@ -4,6 +4,12 @@ go 1.21
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/go-viper/encoding/dotenv v0.1.0
+	github.com/go-viper/encoding/hcl v0.1.0
+	github.com/go-viper/encoding/ini v0.1.0
+	github.com/go-viper/encoding/javaproperties v0.1.0
+	github.com/go-viper/encoding/toml v0.1.0
+	github.com/go-viper/encoding/yaml v0.1.0
 	github.com/go-viper/mapstructure/v2 v2.0.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/magiconair/properties v1.8.7
