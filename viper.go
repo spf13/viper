@@ -858,6 +858,28 @@ func (v *Viper) Sub(key string) *Viper {
 	return nil
 }
 
+// SubSlice returns a slice of new Viper instances representing a sub tree of this instance.
+// Sub is case-insensitive for a key.
+func SubSlice(key string) []*Viper { return v.SubSlice(key) }
+func (v *Viper) SubSlice(key string) []*Viper {
+	data := v.Get(key)
+	if data == nil {
+		return nil
+	}
+
+	if reflect.TypeOf(data).Kind() == reflect.Slice {
+		var vList []*Viper
+		for _, item := range data.([]interface{}) {
+			subv := New()
+			subv.config = cast.ToStringMap(item)
+			vList = append(vList, subv)
+		}
+		return vList
+	}
+
+	return nil
+}
+
 // GetString returns the value associated with the key as a string.
 func GetString(key string) string { return v.GetString(key) }
 

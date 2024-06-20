@@ -1800,6 +1800,30 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, []string{"clothing", "pants"}, subv.parents)
 }
 
+func TestSubSlice(t *testing.T) {
+	var yamlList = []byte(`map:
+  foo: bar
+list:
+- foo: 0
+  bar: 0
+- foo: 1
+  bar: 1
+`)
+
+	v := New()
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlList))
+
+	subvSlice := v.SubSlice("list")
+	for idx, subv := range subvSlice {
+		assert.Equal(t, subv.GetInt("foo"), idx)
+		assert.Equal(t, subv.GetInt("bar"), idx)
+	}
+
+	subvSlice = v.SubSlice("map")
+	assert.Equal(t, ([]*Viper)(nil), subvSlice)
+}
+
 var hclWriteExpected = []byte(`"foos" = {
   "foo" = {
     "key" = 1
