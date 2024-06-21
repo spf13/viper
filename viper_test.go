@@ -1849,11 +1849,11 @@ var jsonWriteExpected = []byte(`{
   "type": "donut"
 }`)
 
-var propertiesWriteExpected = []byte(`p_id = 0001
-p_type = donut
+var propertiesWriteExpected = []byte(`p_batters.batter.type = Regular
+p_id = 0001
 p_name = Cake
 p_ppu = 0.55
-p_batters.batter.type = Regular
+p_type = donut
 `)
 
 // var yamlWriteExpected = []byte(`age: 35

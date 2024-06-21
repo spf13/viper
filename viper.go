@@ -195,6 +195,9 @@ type Viper struct {
 	encoderRegistry *encoding.EncoderRegistry
 	decoderRegistry *encoding.DecoderRegistry
 
+	encoderRegistry2 EncoderRegistry
+	decoderRegistry2 DecoderRegistry
+
 	experimentalFinder     bool
 	experimentalBindStruct bool
 }
@@ -216,6 +219,11 @@ func New() *Viper {
 	v.aliases = make(map[string]string)
 	v.typeByDefValue = false
 	v.logger = slog.New(&discardHandler{})
+
+	codecRegistry := codecRegistry{v: v}
+
+	v.encoderRegistry2 = codecRegistry
+	v.decoderRegistry2 = codecRegistry
 
 	v.resetEncoding()
 
@@ -1715,7 +1723,12 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 
 	switch format := strings.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
-		err := v.decoderRegistry.Decode(format, buf.Bytes(), c)
+		decoder, ok := v.decoderRegistry2.Decoder(format)
+		if !ok {
+			return ConfigParseError{errors.New("decoder not found")}
+		}
+
+		err := decoder.Decode(buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
 		}
@@ -1730,7 +1743,13 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
-		b, err := v.encoderRegistry.Encode(configType, c)
+		encoder, ok := v.encoderRegistry2.Encoder(configType)
+		if !ok {
+			// TODO: return a proper error
+			return ConfigMarshalError{errors.New("encoder not found")}
+		}
+
+		b, err := encoder.Encode(c)
 		if err != nil {
 			return ConfigMarshalError{err}
 		}
