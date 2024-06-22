@@ -1723,12 +1723,12 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 
 	switch format := strings.ToLower(v.getConfigType()); format {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
-		decoder, ok := v.decoderRegistry2.Decoder(format)
-		if !ok {
-			return ConfigParseError{errors.New("decoder not found")}
+		decoder, err := v.decoderRegistry2.Decoder(format)
+		if err != nil {
+			return ConfigParseError{err}
 		}
 
-		err := decoder.Decode(buf.Bytes(), c)
+		err = decoder.Decode(buf.Bytes(), c)
 		if err != nil {
 			return ConfigParseError{err}
 		}
@@ -1743,10 +1743,9 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
 	switch configType {
 	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
-		encoder, ok := v.encoderRegistry2.Encoder(configType)
-		if !ok {
-			// TODO: return a proper error
-			return ConfigMarshalError{errors.New("encoder not found")}
+		encoder, err := v.encoderRegistry2.Encoder(configType)
+		if err != nil {
+			return ConfigMarshalError{err}
 		}
 
 		b, err := encoder.Encode(c)

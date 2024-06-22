@@ -28,16 +28,32 @@ type Codec interface {
 	Decoder
 }
 
+type encodingError string
+
+func (e encodingError) Error() string {
+	return string(e)
+}
+
+const (
+	// ErrEncoderNotFound is returned when there is no encoder registered for a format.
+	ErrEncoderNotFound = encodingError("encoder not found for this format")
+
+	// ErrDecoderNotFound is returned when there is no decoder registered for a format.
+	ErrDecoderNotFound = encodingError("decoder not found for this format")
+)
+
 // EncoderRegistry returns an [Encoder] for a given format.
-// The second return value is false if no [Encoder] is registered for the format.
+//
+// The error is [ErrEncoderNotFound] if no [Encoder] is registered for the format.
 type EncoderRegistry interface {
-	Encoder(format string) (Encoder, bool)
+	Encoder(format string) (Encoder, error)
 }
 
 // DecoderRegistry returns an [Decoder] for a given format.
-// The second return value is false if no [Decoder] is registered for the format.
+//
+// The error is [ErrDecoderNotFound] if no [Decoder] is registered for the format.
 type DecoderRegistry interface {
-	Decoder(format string) (Decoder, bool)
+	Decoder(format string) (Decoder, error)
 }
 
 // [CodecRegistry] combines [EncoderRegistry] and [DecoderRegistry] interfaces.
@@ -72,12 +88,22 @@ type codecRegistry struct {
 	v *Viper
 }
 
-func (r codecRegistry) Encoder(format string) (Encoder, bool) {
-	return r.codec(format)
+func (r codecRegistry) Encoder(format string) (Encoder, error) {
+	encoder, ok := r.codec(format)
+	if !ok {
+		return nil, ErrEncoderNotFound
+	}
+
+	return encoder, nil
 }
 
-func (r codecRegistry) Decoder(format string) (Decoder, bool) {
-	return r.codec(format)
+func (r codecRegistry) Decoder(format string) (Decoder, error) {
+	decoder, ok := r.codec(format)
+	if !ok {
+		return nil, ErrDecoderNotFound
+	}
+
+	return decoder, nil
 }
 
 func (r codecRegistry) codec(format string) (Codec, bool) {
