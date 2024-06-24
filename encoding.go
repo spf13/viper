@@ -1,6 +1,7 @@
 package viper
 
 import (
+	"errors"
 	"strings"
 	"sync"
 
@@ -31,30 +32,18 @@ type Codec interface {
 	Decoder
 }
 
-type encodingError string
-
-func (e encodingError) Error() string {
-	return string(e)
-}
-
-const (
-	// ErrEncoderNotFound is returned when there is no encoder registered for a format.
-	ErrEncoderNotFound = encodingError("encoder not found for this format")
-
-	// ErrDecoderNotFound is returned when there is no decoder registered for a format.
-	ErrDecoderNotFound = encodingError("decoder not found for this format")
-)
+// TODO: consider adding specific errors for not found scenarios
 
 // EncoderRegistry returns an [Encoder] for a given format.
 //
-// The error is [ErrEncoderNotFound] if no [Encoder] is registered for the format.
+// [EncoderRegistry] returns an error if no [Encoder] is registered for the format.
 type EncoderRegistry interface {
 	Encoder(format string) (Encoder, error)
 }
 
 // DecoderRegistry returns an [Decoder] for a given format.
 //
-// The error is [ErrDecoderNotFound] if no [Decoder] is registered for the format.
+// [DecoderRegistry] returns an error if no [Decoder] is registered for the format.
 type DecoderRegistry interface {
 	Decoder(format string) (Decoder, error)
 }
@@ -94,7 +83,7 @@ type codecRegistry struct {
 func (r codecRegistry) Encoder(format string) (Encoder, error) {
 	encoder, ok := r.codec(format)
 	if !ok {
-		return nil, ErrEncoderNotFound
+		return nil, errors.New("encoder not found for this format")
 	}
 
 	return encoder, nil
@@ -103,7 +92,7 @@ func (r codecRegistry) Encoder(format string) (Encoder, error) {
 func (r codecRegistry) Decoder(format string) (Decoder, error) {
 	decoder, ok := r.codec(format)
 	if !ok {
-		return nil, ErrDecoderNotFound
+		return nil, errors.New("decoder not found for this format")
 	}
 
 	return decoder, nil
@@ -179,7 +168,7 @@ func (r *DefaultCodecRegistry) RegisterCodec(format string, codec Codec) error {
 func (r *DefaultCodecRegistry) Encoder(format string) (Encoder, error) {
 	encoder, ok := r.codec(format)
 	if !ok {
-		return nil, ErrEncoderNotFound
+		return nil, errors.New("encoder not found for this format")
 	}
 
 	return encoder, nil
@@ -188,7 +177,7 @@ func (r *DefaultCodecRegistry) Encoder(format string) (Encoder, error) {
 func (r *DefaultCodecRegistry) Decoder(format string) (Decoder, error) {
 	decoder, ok := r.codec(format)
 	if !ok {
-		return nil, ErrDecoderNotFound
+		return nil, errors.New("decoder not found for this format")
 	}
 
 	return decoder, nil
