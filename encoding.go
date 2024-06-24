@@ -58,6 +58,10 @@ type CodecRegistry interface {
 // WithEncoderRegistry sets a custom [EncoderRegistry].
 func WithEncoderRegistry(r EncoderRegistry) Option {
 	return optionFunc(func(v *Viper) {
+		if r == nil {
+			return
+		}
+
 		v.encoderRegistry = r
 	})
 }
@@ -65,6 +69,10 @@ func WithEncoderRegistry(r EncoderRegistry) Option {
 // WithDecoderRegistry sets a custom [DecoderRegistry].
 func WithDecoderRegistry(r DecoderRegistry) Option {
 	return optionFunc(func(v *Viper) {
+		if r == nil {
+			return
+		}
+
 		v.decoderRegistry = r
 	})
 }
@@ -72,6 +80,10 @@ func WithDecoderRegistry(r DecoderRegistry) Option {
 // WithCodecRegistry sets a custom [EncoderRegistry] and [DecoderRegistry].
 func WithCodecRegistry(r CodecRegistry) Option {
 	return optionFunc(func(v *Viper) {
+		if r == nil {
+			return
+		}
+
 		v.encoderRegistry = r
 		v.decoderRegistry = r
 	})
