@@ -247,6 +247,10 @@ type StringReplacer interface {
 // EnvKeyReplacer sets a replacer used for mapping environment variables to internal keys.
 func EnvKeyReplacer(r StringReplacer) Option {
 	return optionFunc(func(v *Viper) {
+		if r == nil {
+			return
+		}
+
 		v.envKeyReplacer = r
 	})
 }
