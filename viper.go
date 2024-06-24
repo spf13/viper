@@ -40,14 +40,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 
-	"github.com/spf13/viper/internal/encoding"
-	"github.com/spf13/viper/internal/encoding/dotenv"
-	"github.com/spf13/viper/internal/encoding/hcl"
 	"github.com/spf13/viper/internal/encoding/ini"
-	"github.com/spf13/viper/internal/encoding/javaproperties"
-	"github.com/spf13/viper/internal/encoding/json"
-	"github.com/spf13/viper/internal/encoding/toml"
-	"github.com/spf13/viper/internal/encoding/yaml"
 	"github.com/spf13/viper/internal/features"
 )
 
@@ -191,10 +184,6 @@ type Viper struct {
 
 	logger *slog.Logger
 
-	// TODO: should probably be protected with a mutex
-	encoderRegistry *encoding.EncoderRegistry
-	decoderRegistry *encoding.DecoderRegistry
-
 	encoderRegistry2 EncoderRegistry
 	decoderRegistry2 DecoderRegistry
 
@@ -224,8 +213,6 @@ func New() *Viper {
 
 	v.encoderRegistry2 = codecRegistry
 	v.decoderRegistry2 = codecRegistry
-
-	v.resetEncoding()
 
 	v.experimentalFinder = features.Finder
 	v.experimentalBindStruct = features.BindStruct
@@ -276,8 +263,6 @@ func NewWithOptions(opts ...Option) *Viper {
 		opt.apply(v)
 	}
 
-	v.resetEncoding()
-
 	return v
 }
 
@@ -286,15 +271,8 @@ func NewWithOptions(opts ...Option) *Viper {
 // Be careful when using this function: subsequent calls may override options you set.
 // It's always better to use a local Viper instance.
 func SetOptions(opts ...Option) {
-	keyDelim := v.keyDelim
-
 	for _, opt := range opts {
 		opt.apply(v)
-	}
-
-	// reset encoding if key delimiter changed
-	if keyDelim != v.keyDelim {
-		v.resetEncoding()
 	}
 }
 
@@ -306,84 +284,6 @@ func Reset() {
 	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
 
 	resetRemote()
-}
-
-// TODO: make this lazy initialization instead.
-func (v *Viper) resetEncoding() {
-	encoderRegistry := encoding.NewEncoderRegistry()
-	decoderRegistry := encoding.NewDecoderRegistry()
-
-	{
-		codec := yaml.Codec{}
-
-		encoderRegistry.RegisterEncoder("yaml", codec)
-		decoderRegistry.RegisterDecoder("yaml", codec)
-
-		encoderRegistry.RegisterEncoder("yml", codec)
-		decoderRegistry.RegisterDecoder("yml", codec)
-	}
-
-	{
-		codec := json.Codec{}
-
-		encoderRegistry.RegisterEncoder("json", codec)
-		decoderRegistry.RegisterDecoder("json", codec)
-	}
-
-	{
-		codec := toml.Codec{}
-
-		encoderRegistry.RegisterEncoder("toml", codec)
-		decoderRegistry.RegisterDecoder("toml", codec)
-	}
-
-	{
-		codec := hcl.Codec{}
-
-		encoderRegistry.RegisterEncoder("hcl", codec)
-		decoderRegistry.RegisterDecoder("hcl", codec)
-
-		encoderRegistry.RegisterEncoder("tfvars", codec)
-		decoderRegistry.RegisterDecoder("tfvars", codec)
-	}
-
-	{
-		codec := ini.Codec{
-			KeyDelimiter: v.keyDelim,
-			LoadOptions:  v.iniLoadOptions,
-		}
-
-		encoderRegistry.RegisterEncoder("ini", codec)
-		decoderRegistry.RegisterDecoder("ini", codec)
-	}
-
-	{
-		codec := &javaproperties.Codec{
-			KeyDelimiter: v.keyDelim,
-		}
-
-		encoderRegistry.RegisterEncoder("properties", codec)
-		decoderRegistry.RegisterDecoder("properties", codec)
-
-		encoderRegistry.RegisterEncoder("props", codec)
-		decoderRegistry.RegisterDecoder("props", codec)
-
-		encoderRegistry.RegisterEncoder("prop", codec)
-		decoderRegistry.RegisterDecoder("prop", codec)
-	}
-
-	{
-		codec := &dotenv.Codec{}
-
-		encoderRegistry.RegisterEncoder("dotenv", codec)
-		decoderRegistry.RegisterDecoder("dotenv", codec)
-
-		encoderRegistry.RegisterEncoder("env", codec)
-		decoderRegistry.RegisterDecoder("env", codec)
-	}
-
-	v.encoderRegistry = encoderRegistry
-	v.decoderRegistry = decoderRegistry
 }
 
 // SupportedExts are universally supported extensions.
