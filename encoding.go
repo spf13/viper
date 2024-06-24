@@ -36,12 +36,16 @@ type Codec interface {
 
 // EncoderRegistry returns an [Encoder] for a given format.
 //
+// Format is case-insensitive.
+//
 // [EncoderRegistry] returns an error if no [Encoder] is registered for the format.
 type EncoderRegistry interface {
 	Encoder(format string) (Encoder, error)
 }
 
 // DecoderRegistry returns an [Decoder] for a given format.
+//
+// Format is case-insensitive.
 //
 // [DecoderRegistry] returns an error if no [Decoder] is registered for the format.
 type DecoderRegistry interface {
@@ -99,7 +103,7 @@ func (r codecRegistry) Decoder(format string) (Decoder, error) {
 }
 
 func (r codecRegistry) codec(format string) (Codec, bool) {
-	switch format {
+	switch strings.ToLower(format) {
 	case "yaml", "yml":
 		return yaml.Codec{}, true
 
@@ -186,6 +190,8 @@ func (r *DefaultCodecRegistry) Decoder(format string) (Decoder, error) {
 func (r *DefaultCodecRegistry) codec(format string) (Codec, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	format = strings.ToLower(format)
 
 	if r.codecs != nil {
 		codec, ok := r.codecs[format]
