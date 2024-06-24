@@ -209,7 +209,7 @@ func New() *Viper {
 	v.typeByDefValue = false
 	v.logger = slog.New(&discardHandler{})
 
-	codecRegistry := codecRegistry{v: v}
+	codecRegistry := NewCodecRegistry()
 
 	v.encoderRegistry = codecRegistry
 	v.decoderRegistry = codecRegistry
