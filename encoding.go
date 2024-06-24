@@ -6,9 +6,6 @@ import (
 	"sync"
 
 	"github.com/spf13/viper/internal/encoding/dotenv"
-	"github.com/spf13/viper/internal/encoding/hcl"
-	"github.com/spf13/viper/internal/encoding/ini"
-	"github.com/spf13/viper/internal/encoding/javaproperties"
 	"github.com/spf13/viper/internal/encoding/json"
 	"github.com/spf13/viper/internal/encoding/toml"
 	"github.com/spf13/viper/internal/encoding/yaml"
@@ -112,20 +109,6 @@ func (r codecRegistry) codec(format string) (Codec, bool) {
 
 	case "toml":
 		return toml.Codec{}, true
-
-	case "hcl", "tfvars":
-		return hcl.Codec{}, true
-
-	case "ini":
-		return ini.Codec{
-			KeyDelimiter: r.v.keyDelim,
-			LoadOptions:  r.v.iniLoadOptions,
-		}, true
-
-	case "properties", "props", "prop": // Note: This breaks writing a properties file.
-		return &javaproperties.Codec{
-			KeyDelimiter: v.keyDelim,
-		}, true
 
 	case "dotenv", "env":
 		return &dotenv.Codec{}, true
