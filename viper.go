@@ -1649,12 +1649,18 @@ func mergeMaps(
 
 		svType := reflect.TypeOf(sv)
 		tvType := reflect.TypeOf(tv)
-		if svType != tvType {
-			v.logger.Errorf("svType != tvType; key=%s, st=%v, tt=%v, sv=%v, tv=%v", sk, svType, tvType, sv, tv)
+		// type different
+		diffType := svType != tvType
+		v.logger.Debugf("processing key=%s, st=%v, tt=%v, sv=%v, tv=%v, diffType=%v", sk, svType, tvType, sv, tv, diffType)
+		// just update when type different
+		if diffType {
+			v.logger.Debugf("setting diffType value")
+			tgt[tk] = sv
+			if itgt != nil {
+				itgt[tk] = sv
+			}
 			continue
 		}
-
-		v.logger.Debugf("processing key=%s, st=%v, tt=%v, sv=%v, tv=%v", sk, svType, tvType, sv, tv)
 
 		switch ttv := tv.(type) {
 		case map[interface{}]interface{}:
