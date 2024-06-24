@@ -183,6 +183,8 @@ type Viper struct {
 	encoderRegistry EncoderRegistry
 	decoderRegistry DecoderRegistry
 
+	decodeHook mapstructure.DecodeHookFunc
+
 	experimentalFinder     bool
 	experimentalBindStruct bool
 }
@@ -252,6 +254,17 @@ func EnvKeyReplacer(r StringReplacer) Option {
 		}
 
 		v.envKeyReplacer = r
+	})
+}
+
+// WithDecodeHook sets a default decode hook for mapstructure.
+func WithDecodeHook(h mapstructure.DecodeHookFunc) Option {
+	return optionFunc(func(v *Viper) {
+		if h == nil {
+			return
+		}
+
+		v.decodeHook = h
 	})
 }
 
@@ -900,7 +913,7 @@ func UnmarshalKey(key string, rawVal any, opts ...DecoderConfigOption) error {
 }
 
 func (v *Viper) UnmarshalKey(key string, rawVal any, opts ...DecoderConfigOption) error {
-	return decode(v.Get(key), defaultDecoderConfig(rawVal, opts...))
+	return decode(v.Get(key), v.defaultDecoderConfig(rawVal, opts...))
 }
 
 // Unmarshal unmarshals the config into a Struct. Make sure that the tags
@@ -923,13 +936,13 @@ func (v *Viper) Unmarshal(rawVal any, opts ...DecoderConfigOption) error {
 	}
 
 	// TODO: struct keys should be enough?
-	return decode(v.getSettings(keys), defaultDecoderConfig(rawVal, opts...))
+	return decode(v.getSettings(keys), v.defaultDecoderConfig(rawVal, opts...))
 }
 
 func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]string, error) {
 	var structKeyMap map[string]any
 
-	err := decode(input, defaultDecoderConfig(&structKeyMap, opts...))
+	err := decode(input, v.defaultDecoderConfig(&structKeyMap, opts...))
 	if err != nil {
 		return nil, err
 	}
@@ -946,15 +959,20 @@ func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]stri
 
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
 // of time.Duration values & string slices.
-func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
-	c := &mapstructure.DecoderConfig{
-		Metadata:         nil,
-		WeaklyTypedInput: true,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+func (v *Viper) defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
+	decodeHook := v.decodeHook
+	if decodeHook == nil {
+		decodeHook = mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
 			// mapstructure.StringToSliceHookFunc(","),
 			stringToWeakSliceHookFunc(","),
-		),
+		)
+	}
+
+	c := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		WeaklyTypedInput: true,
+		DecodeHook:       decodeHook,
 	}
 
 	for _, opt := range opts {
@@ -1005,7 +1023,7 @@ func UnmarshalExact(rawVal any, opts ...DecoderConfigOption) error {
 }
 
 func (v *Viper) UnmarshalExact(rawVal any, opts ...DecoderConfigOption) error {
-	config := defaultDecoderConfig(rawVal, opts...)
+	config := v.defaultDecoderConfig(rawVal, opts...)
 	config.ErrorUnused = true
 
 	keys := v.AllKeys()

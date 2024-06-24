@@ -894,6 +894,41 @@ func TestUnmarshal(t *testing.T) {
 	)
 }
 
+func TestUnmarshalWithDefaultDecodeHook(t *testing.T) {
+	opt := mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		// Custom Decode Hook Function
+		func(rf reflect.Kind, rt reflect.Kind, data any) (any, error) {
+			if rf != reflect.String || rt != reflect.Map {
+				return data, nil
+			}
+			m := map[string]string{}
+			raw := data.(string)
+			if raw == "" {
+				return m, nil
+			}
+			err := json.Unmarshal([]byte(raw), &m)
+			return m, err
+		},
+	)
+
+	v := NewWithOptions(WithDecodeHook(opt))
+	v.Set("credentials", "{\"foo\":\"bar\"}")
+
+	type config struct {
+		Credentials map[string]string
+	}
+
+	var C config
+
+	require.NoError(t, v.Unmarshal(&C), "unable to decode into struct")
+
+	assert.Equal(t, &config{
+		Credentials: map[string]string{"foo": "bar"},
+	}, &C)
+}
+
 func TestUnmarshalWithDecoderOptions(t *testing.T) {
 	v := New()
 	v.Set("credentials", "{\"foo\":\"bar\"}")
