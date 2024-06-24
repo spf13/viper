@@ -40,7 +40,6 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/pflag"
 
-	"github.com/spf13/viper/internal/encoding/ini"
 	"github.com/spf13/viper/internal/features"
 )
 
@@ -162,9 +161,6 @@ type Viper struct {
 	configType        string
 	configPermissions os.FileMode
 	envPrefix         string
-
-	// Specific commands for ini parsing
-	iniLoadOptions ini.LoadOptions
 
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
@@ -1935,13 +1931,6 @@ func SetConfigPermissions(perm os.FileMode) { v.SetConfigPermissions(perm) }
 
 func (v *Viper) SetConfigPermissions(perm os.FileMode) {
 	v.configPermissions = perm.Perm()
-}
-
-// IniLoadOptions sets the load options for ini parsing.
-func IniLoadOptions(in ini.LoadOptions) Option {
-	return optionFunc(func(v *Viper) {
-		v.iniLoadOptions = in
-	})
 }
 
 func (v *Viper) getConfigType() string {
