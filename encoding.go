@@ -61,22 +61,22 @@ type CodecRegistry interface {
 // WithEncoderRegistry sets a custom [EncoderRegistry].
 func WithEncoderRegistry(r EncoderRegistry) Option {
 	return optionFunc(func(v *Viper) {
-		v.encoderRegistry2 = r
+		v.encoderRegistry = r
 	})
 }
 
 // WithDecoderRegistry sets a custom [DecoderRegistry].
 func WithDecoderRegistry(r DecoderRegistry) Option {
 	return optionFunc(func(v *Viper) {
-		v.decoderRegistry2 = r
+		v.decoderRegistry = r
 	})
 }
 
 // WithCodecRegistry sets a custom [EncoderRegistry] and [DecoderRegistry].
 func WithCodecRegistry(r CodecRegistry) Option {
 	return optionFunc(func(v *Viper) {
-		v.encoderRegistry2 = r
-		v.decoderRegistry2 = r
+		v.encoderRegistry = r
+		v.decoderRegistry = r
 	})
 }
 
@@ -134,7 +134,7 @@ func (r codecRegistry) codec(format string) (Codec, bool) {
 	return nil, false
 }
 
-// DefaultCodecRegistry
+// DefaultCodecRegistry is a simple implementation of [CodecRegistry] that allows registering custom [Codec]s.
 type DefaultCodecRegistry struct {
 	codecs map[string]Codec
 
@@ -158,6 +158,8 @@ func (r *DefaultCodecRegistry) init() {
 }
 
 // RegisterCodec registers a custom [Codec].
+//
+// Format is case-insensitive.
 func (r *DefaultCodecRegistry) RegisterCodec(format string, codec Codec) error {
 	r.init()
 
@@ -169,6 +171,9 @@ func (r *DefaultCodecRegistry) RegisterCodec(format string, codec Codec) error {
 	return nil
 }
 
+// Encoder implements the [EncoderRegistry] interface.
+//
+// Format is case-insensitive.
 func (r *DefaultCodecRegistry) Encoder(format string) (Encoder, error) {
 	encoder, ok := r.codec(format)
 	if !ok {
@@ -178,6 +183,9 @@ func (r *DefaultCodecRegistry) Encoder(format string) (Encoder, error) {
 	return encoder, nil
 }
 
+// Decoder implements the [DecoderRegistry] interface.
+//
+// Format is case-insensitive.
 func (r *DefaultCodecRegistry) Decoder(format string) (Decoder, error) {
 	decoder, ok := r.codec(format)
 	if !ok {
