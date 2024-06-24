@@ -1,6 +1,9 @@
 package viper
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/spf13/viper/internal/encoding/dotenv"
 	"github.com/spf13/viper/internal/encoding/hcl"
 	"github.com/spf13/viper/internal/encoding/ini"
@@ -130,6 +133,87 @@ func (r codecRegistry) codec(format string) (Codec, bool) {
 		return &javaproperties.Codec{
 			KeyDelimiter: v.keyDelim,
 		}, true
+
+	case "dotenv", "env":
+		return &dotenv.Codec{}, true
+	}
+
+	return nil, false
+}
+
+// DefaultCodecRegistry
+type DefaultCodecRegistry struct {
+	codecs map[string]Codec
+
+	mu   sync.RWMutex
+	once sync.Once
+}
+
+// NewCodecRegistry returns a new [CodecRegistry], ready to accept custom [Codec]s.
+func NewCodecRegistry() *DefaultCodecRegistry {
+	r := &DefaultCodecRegistry{}
+
+	r.init()
+
+	return r
+}
+
+func (r *DefaultCodecRegistry) init() {
+	r.once.Do(func() {
+		r.codecs = map[string]Codec{}
+	})
+}
+
+// RegisterCodec registers a custom [Codec].
+func (r *DefaultCodecRegistry) RegisterCodec(format string, codec Codec) error {
+	r.init()
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.codecs[strings.ToLower(format)] = codec
+
+	return nil
+}
+
+func (r *DefaultCodecRegistry) Encoder(format string) (Encoder, error) {
+	encoder, ok := r.codec(format)
+	if !ok {
+		return nil, ErrEncoderNotFound
+	}
+
+	return encoder, nil
+}
+
+func (r *DefaultCodecRegistry) Decoder(format string) (Decoder, error) {
+	decoder, ok := r.codec(format)
+	if !ok {
+		return nil, ErrDecoderNotFound
+	}
+
+	return decoder, nil
+}
+
+func (r *DefaultCodecRegistry) codec(format string) (Codec, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.codecs != nil {
+		codec, ok := r.codecs[format]
+		if ok {
+			return codec, true
+		}
+	}
+
+	switch format {
+	case "yaml", "yml":
+		return yaml.Codec{}, true
+
+	case "json":
+		return json.Codec{}, true
+
+	case "toml":
+		return toml.Codec{}, true
 
 	case "dotenv", "env":
 		return &dotenv.Codec{}, true
