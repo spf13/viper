@@ -77,46 +77,6 @@ func WithCodecRegistry(r CodecRegistry) Option {
 	})
 }
 
-type codecRegistry struct {
-	v *Viper
-}
-
-func (r codecRegistry) Encoder(format string) (Encoder, error) {
-	encoder, ok := r.codec(format)
-	if !ok {
-		return nil, errors.New("encoder not found for this format")
-	}
-
-	return encoder, nil
-}
-
-func (r codecRegistry) Decoder(format string) (Decoder, error) {
-	decoder, ok := r.codec(format)
-	if !ok {
-		return nil, errors.New("decoder not found for this format")
-	}
-
-	return decoder, nil
-}
-
-func (r codecRegistry) codec(format string) (Codec, bool) {
-	switch strings.ToLower(format) {
-	case "yaml", "yml":
-		return yaml.Codec{}, true
-
-	case "json":
-		return json.Codec{}, true
-
-	case "toml":
-		return toml.Codec{}, true
-
-	case "dotenv", "env":
-		return &dotenv.Codec{}, true
-	}
-
-	return nil, false
-}
-
 // DefaultCodecRegistry is a simple implementation of [CodecRegistry] that allows registering custom [Codec]s.
 type DefaultCodecRegistry struct {
 	codecs map[string]Codec
