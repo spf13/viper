@@ -945,7 +945,6 @@ func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]stri
 func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	c := &mapstructure.DecoderConfig{
 		Metadata:         nil,
-		Result:           output,
 		WeaklyTypedInput: true,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
@@ -953,9 +952,14 @@ func defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure
 			stringToWeakSliceHookFunc(","),
 		),
 	}
+
 	for _, opt := range opts {
 		opt(c)
 	}
+
+	// Do not allow overwriting the output
+	c.Result = output
+
 	return c
 }
 
