@@ -1209,7 +1209,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	envkeys, exists := v.env[lcaseKey]
 	if exists {
 		for _, envkey := range envkeys {
-			if val, ok := v.getEnv(envkey); ok {
+			if val, ok := v.getEnv(strings.ToUpper(envkey)); ok {
 				return val
 			}
 		}
