@@ -2590,6 +2590,30 @@ func TestFlagShadow(t *testing.T) {
 	assert.Equal(t, "", v.GetString("foo.bar1.bar2"))
 }
 
+func TestBindUsesEnvPrefix(t *testing.T) {
+	v := New()
+
+	os.Setenv("APP_FOO", "foo")
+	os.Setenv("APP_BAR", "bar")
+
+	v.SetEnvPrefix("APP")
+	v.AutomaticEnv()
+	v.BindEnv("foo1", "FOO")
+	v.BindEnv("bar1", "BAR")
+
+	assert.Equal(t, "foo", v.Get("foo1"))
+	assert.Equal(t, "bar", v.Get("bar1"))
+
+	type TestStruct struct {
+		Foo1 string `mapstructure:"foo1"`
+		Bar1 string `mapstructure:"bar1"`
+	}
+	var ts TestStruct
+	assert.NoError(t, v.Unmarshal(&ts))
+	assert.Equal(t, "foo", ts.Foo1)
+	assert.Equal(t, "bar", ts.Bar1)
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
