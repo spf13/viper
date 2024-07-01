@@ -1106,7 +1106,11 @@ func (v *Viper) BindEnv(input ...string) error {
 	if len(input) == 1 {
 		v.env[key] = append(v.env[key], v.mergeWithEnvPrefix(key))
 	} else {
-		v.env[key] = append(v.env[key], input[1:]...)
+		envKeys := make([]string, len(input[:1]))
+		for i, envKey := range input[1:] {
+			envKeys[i] = v.mergeWithEnvPrefix(envKey)
+		}
+		v.env[key] = append(v.env[key], envKeys...)
 	}
 
 	return nil
