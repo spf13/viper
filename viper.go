@@ -1643,17 +1643,20 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
-	switch format := strings.ToLower(v.getConfigType()); format {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "properties", "props", "prop", "dotenv", "env":
-		decoder, err := v.decoderRegistry.Decoder(format)
-		if err != nil {
-			return ConfigParseError{err}
-		}
+	format := strings.ToLower(v.getConfigType())
 
-		err = decoder.Decode(buf.Bytes(), c)
-		if err != nil {
-			return ConfigParseError{err}
-		}
+	if !stringInSlice(format, SupportedExts) {
+		return UnsupportedConfigError(format)
+	}
+
+	decoder, err := v.decoderRegistry.Decoder(format)
+	if err != nil {
+		return ConfigParseError{err}
+	}
+
+	err = decoder.Decode(buf.Bytes(), c)
+	if err != nil {
+		return ConfigParseError{err}
 	}
 
 	insensitiviseMap(c)
@@ -1663,23 +1666,22 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 // Marshal a map into Writer.
 func (v *Viper) marshalWriter(f afero.File, configType string) error {
 	c := v.AllSettings()
-	switch configType {
-	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
-		encoder, err := v.encoderRegistry.Encoder(configType)
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
 
-		b, err := encoder.Encode(c)
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
-
-		_, err = f.WriteString(string(b))
-		if err != nil {
-			return ConfigMarshalError{err}
-		}
+	encoder, err := v.encoderRegistry.Encoder(configType)
+	if err != nil {
+		return ConfigMarshalError{err}
 	}
+
+	b, err := encoder.Encode(c)
+	if err != nil {
+		return ConfigMarshalError{err}
+	}
+
+	_, err = f.WriteString(string(b))
+	if err != nil {
+		return ConfigMarshalError{err}
+	}
+
 	return nil
 }
 
