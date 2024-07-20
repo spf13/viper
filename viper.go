@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -460,7 +461,7 @@ func (v *Viper) AddConfigPath(in string) {
 		absin := absPathify(v.logger, in)
 
 		v.logger.Info("adding path to search paths", "path", absin)
-		if !stringInSlice(absin, v.configPaths) {
+		if !slices.Contains(v.configPaths, absin) {
 			v.configPaths = append(v.configPaths, absin)
 		}
 	}
@@ -1478,7 +1479,7 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 
-	if !stringInSlice(v.getConfigType(), SupportedExts) {
+	if !slices.Contains(SupportedExts, v.getConfigType()) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
@@ -1509,7 +1510,7 @@ func (v *Viper) MergeInConfig() error {
 		return err
 	}
 
-	if !stringInSlice(v.getConfigType(), SupportedExts) {
+	if !slices.Contains(SupportedExts, v.getConfigType()) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
@@ -1616,7 +1617,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 		return fmt.Errorf("config type could not be determined for %s", filename)
 	}
 
-	if !stringInSlice(configType, SupportedExts) {
+	if !slices.Contains(SupportedExts, configType) {
 		return UnsupportedConfigError(configType)
 	}
 	if v.config == nil {
@@ -1645,7 +1646,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 
 	format := strings.ToLower(v.getConfigType())
 
-	if !stringInSlice(format, SupportedExts) {
+	if !slices.Contains(SupportedExts, format) {
 		return UnsupportedConfigError(format)
 	}
 

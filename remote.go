@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"slices"
 )
 
 // SupportedRemoteProviders are universally supported remote providers.
@@ -93,7 +94,7 @@ func AddRemoteProvider(provider, endpoint, path string) error {
 }
 
 func (v *Viper) AddRemoteProvider(provider, endpoint, path string) error {
-	if !stringInSlice(provider, SupportedRemoteProviders) {
+	if !slices.Contains(SupportedRemoteProviders, provider) {
 		return UnsupportedRemoteProviderError(provider)
 	}
 	if provider != "" && endpoint != "" {
@@ -126,7 +127,7 @@ func AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) err
 }
 
 func (v *Viper) AddSecureRemoteProvider(provider, endpoint, path, secretkeyring string) error {
-	if !stringInSlice(provider, SupportedRemoteProviders) {
+	if !slices.Contains(SupportedRemoteProviders, provider) {
 		return UnsupportedRemoteProviderError(provider)
 	}
 	if provider != "" && endpoint != "" {
