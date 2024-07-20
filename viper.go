@@ -1591,6 +1591,19 @@ func (v *Viper) WriteConfigAs(filename string) error {
 	return v.writeConfig(filename, true)
 }
 
+// WriteConfigTo writes current configuration to an [io.Writer].
+func WriteConfigTo(w io.Writer) error { return v.WriteConfigTo(w) }
+
+func (v *Viper) WriteConfigTo(w io.Writer) error {
+	format := strings.ToLower(v.getConfigType())
+
+	if !slices.Contains(SupportedExts, format) {
+		return UnsupportedConfigError(format)
+	}
+
+	return v.marshalWriter(w, format)
+}
+
 // SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 
@@ -1665,7 +1678,7 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 }
 
 // Marshal a map into Writer.
-func (v *Viper) marshalWriter(f afero.File, configType string) error {
+func (v *Viper) marshalWriter(w io.Writer, configType string) error {
 	c := v.AllSettings()
 
 	encoder, err := v.encoderRegistry.Encoder(configType)
@@ -1678,7 +1691,7 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 		return ConfigMarshalError{err}
 	}
 
-	_, err = f.WriteString(string(b))
+	_, err = w.Write(b)
 	if err != nil {
 		return ConfigMarshalError{err}
 	}
