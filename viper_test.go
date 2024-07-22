@@ -1681,6 +1681,17 @@ func TestSub(t *testing.T) {
 	assert.Equal(t, []string{"clothing", "pants"}, subv.parents)
 }
 
+func TestSubWithKeyDelimiter(t *testing.T) {
+	v := NewWithOptions(KeyDelimiter("::"))
+	v.SetConfigType("yaml")
+	r := strings.NewReader(string(yamlExampleWithDot))
+	err := v.unmarshalReader(r, v.config)
+	require.NoError(t, err)
+
+	subv := v.Sub("emails")
+	assert.Equal(t, "01/02/03", subv.Get("steve@hacker.com::created"))
+}
+
 var jsonWriteExpected = []byte(`{
   "batters": {
     "batter": [
