@@ -6,7 +6,7 @@ replace github.com/spf13/viper => ../
 
 require (
 	github.com/sagikazarmark/crypt v0.24.0
-	github.com/spf13/viper v1.20.0-alpha.5
+	github.com/spf13/viper v1.20.0-alpha.6
 )
 
 require (
