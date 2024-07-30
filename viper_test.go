@@ -2039,6 +2039,7 @@ func TestMergeConfig(t *testing.T) {
 	assert.Equal(t, 37890, v.GetInt("hello.pop"))
 	assert.Equal(t, int32(37890), v.GetInt32("hello.pop"))
 	assert.Equal(t, int64(765432101234567), v.GetInt64("hello.largenum"))
+	assert.Equal(t, uint8(2), v.GetUint8("hello.pop"))
 	assert.Equal(t, uint(37890), v.GetUint("hello.pop"))
 	assert.Equal(t, uint16(37890), v.GetUint16("hello.pop"))
 	assert.Equal(t, uint32(37890), v.GetUint32("hello.pop"))
