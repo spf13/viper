@@ -542,9 +542,11 @@ func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]interface{})
 func (v *Viper) isPathShadowedInFlatMap(path []string, mi interface{}) string {
 	// unify input map
 	var m map[string]interface{}
-	switch mi.(type) {
-	case map[string]string, map[string]FlagValue:
-		m = cast.ToStringMap(mi)
+	switch miv := mi.(type) {
+	case map[string]string:
+		m = castMapStringToMapInterface(miv)
+	case map[string]FlagValue:
+		m = castMapFlagToMapInterface(miv)
 	default:
 		return ""
 	}
