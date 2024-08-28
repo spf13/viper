@@ -1,11 +1,12 @@
 module github.com/spf13/viper
 
 go 1.21
+toolchain go1.22.5
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-viper/mapstructure/v2 v2.1.0
-	github.com/pelletier/go-toml/v2 v2.2.2
+	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/sagikazarmark/locafero v0.6.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cast v1.7.0
