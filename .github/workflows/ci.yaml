@@ -26,7 +26,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: "1.22"
+          go-version: "1.23"
 
       - name: Build
         run: go build .
@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ["1.21", "1.22"]
+        go: ["1.21", "1.22", "1.23"]
         tags: ["", "viper_finder", "viper_bind_struct"]
 
     steps:
@@ -75,12 +75,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: "1.22"
+          go-version: "1.23"
 
       - name: Lint
         uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
         with:
-          version: v1.59.0
+          version: v1.60.3
 
   dev:
     name: Developer environment
