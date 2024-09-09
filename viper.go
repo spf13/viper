@@ -152,6 +152,8 @@ type Viper struct {
 
 	experimentalFinder     bool
 	experimentalBindStruct bool
+
+	viperLock sync.RWMutex
 }
 
 // New returns an initialized Viper instance.
@@ -713,6 +715,9 @@ func Get(key string) any { return v.Get(key) }
 //
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func (v *Viper) Get(key string) any {
+	v.viperLock.RLock()
+	defer v.viperLock.RUnlock()
+
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, true)
 	if val == nil {
