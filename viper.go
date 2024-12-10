@@ -1205,6 +1205,15 @@ func (v *Viper) IsSet(key string) bool {
 	return val != nil
 }
 
+// IsConfigured checks to see if the key has a non-default value set.
+// IsConfigured is case-insensitive for a key.
+func IsConfigured(key string) bool { return v.IsConfigured(key) }
+func (v *Viper) IsConfigured(key string) bool {
+	lcaseKey := strings.ToLower(key)
+	val := v.find(lcaseKey, true)
+	return val != nil
+}
+
 // AutomaticEnv has Viper check ENV variables for all.
 // keys set in config, default & flags
 func AutomaticEnv() { v.AutomaticEnv() }

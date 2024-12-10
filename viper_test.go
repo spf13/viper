@@ -999,6 +999,18 @@ func TestIsSet(t *testing.T) {
 	assert.True(t, v.IsSet("helloworld"))
 }
 
+func TestIsConfigured(t *testing.T) {
+	v := New()
+	v.SetDefault("clothing.shoes", true)
+	v.SetConfigType("yaml")
+	v.ReadConfig(bytes.NewBuffer(yamlExample))
+	assert.True(t, v.IsConfigured("clothing.jacket"))
+	assert.False(t, v.IsConfigured("clothing.jackets"))
+	assert.False(t, v.IsConfigured("clothing.shoes"))
+	v.Set("clothing.shoes", false)
+	assert.True(t, v.IsConfigured("clothing.shoes"))
+}
+
 func TestDirsSearch(t *testing.T) {
 
 	root, config, cleanup := initDirs(t)
