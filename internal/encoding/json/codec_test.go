@@ -59,7 +59,7 @@ func TestCodec_Encode(t *testing.T) {
 	b, err := codec.Encode(data)
 	require.NoError(t, err)
 
-	assert.Equal(t, encoded, string(b))
+	assert.JSONEq(t, encoded, string(b))
 }
 
 func TestCodec_Decode(t *testing.T) {
