@@ -477,7 +477,7 @@ func TestDefault(t *testing.T) {
 	v.SetConfigType("yaml")
 	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "leather", v.Get("clothing.jacket"))
 }
 
@@ -1621,7 +1621,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, err, ConfigFileNotFoundError{"", ""})
+	assert.IsType(t, ConfigFileNotFoundError{"", ""}, err)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1920,7 +1920,7 @@ func TestSafeWriteConfig(t *testing.T) {
 	require.NoError(t, v.SafeWriteConfig())
 	read, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/test/c.yaml"))
 	require.NoError(t, err)
-	assert.Equal(t, yamlWriteExpected, read)
+	assert.YAMLEq(t, string(yamlWriteExpected), string(read))
 }
 
 func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
@@ -2501,7 +2501,7 @@ func TestKeyDelimiter(t *testing.T) {
 
 	var actual config
 
-	assert.NoError(t, v.Unmarshal(&actual))
+	require.NoError(t, v.Unmarshal(&actual))
 
 	assert.Equal(t, expected, actual)
 }
