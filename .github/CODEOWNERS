@@ -4,4 +4,4 @@
 
 # All file changes should be reviewed by the maintainer team unless
 # specified otherwise
-*     @DataDog/agent-shared-components
+*     @DataDog/agent-configuration
