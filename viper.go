@@ -1577,19 +1577,40 @@ func WriteConfig() error { return v.WriteConfig() }
 func (v *Viper) WriteConfig() error {
 	filename, err := v.getConfigFile()
 	if err != nil {
-		return err
+		if _, ok := err.(ConfigFileNotFoundError); !ok {
+			return err
+		}
+
+		filename, err = v.getDefaultConfigFile()
+		if err != nil {
+			return err
+		}
 	}
-	return v.writeConfig(filename, true)
+
+	v.configFile = filename
+
+	return v.WriteConfigAs(v.configFile)
 }
 
 // SafeWriteConfig writes current configuration to file only if the file does not exist.
 func SafeWriteConfig() error { return v.SafeWriteConfig() }
 
 func (v *Viper) SafeWriteConfig() error {
-	if len(v.configPaths) < 1 {
-		return errors.New("missing configuration for 'configPath'")
+	filename, err := v.getConfigFile()
+	if err != nil {
+		if _, ok := err.(ConfigFileNotFoundError); !ok {
+			return err
+		}
+
+		filename, err = v.getDefaultConfigFile()
+		if err != nil {
+			return err
+		}
 	}
-	return v.SafeWriteConfigAs(filepath.Join(v.configPaths[0], v.configName+"."+v.configType))
+
+	v.configFile = filename
+
+	return v.SafeWriteConfigAs(v.configFile)
 }
 
 // WriteConfigAs writes current configuration to a given filename.
@@ -2011,6 +2032,18 @@ func (v *Viper) getConfigFile() (string, error) {
 		v.configFile = cf
 	}
 	return v.configFile, nil
+}
+
+func (v *Viper) getDefaultConfigFile() (string, error) {
+	if len(v.configPaths) < 1 {
+		return "", errors.New("missing configuration for 'configPath'")
+	}
+
+	if v.configType == "" {
+		v.configType = SupportedExts[0]
+	}
+
+	return filepath.Join(v.configPaths[0], v.configName+"."+v.configType), nil
 }
 
 // Debug prints all configuration registries for debugging
