@@ -3,7 +3,8 @@
 >
 > **Thank you!**
 
-![Viper](.github/logo.png?raw=true)
+![viper logo](https://github.com/user-attachments/assets/acae9193-2974-41f3-808d-2d433f5ada5e)
+
 
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#configuration)
 [![run on repl.it](https://repl.it/badge/github/sagikazarmark/Viper-example)](https://repl.it/@sagikazarmark/Viper-example#main.go)
