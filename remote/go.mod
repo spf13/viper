@@ -1,7 +1,6 @@
 module github.com/spf13/viper/remote
 
 go 1.21.0
-toolchain go1.23.7
 
 replace github.com/spf13/viper => ../
 
