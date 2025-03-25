@@ -1542,6 +1542,14 @@ func TestReadConfig(t *testing.T) {
 	})
 }
 
+func TestReadConfigWithSetConfigFile(t *testing.T) {
+	v := New()
+	v.SetConfigFile("config.yaml") // Dummy value to infer config type from file extension
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
+}
+
 func TestIsSet(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
@@ -2057,6 +2065,14 @@ func TestMergeConfig(t *testing.T) {
 	assert.Len(t, v.GetStringSlice("hello.universe"), 2)
 	assert.Len(t, v.GetIntSlice("hello.ints"), 2)
 	assert.Equal(t, "bar", v.GetString("fu"))
+}
+
+func TestMergeConfigWithSetConfigFile(t *testing.T) {
+	v := New()
+	v.SetConfigFile("config.yaml") // Dummy value to infer config type from file extension
+	err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
 func TestMergeConfigOverrideType(t *testing.T) {
