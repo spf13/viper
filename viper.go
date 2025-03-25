@@ -1535,8 +1535,8 @@ func (v *Viper) MergeInConfig() error {
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 
 func (v *Viper) ReadConfig(in io.Reader) error {
-	if v.configType == "" {
-		return errors.New("cannot decode configuration: config type is not set")
+	if v.getConfigType() == "" {
+		return errors.New("cannot decode configuration: unable to get config type from configType or file extension")
 	}
 
 	v.config = make(map[string]any)
@@ -1547,8 +1547,8 @@ func (v *Viper) ReadConfig(in io.Reader) error {
 func MergeConfig(in io.Reader) error { return v.MergeConfig(in) }
 
 func (v *Viper) MergeConfig(in io.Reader) error {
-	if v.configType == "" {
-		return errors.New("cannot decode configuration: config type is not set")
+	if v.getConfigType() == "" {
+		return errors.New("cannot decode configuration: unable to get config type from configType or file extension")
 	}
 
 	cfg := make(map[string]any)
