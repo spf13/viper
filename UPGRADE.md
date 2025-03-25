@@ -83,6 +83,17 @@ v := viper.NewWithOptions(
 )
 ```
 
+### BREAKING: "github.com/mitchellh/mapstructure" depedency replaced
+
+`mapstructure` package import has changed ([#1723](https://github.com/spf13/viper/pull/1723)) and code like take does not compile anymore
+```go
+err := viper.Unmarshal(&appConfig, func(config *mapstructure.DecoderConfig) {
+	config.TagName = "yaml"
+})
+```
+
+To fix this issue, replace all instances of imports [`"github.com/mitchellh/mapstructure"`](https://github.com/mitchellh/mapstructure) with [`"github.com/go-viper/mapstructure/v2"`](https://github.com/go-viper/mapstructure/).
+
 ### BREAKING: HCL, Java properties, INI removed from core
 
 In order to reduce third-party dependencies, Viper dropped support for the following formats from the core:
