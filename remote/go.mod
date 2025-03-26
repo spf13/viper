@@ -6,7 +6,7 @@ replace github.com/spf13/viper => ../
 
 require (
 	github.com/sagikazarmark/crypt v0.26.0
-	github.com/spf13/viper v1.20.0-alpha.6
+	github.com/spf13/viper v1.20.1
 )
 
 require (
@@ -56,8 +56,8 @@ require (
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
-	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.15 // indirect
