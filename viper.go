@@ -166,6 +166,8 @@ type Viper struct {
 	automaticEnvApplied bool
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
+	aliasesFirstly 		bool
+	aliasesStepByStep	bool
 
 	parents        []string
 	config         map[string]any
@@ -205,6 +207,8 @@ func New() *Viper {
 	v.pflags = make(map[string]FlagValue)
 	v.env = make(map[string][]string)
 	v.aliases = make(map[string]string)
+	v.aliasesFirstly = true
+	v.aliasesStepByStep = false
 	v.typeByDefValue = false
 	v.logger = slog.New(&discardHandler{})
 
@@ -416,6 +420,25 @@ func (v *Viper) mergeWithEnvPrefix(in string) string {
 	}
 
 	return strings.ToUpper(in)
+}
+
+// AliasesFirstly changes the order of processing aliases.
+// If TRUE is passed, values will be searched by alias.
+// If FALSE is passed, the standard key is processed first,
+// and if the value is not found, an alias search will be performed.
+func AliasesFirstly(firstly bool) { v.AliasesFirstly(firstly) }
+
+func (v *Viper) AliasesFirstly(firstly bool) {
+	v.aliasesFirstly = firstly
+}
+
+// AliasesStepByStep changes the processing of nested aliases.
+// If TRUE is passed, the values will be searched at each nesting level of the alias.
+// If FALSE is passed, the values will be searched at the last nesting level of the aliases
+func AliasesStepByStep(enable bool) { v.AliasesStepByStep(enable) }
+
+func (v *Viper) AliasesStepByStep(enable bool) {
+	v.aliasesStepByStep = enable
 }
 
 // AllowEmptyEnv tells Viper to consider set,
@@ -1143,8 +1166,8 @@ func (v *Viper) MustBindEnv(input ...string) {
 // Note: this assumes a lower-cased key given.
 func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	var (
+		lastKey string
 		val    any
-		exists bool
 		path   = strings.Split(lcaseKey, v.keyDelim)
 		nested = len(path) > 1
 	)
@@ -1154,110 +1177,27 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		return nil
 	}
 
-	// if the requested key is an alias, then return the proper key
-	lcaseKey = v.realKey(lcaseKey)
-	path = strings.Split(lcaseKey, v.keyDelim)
-	nested = len(path) > 1
-
-	// Set() override first
-	val = v.searchMap(v.override, path)
-	if val != nil {
-		return val
-	}
-	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
-		return nil
-	}
-
-	// PFlag override next
-	flag, exists := v.pflags[lcaseKey]
-	if exists && flag.HasChanged() {
-		switch flag.ValueType() {
-		case "int", "int8", "int16", "int32", "int64":
-			return cast.ToInt(flag.ValueString())
-		case "bool":
-			return cast.ToBool(flag.ValueString())
-		case "stringSlice", "stringArray":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			res, _ := readAsCSV(s)
-			return res
-		case "intSlice":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			res, _ := readAsCSV(s)
-			return cast.ToIntSlice(res)
-		case "durationSlice":
-			s := strings.TrimPrefix(flag.ValueString(), "[")
-			s = strings.TrimSuffix(s, "]")
-			slice := strings.Split(s, ",")
-			return cast.ToDurationSlice(slice)
-		case "stringToString":
-			return stringToStringConv(flag.ValueString())
-		case "stringToInt":
-			return stringToIntConv(flag.ValueString())
-		default:
-			return flag.ValueString()
+	for lastKey != lcaseKey {
+		if v.aliasesFirstly {
+			// if the requested key is an alias, then return the proper key
+			lastKey = lcaseKey
+			lcaseKey = v.realKey(lcaseKey)
+			path = strings.Split(lcaseKey, v.keyDelim)
+			nested = len(path) > 1
 		}
-	}
-	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
-		return nil
-	}
 
-	// Env override next
-	if v.automaticEnvApplied {
-		envKey := strings.Join(append(v.parents, lcaseKey), ".")
-		// even if it hasn't been registered, if automaticEnv is used,
-		// check any Get request
-		if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+		// Set() override first
+		val = v.searchMap(v.override, path)
+		if val != nil {
 			return val
 		}
-		if nested && v.isPathShadowedInAutoEnv(path) != "" {
+		if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
 			return nil
 		}
-	}
-	envkeys, exists := v.env[lcaseKey]
-	if exists {
-		for _, envkey := range envkeys {
-			if val, ok := v.getEnv(envkey); ok {
-				return val
-			}
-		}
-	}
-	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
-		return nil
-	}
 
-	// Config file next
-	val = v.searchIndexableWithPathPrefixes(v.config, path)
-	if val != nil {
-		return val
-	}
-	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
-		return nil
-	}
-
-	// K/V store next
-	val = v.searchMap(v.kvstore, path)
-	if val != nil {
-		return val
-	}
-	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
-		return nil
-	}
-
-	// Default next
-	val = v.searchMap(v.defaults, path)
-	if val != nil {
-		return val
-	}
-	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
-		return nil
-	}
-
-	if flagDefault {
-		// last chance: if no value is found and a flag does exist for the key,
-		// get the flag's default value even if the flag's value has not been set.
-		if flag, exists := v.pflags[lcaseKey]; exists {
+		// PFlag override next
+		flag, exists := v.pflags[lcaseKey]
+		if exists && flag.HasChanged() {
 			switch flag.ValueType() {
 			case "int", "int8", "int16", "int32", "int64":
 				return cast.ToInt(flag.ValueString())
@@ -1273,20 +1213,116 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
-			case "stringToString":
-				return stringToStringConv(flag.ValueString())
-			case "stringToInt":
-				return stringToIntConv(flag.ValueString())
 			case "durationSlice":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")
 				slice := strings.Split(s, ",")
 				return cast.ToDurationSlice(slice)
+			case "stringToString":
+				return stringToStringConv(flag.ValueString())
+			case "stringToInt":
+				return stringToIntConv(flag.ValueString())
 			default:
 				return flag.ValueString()
 			}
 		}
-		// last item, no need to check shadowing
+		if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
+			return nil
+		}
+
+		// Env override next
+		if v.automaticEnvApplied {
+			envKey := strings.Join(append(v.parents, lcaseKey), ".")
+			// even if it hasn't been registered, if automaticEnv is used,
+			// check any Get request
+			if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+				return val
+			}
+			if nested && v.isPathShadowedInAutoEnv(path) != "" {
+				return nil
+			}
+		}
+		envkeys, exists := v.env[lcaseKey]
+		if exists {
+			for _, envkey := range envkeys {
+				if val, ok := v.getEnv(envkey); ok {
+					return val
+				}
+			}
+		}
+		if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
+			return nil
+		}
+
+		// Config file next
+		val = v.searchIndexableWithPathPrefixes(v.config, path)
+		if val != nil {
+			return val
+		}
+		if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
+			return nil
+		}
+
+		// K/V store next
+		val = v.searchMap(v.kvstore, path)
+		if val != nil {
+			return val
+		}
+		if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
+			return nil
+		}
+
+		// Default next
+		val = v.searchMap(v.defaults, path)
+		if val != nil {
+			return val
+		}
+		if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
+			return nil
+		}
+
+		if flagDefault {
+			// last chance: if no value is found and a flag does exist for the key,
+			// get the flag's default value even if the flag's value has not been set.
+			if flag, exists := v.pflags[lcaseKey]; exists {
+				switch flag.ValueType() {
+				case "int", "int8", "int16", "int32", "int64":
+					return cast.ToInt(flag.ValueString())
+				case "bool":
+					return cast.ToBool(flag.ValueString())
+				case "stringSlice", "stringArray":
+					s := strings.TrimPrefix(flag.ValueString(), "[")
+					s = strings.TrimSuffix(s, "]")
+					res, _ := readAsCSV(s)
+					return res
+				case "intSlice":
+					s := strings.TrimPrefix(flag.ValueString(), "[")
+					s = strings.TrimSuffix(s, "]")
+					res, _ := readAsCSV(s)
+					return cast.ToIntSlice(res)
+				case "stringToString":
+					return stringToStringConv(flag.ValueString())
+				case "stringToInt":
+					return stringToIntConv(flag.ValueString())
+				case "durationSlice":
+					s := strings.TrimPrefix(flag.ValueString(), "[")
+					s = strings.TrimSuffix(s, "]")
+					slice := strings.Split(s, ",")
+					return cast.ToDurationSlice(slice)
+				default:
+					return flag.ValueString()
+				}
+			}
+			// last item, no need to check shadowing
+
+			if !v.aliasesFirstly {
+				// if the requested key is an alias, then return the proper key
+				lastKey = lcaseKey
+				lcaseKey = v.realKey(lcaseKey)
+				path = strings.Split(lcaseKey, v.keyDelim)
+				nested = len(path) > 1
+			}
+		}
 	}
 
 	return nil
@@ -1420,7 +1456,9 @@ func (v *Viper) realKey(key string) string {
 	newkey, exists := v.aliases[key]
 	if exists {
 		v.logger.Debug("key is an alias", "alias", key, "to", newkey)
-
+		if v.aliasesStepByStep {
+			return newkey
+		}
 		return v.realKey(newkey)
 	}
 	return key
