@@ -1,6 +1,6 @@
 package yaml
 
-import "gopkg.in/yaml.v3"
+import "sigs.k8s.io/yaml"
 
 // Codec implements the encoding.Encoder and encoding.Decoder interfaces for YAML encoding.
 type Codec struct{}
