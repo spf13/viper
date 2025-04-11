@@ -1181,11 +1181,26 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return res
+		case "boolSlice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			res, _ := readAsCSV(s)
+			return cast.ToBoolSlice(res)
 		case "intSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
+		case "uintSlice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			res, _ := readAsCSV(s)
+			return cast.ToUintSlice(res)
+		case "float64Slice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			res, _ := readAsCSV(s)
+			return cast.ToFloat64Slice(res)
 		case "durationSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
@@ -1268,11 +1283,26 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
 				return res
+			case "boolSlice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return cast.ToBoolSlice(res)
 			case "intSlice":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
+			case "uintSlice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return cast.ToUintSlice(res)
+			case "float64Slice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return cast.ToFloat64Slice(res)
 			case "stringToString":
 				return stringToStringConv(flag.ValueString())
 			case "stringToInt":
