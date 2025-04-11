@@ -1210,6 +1210,29 @@ func TestBindPFlagsStringArray(t *testing.T) {
 	}
 }
 
+func TestBindPFlagsSlices(t *testing.T) {
+	set := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	set.IntSlice("intslice", []int{}, "")
+	set.BoolSlice("boolslice", []bool{}, "")
+	set.Float64Slice("float64slice", []float64{}, "")
+	set.UintSlice("uintslice", []uint{}, "")
+
+	v := New()
+	v.BindPFlags(set)
+
+	set.Set("intslice", "1,2")
+	assert.Equal(t, []int{1, 2}, v.Get("intslice"))
+
+	set.Set("boolslice", "true,false")
+	assert.Equal(t, []bool{true, false}, v.Get("boolslice"))
+
+	set.Set("float64slice", "1.1,2.2")
+	assert.Equal(t, []float64{1.1, 2.2}, v.Get("float64slice"))
+
+	set.Set("uintslice", "1,2")
+	assert.Equal(t, []uint{1, 2}, v.Get("uintslice"))
+}
+
 func TestSliceFlagsReturnCorrectType(t *testing.T) {
 	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	flagSet.IntSlice("int", []int{1, 2}, "")
