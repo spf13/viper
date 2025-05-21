@@ -477,7 +477,7 @@ func TestDefault(t *testing.T) {
 	v.SetConfigType("yaml")
 	err := v.ReadConfig(bytes.NewBuffer(yamlExample))
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "leather", v.Get("clothing.jacket"))
 }
 
@@ -1542,6 +1542,14 @@ func TestReadConfig(t *testing.T) {
 	})
 }
 
+func TestReadConfigWithSetConfigFile(t *testing.T) {
+	v := New()
+	v.SetConfigFile("config.yaml") // Dummy value to infer config type from file extension
+	err := v.ReadConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
+}
+
 func TestIsSet(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
@@ -1621,7 +1629,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, err, ConfigFileNotFoundError{"", ""})
+	assert.IsType(t, ConfigFileNotFoundError{"", ""}, err)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1920,7 +1928,7 @@ func TestSafeWriteConfig(t *testing.T) {
 	require.NoError(t, v.SafeWriteConfig())
 	read, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/test/c.yaml"))
 	require.NoError(t, err)
-	assert.Equal(t, yamlWriteExpected, read)
+	assert.YAMLEq(t, string(yamlWriteExpected), string(read))
 }
 
 func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
@@ -2039,6 +2047,7 @@ func TestMergeConfig(t *testing.T) {
 	assert.Equal(t, 37890, v.GetInt("hello.pop"))
 	assert.Equal(t, int32(37890), v.GetInt32("hello.pop"))
 	assert.Equal(t, int64(765432101234567), v.GetInt64("hello.largenum"))
+	assert.Equal(t, uint8(2), v.GetUint8("hello.pop"))
 	assert.Equal(t, uint(37890), v.GetUint("hello.pop"))
 	assert.Equal(t, uint16(37890), v.GetUint16("hello.pop"))
 	assert.Equal(t, uint32(37890), v.GetUint32("hello.pop"))
@@ -2056,6 +2065,14 @@ func TestMergeConfig(t *testing.T) {
 	assert.Len(t, v.GetStringSlice("hello.universe"), 2)
 	assert.Len(t, v.GetIntSlice("hello.ints"), 2)
 	assert.Equal(t, "bar", v.GetString("fu"))
+}
+
+func TestMergeConfigWithSetConfigFile(t *testing.T) {
+	v := New()
+	v.SetConfigFile("config.yaml") // Dummy value to infer config type from file extension
+	err := v.MergeConfig(bytes.NewBuffer(yamlMergeExampleSrc))
+	require.NoError(t, err)
+	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
 func TestMergeConfigOverrideType(t *testing.T) {
@@ -2500,7 +2517,7 @@ func TestKeyDelimiter(t *testing.T) {
 
 	var actual config
 
-	assert.NoError(t, v.Unmarshal(&actual))
+	require.NoError(t, v.Unmarshal(&actual))
 
 	assert.Equal(t, expected, actual)
 }

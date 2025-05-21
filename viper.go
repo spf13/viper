@@ -816,6 +816,13 @@ func (v *Viper) GetInt64(key string) int64 {
 	return cast.ToInt64(v.Get(key))
 }
 
+// GetUint8 returns the value associated with the key as an unsigned integer.
+func GetUint8(key string) uint8 { return v.GetUint8(key) }
+
+func (v *Viper) GetUint8(key string) uint8 {
+	return cast.ToUint8(v.Get(key))
+}
+
 // GetUint returns the value associated with the key as an unsigned integer.
 func GetUint(key string) uint { return v.GetUint(key) }
 
@@ -1528,27 +1535,29 @@ func (v *Viper) MergeInConfig() error {
 func ReadConfig(in io.Reader) error { return v.ReadConfig(in) }
 
 func (v *Viper) ReadConfig(in io.Reader) error {
-	if v.configType == "" {
-		return errors.New("cannot decode configuration: config type is not set")
+	config := make(map[string]any)
+
+	err := v.unmarshalReader(in, config)
+	if err != nil {
+		return err
 	}
 
-	v.config = make(map[string]any)
-	return v.unmarshalReader(in, v.config)
+	v.config = config
+
+	return nil
 }
 
 // MergeConfig merges a new configuration with an existing config.
 func MergeConfig(in io.Reader) error { return v.MergeConfig(in) }
 
 func (v *Viper) MergeConfig(in io.Reader) error {
-	if v.configType == "" {
-		return errors.New("cannot decode configuration: config type is not set")
-	}
+	config := make(map[string]any)
 
-	cfg := make(map[string]any)
-	if err := v.unmarshalReader(in, cfg); err != nil {
+	if err := v.unmarshalReader(in, config); err != nil {
 		return err
 	}
-	return v.MergeConfigMap(cfg)
+
+	return v.MergeConfigMap(config)
 }
 
 // MergeConfigMap merges the configuration from the map given with an existing config.
@@ -1655,15 +1664,21 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 }
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
+	format := strings.ToLower(v.getConfigType())
+	if format == "" {
+		return errors.New("cannot decode configuration: unable to determine config type")
+	}
+
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(in)
 
-	format := strings.ToLower(v.getConfigType())
-
+	// TODO: remove this once SupportedExts is deprecated/removed
 	if !slices.Contains(SupportedExts, format) {
 		return UnsupportedConfigError(format)
 	}
 
+	// TODO: return [UnsupportedConfigError] if the registry does not contain the format
+	// TODO: consider deprecating this error type
 	decoder, err := v.decoderRegistry.Decoder(format)
 	if err != nil {
 		return ConfigParseError{err}

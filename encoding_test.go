@@ -20,9 +20,7 @@ func (codec) Decode(_ []byte, _ map[string]any) error {
 func TestDefaultCodecRegistry(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		registry := NewCodecRegistry()
-
 		c := codec{}
-
 		err := registry.RegisterCodec("myformat", c)
 		require.NoError(t, err)
 
