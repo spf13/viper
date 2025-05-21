@@ -821,7 +821,7 @@ You can use your favorite format's marshaller with the config returned by `AllSe
 
 ```go
 import (
-	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 	// ...
 )
 
