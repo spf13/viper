@@ -1011,6 +1011,15 @@ func TestIsConfigured(t *testing.T) {
 	assert.True(t, v.IsConfigured("clothing.shoes"))
 }
 
+func TestIsConfiguredUsingEnv(t *testing.T) {
+	v := New()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.BindEnv("foo.bar")
+	t.Setenv("FOO_BAR", "baz")
+	assert.True(t, v.IsConfigured("foo"))
+	assert.True(t, v.IsConfigured("foo.bar"))
+}
+
 func TestDirsSearch(t *testing.T) {
 
 	root, config, cleanup := initDirs(t)

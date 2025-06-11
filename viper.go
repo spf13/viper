@@ -1211,7 +1211,22 @@ func IsConfigured(key string) bool { return v.IsConfigured(key) }
 func (v *Viper) IsConfigured(key string) bool {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, true)
-	return val != nil
+	if val != nil {
+		return true
+	}
+
+	// Have to check children for "inner node", since viper doesn't store env vars
+	for childkey, envvars := range v.env {
+		if childkey != key && strings.HasPrefix(childkey, key) {
+			for _, envvar := range envvars {
+				if _, found := v.getEnv(envvar); found {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // AutomaticEnv has Viper check ENV variables for all.
