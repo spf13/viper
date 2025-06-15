@@ -76,7 +76,12 @@ type ConfigFileNotFoundError struct {
 
 // Error returns the formatted configuration error.
 func (fnfe ConfigFileNotFoundError) Error() string {
-	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
+	message := fmt.Sprintf("Config file %q Not Found", fnfe.name)
+	if fnfe.locations != "" {
+		message += fmt.Sprintf(" in %q", fnfe.locations)
+	}
+
+	return message
 }
 
 // ConfigFileAlreadyExistsError denotes failure to write new configuration file.
@@ -1522,11 +1527,16 @@ func (v *Viper) ReadInConfig() error {
 	}
 
 	v.logger.Debug("reading file", "file", filename)
+	exists, err := afero.Exists(v.fs, filename)
+	if !exists {
+		return ConfigFileNotFoundError{filename, ""}
+	} else if err != nil {
+		return err
+	}
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
 		return err
 	}
-
 	config := make(map[string]any)
 
 	err = v.unmarshalReader(bytes.NewReader(file), config)
