@@ -359,7 +359,7 @@ func TestReadInConfig(t *testing.T) {
 	t.Run("config file set", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		err := fs.Mkdir("/etc/viper", 0o777)
+		err := fs.Mkdir(testutil.AbsFilePath(t, "/etc/viper"), 0o777)
 		require.NoError(t, err)
 
 		file, err := fs.Create(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
@@ -1573,6 +1573,23 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
+func TestWrongConfigWithSetConfigFileNotFound(t *testing.T) {
+	_, config := initDirs(t)
+
+	v := New()
+	v.SetConfigName(config)
+	v.SetDefault(`key`, `default`)
+
+	v.SetConfigFile(`whatareyoutalkingabout.yaml`)
+
+	err := v.ReadInConfig()
+	assert.IsType(t, ConfigFileNotFoundError{name: "", locations: ""}, err)
+
+	// Even though config did not load and the error might have
+	// been ignored by the client, the default still loads
+	assert.Equal(t, `default`, v.GetString(`key`))
+}
+
 func TestIsSet(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
@@ -1652,7 +1669,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, ConfigFileNotFoundError{"", ""}, err)
+	assert.IsType(t, ConfigFileNotFoundError{name: "", locations: ""}, err)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1670,7 +1687,7 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.MergeInConfig()
-	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{"", ""}), reflect.TypeOf(err))
+	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{name: "", locations: ""}), reflect.TypeOf(err))
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
