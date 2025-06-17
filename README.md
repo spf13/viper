@@ -132,7 +132,8 @@ You can handle the specific case where no config file is found like this:
 
 ```go
 if err := viper.ReadInConfig(); err != nil {
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+	var notFoundError viper.ConfigFileNotFoundError
+	if errors.As(err, &notFoundError){
 		// Config file not found; ignore error if desired
 	} else {
 		// Config file was found but another error was produced
