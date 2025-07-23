@@ -188,6 +188,8 @@ type Viper struct {
 
 	experimentalFinder     bool
 	experimentalBindStruct bool
+
+	stopCh chan struct{}
 }
 
 // New returns an initialized Viper instance.
@@ -215,6 +217,8 @@ func New() *Viper {
 
 	v.experimentalFinder = features.Finder
 	v.experimentalBindStruct = features.BindStruct
+	
+    v.stopCh = make(chan struct{})
 
 	return v
 }
@@ -340,11 +344,13 @@ func (v *Viper) WatchConfig() {
 		eventsWG := sync.WaitGroup{}
 		eventsWG.Add(1)
 		go func() {
+			defer eventsWG.Done()
 			for {
 				select {
+                case <-v.stopCh:  // 新增：监听停止信号
+                    return
 				case event, ok := <-watcher.Events:
 					if !ok { // 'Events' channel is closed
-						eventsWG.Done()
 						return
 					}
 					currentConfigFile, _ := filepath.EvalSymlinks(filename)
@@ -363,7 +369,6 @@ func (v *Viper) WatchConfig() {
 							v.onConfigChange(event)
 						}
 					} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) {
-						eventsWG.Done()
 						return
 					}
 
@@ -371,7 +376,6 @@ func (v *Viper) WatchConfig() {
 					if ok { // 'Errors' channel is not closed
 						v.logger.Error(fmt.Sprintf("watcher error: %s", err))
 					}
-					eventsWG.Done()
 					return
 				}
 			}
@@ -381,6 +385,14 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+}
+
+// StopWatch stops the configuration watcher and releases resources
+func (v *Viper) StopWatch() {
+    if v.stopCh != nil {
+        close(v.stopCh)
+        v.stopCh = nil
+    }
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
