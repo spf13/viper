@@ -1762,7 +1762,7 @@ var jsonWriteExpected = []byte(`{
 // name: steve
 // `)
 
-func TestWriteConfig(t *testing.T) {
+func TestWriteConfigAs(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	testCases := map[string]struct {
 		configName      string
@@ -1840,7 +1840,7 @@ func TestWriteConfig(t *testing.T) {
 	}
 }
 
-func TestWriteConfigTOML(t *testing.T) {
+func TestWriteConfigAsTOML(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
 	testCases := map[string]struct {
@@ -1891,7 +1891,7 @@ func TestWriteConfigTOML(t *testing.T) {
 	}
 }
 
-func TestWriteConfigDotEnv(t *testing.T) {
+func TestWriteConfigAsDotEnv(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	testCases := map[string]struct {
 		configName string
@@ -1940,6 +1940,56 @@ func TestWriteConfigDotEnv(t *testing.T) {
 	}
 }
 
+func TestWriteConfig(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.AddConfigPath("/test")
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
+	require.NoError(t, v.WriteConfig())
+	read, err := afero.ReadFile(fs, "/test/c.yaml")
+	require.NoError(t, err)
+	assert.Equal(t, yamlWriteExpected, read)
+}
+
+func TestWriteConfigWithExplicitlySetFile(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.AddConfigPath("/test1")
+	v.SetConfigName("c1")
+	v.SetConfigType("yaml")
+	v.SetConfigFile("/test2/c2.yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
+	require.NoError(t, v.WriteConfig())
+	read, err := afero.ReadFile(fs, "/test2/c2.yaml")
+	require.NoError(t, err)
+	assert.Equal(t, yamlWriteExpected, read)
+}
+
+func TestWriteConfigWithMissingConfigPath(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	require.EqualError(t, v.WriteConfig(), "missing configuration for 'configPath'")
+}
+
+func TestWriteConfigWithExistingFile(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	fs.Create("/test/c.yaml")
+	v.SetFs(fs)
+	v.AddConfigPath("/test")
+	v.SetConfigName("c")
+	v.SetConfigType("yaml")
+	err := v.WriteConfig()
+	require.NoError(t, err)
+}
+
 func TestSafeWriteConfig(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
@@ -1952,6 +2002,21 @@ func TestSafeWriteConfig(t *testing.T) {
 	read, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/test/c.yaml"))
 	require.NoError(t, err)
 	assert.YAMLEq(t, string(yamlWriteExpected), string(read))
+}
+
+func TestSafeWriteConfigWithExplicitlySetFile(t *testing.T) {
+	v := New()
+	fs := afero.NewMemMapFs()
+	v.SetFs(fs)
+	v.AddConfigPath("/test1")
+	v.SetConfigName("c1")
+	v.SetConfigType("yaml")
+	v.SetConfigFile("/test2/c2.yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBuffer(yamlExample)))
+	require.NoError(t, v.SafeWriteConfig())
+	read, err := afero.ReadFile(fs, "/test2/c2.yaml")
+	require.NoError(t, err)
+	assert.Equal(t, yamlWriteExpected, read)
 }
 
 func TestSafeWriteConfigWithMissingConfigPath(t *testing.T) {
@@ -1977,7 +2042,7 @@ func TestSafeWriteConfigWithExistingFile(t *testing.T) {
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
 }
 
-func TestSafeWriteAsConfig(t *testing.T) {
+func TestSafeWriteConfigAs(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
 	v.SetFs(fs)
