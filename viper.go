@@ -1700,7 +1700,9 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
+	if _, err := buf.ReadFrom(in); err != nil {
+		return ConfigParseError{err}
+	}
 
 	// TODO: remove this once SupportedExts is deprecated/removed
 	if !slices.Contains(SupportedExts, format) {
