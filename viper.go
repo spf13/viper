@@ -44,52 +44,10 @@ import (
 	"github.com/spf13/viper/internal/features"
 )
 
-// ConfigMarshalError happens when failing to marshal the configuration.
-type ConfigMarshalError struct {
-	err error
-}
-
-// Error returns the formatted configuration error.
-func (e ConfigMarshalError) Error() string {
-	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
-}
-
 var v *Viper
 
 func init() {
 	v = New()
-}
-
-// UnsupportedConfigError denotes encountering an unsupported
-// configuration filetype.
-type UnsupportedConfigError string
-
-// Error returns the formatted configuration error.
-func (str UnsupportedConfigError) Error() string {
-	return fmt.Sprintf("Unsupported Config Type %q", string(str))
-}
-
-// ConfigFileNotFoundError denotes failing to find configuration file.
-type ConfigFileNotFoundError struct {
-	name, locations string
-}
-
-// Error returns the formatted configuration error.
-func (fnfe ConfigFileNotFoundError) Error() string {
-	message := fmt.Sprintf("Config file %q Not Found", fnfe.name)
-	if fnfe.locations != "" {
-		message += fmt.Sprintf(" in %q", fnfe.locations)
-	}
-
-	return message
-}
-
-// ConfigFileAlreadyExistsError denotes failure to write new configuration file.
-type ConfigFileAlreadyExistsError string
-
-// Error returns the formatted error when configuration already exists.
-func (faee ConfigFileAlreadyExistsError) Error() string {
-	return fmt.Sprintf("Config File %q Already Exists", string(faee))
 }
 
 // A DecoderConfigOption can be passed to viper.Unmarshal to configure
@@ -1537,7 +1495,7 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 	if !exists {
-		return ConfigFileNotFoundError{name: filename, locations: ""}
+		return ConfigFileNotFoundFromReadError{name: filename}
 	}
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {

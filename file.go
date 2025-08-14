@@ -50,7 +50,7 @@ func (v *Viper) findConfigFileWithFinder(finder Finder) (string, error) {
 	}
 
 	if len(results) == 0 {
-		return "", ConfigFileNotFoundError{
+		return "", ConfigFileNotFoundFromFinderError{
 			name: v.configName, locations: fmt.Sprintf("%s", v.configPaths),
 		}
 	}
@@ -71,7 +71,7 @@ func (v *Viper) findConfigFileOld() (string, error) {
 			return file, nil
 		}
 	}
-	return "", ConfigFileNotFoundError{
+	return "", ConfigFileNotFoundFromFinderError{
 		name: v.configName, locations: fmt.Sprintf("%s", v.configPaths),
 	}
 }
