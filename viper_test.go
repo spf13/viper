@@ -1583,7 +1583,7 @@ func TestWrongConfigWithSetConfigFileNotFound(t *testing.T) {
 	v.SetConfigFile(`whatareyoutalkingabout.yaml`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, ConfigFileNotFoundError{name: "", locations: ""}, err)
+	assert.IsType(t, ConfigFileNotFoundFromReadError{}, err)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1669,7 +1669,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, ConfigFileNotFoundError{name: "", locations: ""}, err)
+	assert.IsType(t, ConfigFileNotFoundFromFinderError{name: "", locations: ""}, err)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1687,7 +1687,7 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.MergeInConfig()
-	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundError{name: "", locations: ""}), reflect.TypeOf(err))
+	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundFromFinderError{name: "", locations: ""}), reflect.TypeOf(err))
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
