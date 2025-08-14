@@ -6,14 +6,14 @@ import (
 
 /* ConfigFileNotFoundError types */
 
-// For matching on any ConfigFileNotFoundFrom*Error
+// For matching on any ConfigFileNotFoundFrom*Error.
 type ConfigFileNotFoundError interface {
 	Error() string
 	Name() string
 	Locations() string
 }
 
-// ConfigFileNotFoundError denotes failing to find configuration file.
+// ConfigFileNotFoundFromFinderError denotes failing to find a configuration file.
 type ConfigFileNotFoundFromFinderError struct {
 	name, locations string
 }
@@ -36,7 +36,7 @@ func (fnfe ConfigFileNotFoundFromFinderError) Locations() string {
 	return fnfe.locations
 }
 
-// ConfigFileNotFoundError denotes failing to find configuration file.
+// ConfigFileNotFoundFromReadError denotes failing to find a specific configuration file.
 type ConfigFileNotFoundFromReadError struct {
 	name string
 }
