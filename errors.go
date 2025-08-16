@@ -4,13 +4,13 @@ import (
 	"fmt"
 )
 
-/* ConfigFileNotFoundError types */
 
-// For matching on any ConfigFileNotFoundFrom*Error.
-type ConfigFileNotFoundError interface {
-	Error() string
-	Name() string
-	Locations() string
+// FileLookupError is returned when Viper cannot resolve a configuration file,
+// either because a file does not exists or because it cannot find any file matching the criteria.
+type FileLookupError interface {
+	error
+	
+	fileLookup()
 }
 
 // ConfigFileNotFoundFromFinderError denotes failing to find a configuration file.
@@ -37,8 +37,8 @@ func (fnfe ConfigFileNotFoundFromFinderError) Locations() string {
 }
 
 // ConfigFileNotFoundFromReadError denotes failing to find a specific configuration file.
-type ConfigFileNotFoundFromReadError struct {
-	name string
+type FileNotFoundError struct {
+	path string
 }
 
 // Error returns the formatted configuration error.
