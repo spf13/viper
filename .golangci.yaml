@@ -82,10 +82,41 @@ linters:
         - noctx
         path: _test.go
     presets:
-      - comments
       - std-error-handling
 
   settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: "*testing.T"
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+          arguments:
+            - "sayRepetitiveInsteadOfStutters"  # make error messages clearer
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+          disabled: true # disable package comments rule for now
+        - name: range
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+
+        # TODO: add more revive rules
+
     misspell:
       locale: US
     nolintlint:
