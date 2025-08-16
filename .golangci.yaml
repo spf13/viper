@@ -25,7 +25,7 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
-    # - revive
+    - revive
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
@@ -75,8 +75,15 @@ linters:
     # - testpackage
     # - wsl
 
-  disable:
-    - errcheck
+  exclusions:
+    rules:
+      - linters:
+        - errcheck
+        - noctx
+        path: _test.go
+    presets:
+      - comments
+      - std-error-handling
 
   settings:
     misspell:
