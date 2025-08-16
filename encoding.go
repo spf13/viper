@@ -49,7 +49,7 @@ type DecoderRegistry interface {
 	Decoder(format string) (Decoder, error)
 }
 
-// [CodecRegistry] combines [EncoderRegistry] and [DecoderRegistry] interfaces.
+// CodecRegistry combines [EncoderRegistry] and [DecoderRegistry] interfaces.
 type CodecRegistry interface {
 	EncoderRegistry
 	DecoderRegistry
