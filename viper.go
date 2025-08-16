@@ -376,7 +376,12 @@ func (v *Viper) WatchConfig() {
 				}
 			}
 		}()
-		watcher.Add(configDir)
+		err = watcher.Add(configDir)
+		if err != nil {
+			v.logger.Error(fmt.Sprintf("failed to add watcher: %s", err))
+			initWG.Done()
+			return
+		}
 		initWG.Done()   // done initializing the watch in this go routine, so the parent routine can move on...
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
@@ -1700,7 +1705,10 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
 	}
 
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(in)
+	_, err := buf.ReadFrom(in)
+	if err != nil {
+		return fmt.Errorf("failed to read configuration from input: %w", err)
+	}
 
 	// TODO: remove this once SupportedExts is deprecated/removed
 	if !slices.Contains(SupportedExts, format) {
