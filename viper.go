@@ -1503,6 +1503,7 @@ func (v *Viper) ReadInConfig() error {
 	if err != nil {
 		return err
 	}
+
 	config := make(map[string]any)
 
 	err = v.unmarshalReader(bytes.NewReader(file), config)
