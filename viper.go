@@ -1495,7 +1495,7 @@ func (v *Viper) ReadInConfig() error {
 		return err
 	}
 	if !exists {
-		return ConfigFileNotFoundFromReadError{name: filename}
+		return FileNotFoundError{path: filename}
 	}
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {

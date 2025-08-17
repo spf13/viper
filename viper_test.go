@@ -1573,7 +1573,7 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
-func TestWrongConfigWithSetConfigFileNotFound(t *testing.T) {
+func TestWrongConfigWithFileNotFound(t *testing.T) {
 	_, config := initDirs(t)
 
 	v := New()
@@ -1583,7 +1583,7 @@ func TestWrongConfigWithSetConfigFileNotFound(t *testing.T) {
 	v.SetConfigFile(`whatareyoutalkingabout.yaml`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, ConfigFileNotFoundFromReadError{}, err)
+	assert.ErrorAs(t, err, &FileNotFoundError{})
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1669,7 +1669,9 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
-	assert.IsType(t, ConfigFileNotFoundFromFinderError{name: "", locations: ""}, err)
+	// It matches both types of errors.
+	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
+	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1687,7 +1689,9 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.MergeInConfig()
-	assert.Equal(t, reflect.TypeOf(ConfigFileNotFoundFromFinderError{name: "", locations: ""}), reflect.TypeOf(err))
+	// It matches both types of errors.
+	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
+	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
