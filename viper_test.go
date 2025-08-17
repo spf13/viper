@@ -1573,7 +1573,7 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
-func TestWrongConfigWithFileNotFound(t *testing.T) {
+func TestWrongFileNotFound(t *testing.T) {
 	_, config := initDirs(t)
 
 	v := New()
