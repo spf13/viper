@@ -1,0 +1,12 @@
+[
+    {
+        "uid": { "type": "User", "id": "1226384" },
+        "attrs": { "login": "sagikazarmark" },
+        "parents": [{ "type": "Role", "id": "Collaborator" }]
+    },
+    {
+        "uid": { "type": "User", "id": "805695" },
+        "attrs": { "login": "spacez320" },
+        "parents": [{ "type": "Role", "id": "Triager" }]
+    }
+]
