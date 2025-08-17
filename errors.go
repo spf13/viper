@@ -4,54 +4,60 @@ import (
 	"fmt"
 )
 
+/* File look-up errors */
 
-// FileLookupError is returned when Viper cannot resolve a configuration file,
-// either because a file does not exists or because it cannot find any file matching the criteria.
+// FileLookupError is returned when Viper cannot resolve a configuration file.
+//
+// This is meant to be a common interface for all file look-up errors, occurring either because a
+// file does not exist or because it cannot find any file matching finder criteria.
 type FileLookupError interface {
 	error
-	
+
 	fileLookup()
 }
 
-// ConfigFileNotFoundFromFinderError denotes failing to find a configuration file.
-type ConfigFileNotFoundFromFinderError struct {
-	name, locations string
+// ConfigFileNotFoundError denotes failing to find a configuration file from a search.
+//
+// Deprecated: This is wrapped by FileNotFoundFromSearchError, which should be used instead.
+type ConfigFileNotFoundError struct {
+	name      string
+	locations []string
 }
 
-// Error returns the formatted configuration error.
-func (fnfe ConfigFileNotFoundFromFinderError) Error() string {
-	message := fmt.Sprintf("Config file %q Not Found", fnfe.name)
-	if fnfe.locations != "" {
-		message += fmt.Sprintf(" in %q", fnfe.locations)
+// Error returns the formatted error.
+func (fnfe ConfigFileNotFoundError) Error() string {
+	message := fmt.Sprintf("File %q Not Found", fnfe.name)
+	if len(fnfe.locations) != 0 {
+		message += fmt.Sprintf(" in %v", fnfe.locations)
 	}
 
 	return message
 }
 
-func (fnfe ConfigFileNotFoundFromFinderError) Name() string {
-	return fnfe.name
+// Unwraps to FileNotFoundFromSearchError.
+func (fnfe ConfigFileNotFoundError) Unwrap() error {
+	return FileNotFoundFromSearchError{err: fnfe}
 }
 
-func (fnfe ConfigFileNotFoundFromFinderError) Locations() string {
-	return fnfe.locations
+// FileNotFoundFromSearchError denotes failing to find a configuration file from a search.
+// Wraps ConfigFileNotFoundError.
+type FileNotFoundFromSearchError struct {
+	err ConfigFileNotFoundError
 }
 
-// ConfigFileNotFoundFromReadError denotes failing to find a specific configuration file.
+// Error returns the formatted error.
+func (fnfe FileNotFoundFromSearchError) Error() string {
+	return fnfe.err.Error()
+}
+
+// FileNotFoundError denotes failing to find a specific configuration file.
 type FileNotFoundError struct {
 	path string
 }
 
-// Error returns the formatted configuration error.
-func (fnfe ConfigFileNotFoundFromReadError) Error() string {
-	return fmt.Sprintf("Config file %q Not Found", fnfe.name)
-}
-
-func (fnfe ConfigFileNotFoundFromReadError) Name() string {
-	return fnfe.name
-}
-
-func (fnfe ConfigFileNotFoundFromReadError) Locations() string {
-	return ""
+// Error returns the formatted error.
+func (fnfe FileNotFoundError) Error() string {
+	return fmt.Sprintf("File %q Not Found", fnfe.path)
 }
 
 /* Other error types */
