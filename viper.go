@@ -1492,9 +1492,11 @@ func (v *Viper) ReadInConfig() error {
 	v.logger.Debug("reading file", "file", filename)
 	exists, err := afero.Exists(v.fs, filename)
 	if err != nil {
+		// We hit some other error from the filesystem that isn't a missing file
 		return err
 	}
 	if !exists {
+		// The specified config file is missing
 		return FileNotFoundError{path: filename}
 	}
 	file, err := afero.ReadFile(v.fs, filename)
