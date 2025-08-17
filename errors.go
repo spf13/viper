@@ -6,16 +6,6 @@ import (
 
 /* File look-up errors */
 
-// FileLookupError is returned when Viper cannot resolve a configuration file.
-//
-// This is meant to be a common interface for all file look-up errors, occurring either because a
-// file does not exist or because it cannot find any file matching finder criteria.
-type FileLookupError interface {
-	error
-
-	fileLookup()
-}
-
 // ConfigFileNotFoundError denotes failing to find a configuration file from a search.
 //
 // Deprecated: This is wrapped by FileNotFoundFromSearchError, which should be used instead.
