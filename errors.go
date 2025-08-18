@@ -15,7 +15,7 @@ type ConfigFileNotFoundError struct {
 }
 
 // Error returns the formatted error.
-func (fnfe ConfigFileNotFoundError) Error() string {
+func (e ConfigFileNotFoundError) Error() string {
 	message := fmt.Sprintf("File %q Not Found", fnfe.name)
 	if len(fnfe.locations) != 0 {
 		message += fmt.Sprintf(" in %v", fnfe.locations)
@@ -36,7 +36,7 @@ type FileNotFoundFromSearchError struct {
 }
 
 // Error returns the formatted error.
-func (fnfe FileNotFoundFromSearchError) Error() string {
+func (e FileNotFoundFromSearchError) Error() string {
 	return fnfe.err.Error()
 }
 
@@ -46,8 +46,8 @@ type FileNotFoundError struct {
 }
 
 // Error returns the formatted error.
-func (fnfe FileNotFoundError) Error() string {
-	return fmt.Sprintf("File %q Not Found", fnfe.path)
+func (e FileNotFoundError) Error() string {
+	return fmt.Sprintf("file not found: %s", fnfe.path)
 }
 
 /* Other error types */
