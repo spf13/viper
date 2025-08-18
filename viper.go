@@ -713,11 +713,41 @@ func GetViper() *Viper {
 // Get returns an interface. For a specific value use one of the Get____ methods.
 func Get(key string) any { return v.Get(key) }
 
+func isStringMapInterface(val any) bool {
+	vt := reflect.TypeOf(val)
+	return vt.Kind() == reflect.Map &&
+		vt.Key().Kind() == reflect.String &&
+		vt.Elem().Kind() == reflect.Interface
+}
+
 func (v *Viper) Get(key string) any {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
+	}
+
+	// when section is partially overridden,
+	// make sure to return the complete map.
+	if isStringMapInterface(val) {
+		val := val.(map[string]interface{})
+		prefix := lcaseKey + v.keyDelim
+		keys := v.AllKeys()
+		for _, key := range keys {
+			if !strings.HasPrefix(key, prefix) {
+				continue
+			}
+			mk := strings.TrimPrefix(key, prefix)
+			mk = strings.Split(mk, v.keyDelim)[0]
+			if _, exists := val[mk]; exists {
+				continue
+			}
+			mv := v.Get(lcaseKey + v.keyDelim + mk)
+			if mv == nil {
+				continue
+			}
+			val[mk] = mv
+		}
 	}
 
 	if v.typeByDefValue {
