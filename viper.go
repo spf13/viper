@@ -1497,7 +1497,7 @@ func (v *Viper) ReadInConfig() error {
 	if err != nil {
 		if errors.As(err, &pathError) {
 			// The specified config file is missing
-			return FileNotFoundError{path: filename}
+			return FileNotFoundError{err: err, path: filename}
 		} else {
 			// We hit some other error from the filesystem that isn't a missing file
 			return err
