@@ -26,17 +26,17 @@ type ConfigFileNotFoundError struct {
 
 // Error returns the formatted error.
 func (e ConfigFileNotFoundError) Error() string {
-	message := fmt.Sprintf("File %q Not Found", fnfe.name)
-	if len(fnfe.locations) != 0 {
-		message += fmt.Sprintf(" in %v", fnfe.locations)
+	message := fmt.Sprintf("File %q Not Found", e.name)
+	if len(e.locations) != 0 {
+		message += fmt.Sprintf(" in %v", e.locations)
 	}
 
 	return message
 }
 
 // Unwraps to FileNotFoundFromSearchError.
-func (fnfe ConfigFileNotFoundError) Unwrap() error {
-	return FileNotFoundFromSearchError{err: fnfe, locations: fnfe.locations, name: fnfe.name}
+func (e ConfigFileNotFoundError) Unwrap() error {
+	return FileNotFoundFromSearchError{err: e, locations: e.locations, name: e.name}
 }
 
 // FileNotFoundFromSearchError denotes failing to find a configuration file from a search.
@@ -47,27 +47,28 @@ type FileNotFoundFromSearchError struct {
 	name      string
 }
 
-// Error returns the formatted error.
-func (e FileNotFoundFromSearchError) Error() string {
-	return fnfe.err.Error()
+func (e FileNotFoundFromSearchError) fileLookup() {
+	return
 }
 
-func (fnfe FileNotFoundFromSearchError) fileLookup() {
-	return
+// Error returns the formatted error.
+func (e FileNotFoundFromSearchError) Error() string {
+	return e.err.Error()
 }
 
 // FileNotFoundError denotes failing to find a specific configuration file.
 type FileNotFoundError struct {
+	err  error
 	path string
+}
+
+func (e FileNotFoundError) fileLookup() {
+	return
 }
 
 // Error returns the formatted error.
 func (e FileNotFoundError) Error() string {
-	return fmt.Sprintf("file not found: %s", fnfe.path)
-}
-
-func (fnfe FileNotFoundError) fileLookup() {
-	return
+	return fmt.Sprintf("file not found: %s", e.path)
 }
 
 /* Other error types */
@@ -76,8 +77,8 @@ func (fnfe FileNotFoundError) fileLookup() {
 type ConfigFileAlreadyExistsError string
 
 // Error returns the formatted error when configuration already exists.
-func (faee ConfigFileAlreadyExistsError) Error() string {
-	return fmt.Sprintf("Config File %q Already Exists", string(faee))
+func (e ConfigFileAlreadyExistsError) Error() string {
+	return fmt.Sprintf("Config File %q Already Exists", string(e))
 }
 
 // ConfigMarshalError happens when failing to marshal the configuration.
