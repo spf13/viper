@@ -134,9 +134,9 @@ You can handle the specific case where no config file is found like this:
 var fileLookupError viper.fileLookupError
 if err := viper.ReadInConfig(); err != nil {
     if errors.As(err, &fileLookupError) {
-        // Indicates an explicitly set config file is not found, such as with
-        // using `viper.SetConfigFile`, or that no config file was found in
-        // any search path, such as when using `viper.AddConfigPath`.
+        // Indicates an explicitly set config file is not found (such as with
+        // using `viper.SetConfigFile`) or that no config file was found in
+        // any search path (such as when using `viper.AddConfigPath`)
 	} else {
 		// Config file was found but another error was produced
 	}
