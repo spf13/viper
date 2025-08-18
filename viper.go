@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	fs "io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -1479,6 +1480,8 @@ func (v *Viper) Set(key string, value any) {
 func ReadInConfig() error { return v.ReadInConfig() }
 
 func (v *Viper) ReadInConfig() error {
+	var pathError *fs.PathError
+
 	v.logger.Info("attempting to read in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
@@ -1490,18 +1493,15 @@ func (v *Viper) ReadInConfig() error {
 	}
 
 	v.logger.Debug("reading file", "file", filename)
-	exists, err := afero.Exists(v.fs, filename)
-	if err != nil {
-		// We hit some other error from the filesystem that isn't a missing file
-		return err
-	}
-	if !exists {
-		// The specified config file is missing
-		return FileNotFoundError{path: filename}
-	}
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
-		return err
+		if errors.As(err, &pathError) {
+			// The specified config file is missing
+			return FileNotFoundError{path: filename}
+		} else {
+			// We hit some other error from the filesystem that isn't a missing file
+			return err
+		}
 	}
 
 	config := make(map[string]any)
