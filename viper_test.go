@@ -1574,7 +1574,7 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 }
 
 func TestWrongFileNotFound(t *testing.T) {
-	var flErr FileLookupError
+	var fileLookupError FileLookupError
 
 	_, config := initDirs(t)
 
@@ -1587,7 +1587,7 @@ func TestWrongFileNotFound(t *testing.T) {
 	err := v.ReadInConfig()
 	// It matches all error types and the shared error interface.
 	assert.ErrorAs(t, err, &FileNotFoundError{})
-	assert.ErrorAs(t, err, &flErr)
+	assert.ErrorAs(t, err, &fileLookupError)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1663,7 +1663,7 @@ func TestDirsSearch(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
-	var flErr FileLookupError
+	var fileLookupError FileLookupError
 
 	_, config := initDirs(t)
 
@@ -1678,7 +1678,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	// It matches all error types and the shared error interface.
 	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
 	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
-	assert.ErrorAs(t, err, &flErr)
+	assert.ErrorAs(t, err, &fileLookupError)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
@@ -1686,7 +1686,7 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
-	var flErr FileLookupError
+	var fileLookupError FileLookupError
 
 	_, config := initDirs(t)
 
@@ -1701,7 +1701,7 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	// It matches both types of errors.
 	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
 	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
-	assert.ErrorAs(t, err, &flErr)
+	assert.ErrorAs(t, err, &fileLookupError)
 
 	// Even though config did not load and the error might have
 	// been ignored by the client, the default still loads
