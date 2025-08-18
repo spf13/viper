@@ -6,12 +6,22 @@ import (
 
 /* File look-up errors */
 
+// FileLookupError is returned when Viper cannot resolve a configuration file.
+//
+// This is meant to be a common interface for all file look-up errors, occurring either because a
+// file does not exist or because it cannot find any file matching finder criteria.
+type FileLookupError interface {
+	error
+
+	fileLookup()
+}
+
 // ConfigFileNotFoundError denotes failing to find a configuration file from a search.
 //
 // Deprecated: This is wrapped by FileNotFoundFromSearchError, which should be used instead.
 type ConfigFileNotFoundError struct {
-	name      string
 	locations []string
+	name      string
 }
 
 // Error returns the formatted error.
@@ -26,18 +36,24 @@ func (e ConfigFileNotFoundError) Error() string {
 
 // Unwraps to FileNotFoundFromSearchError.
 func (fnfe ConfigFileNotFoundError) Unwrap() error {
-	return FileNotFoundFromSearchError{err: fnfe}
+	return FileNotFoundFromSearchError{err: fnfe, locations: fnfe.locations, name: fnfe.name}
 }
 
 // FileNotFoundFromSearchError denotes failing to find a configuration file from a search.
 // Wraps ConfigFileNotFoundError.
 type FileNotFoundFromSearchError struct {
-	err ConfigFileNotFoundError
+	err       ConfigFileNotFoundError
+	locations []string
+	name      string
 }
 
 // Error returns the formatted error.
 func (e FileNotFoundFromSearchError) Error() string {
 	return fnfe.err.Error()
+}
+
+func (fnfe FileNotFoundFromSearchError) fileLookup() {
+	return
 }
 
 // FileNotFoundError denotes failing to find a specific configuration file.
@@ -48,6 +64,10 @@ type FileNotFoundError struct {
 // Error returns the formatted error.
 func (e FileNotFoundError) Error() string {
 	return fmt.Sprintf("file not found: %s", fnfe.path)
+}
+
+func (fnfe FileNotFoundError) fileLookup() {
+	return
 }
 
 /* Other error types */
