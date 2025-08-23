@@ -1,0 +1,21 @@
+name: "Close stale issues"
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      # Executes the stale issue action
+      # - Issues older than 30 days with no activity will receive a "Stale" label and a warning
+      # - Issues with a "Stale" label will close in 5 days
+      - uses: actions/stale@v9
+        with:
+          close-issue-message: "This issue has been closed for inactivity. Please re-open if this was a mistake."
+          days-before-close: 5
+          days-before-pr-stale: -1 # Ignore all PRs
+          days-before-stale: 30
+          debug-only: true # TODO for testing
+          stale-issue-message: "Issues with no activity for 30 days are marked stale and subject to being closed."
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
