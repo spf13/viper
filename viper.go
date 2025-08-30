@@ -1660,6 +1660,196 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
+// WriteConfigAsTyped writes the current configuration to a file at the specified
+// path, with automatic type coercion (e.g. "true" → true, "42" → 42).
+//
+// The configuration is marshaled in the format specified by the file's extension
+// (e.g. .yaml, .json, .toml). If the file cannot be created or written, an error is returned.
+//
+// This function is similar to WriteConfigAs(), but ensures that string values
+// (e.g. from environment variables or flags) are converted to their proper types
+// before writing.
+func WriteConfigAsTyped(filename string) error { return v.WriteConfigAsTyped(filename) }
+
+// WriteConfigAsTyped writes the current configuration to the file at the given path.
+// The file is created or truncated if it already exists.
+// The config format is determined by the file extension.
+func (v *Viper) WriteConfigAsTyped(filename string) error {
+	return v.writeConfigAsTyped(filename, true)
+}
+
+// SafeWriteConfigAsTyped writes the current configuration to the file at the given path
+// only if the file does not already exist.
+//
+// If the file exists, SafeWriteConfigAsTyped returns an error of type ConfigFileAlreadyExistsError.
+func SafeWriteConfigAsTyped(filename string) error { return v.SafeWriteConfigAsTyped(filename) }
+
+// SafeWriteConfigAsTyped is the method version of SafeWriteConfigAsTyped.
+// It ensures no existing file is overwritten.
+func (v *Viper) SafeWriteConfigAsTyped(filename string) error {
+	alreadyExists, err := afero.Exists(v.fs, filename)
+	if err != nil {
+		return err
+	}
+	if alreadyExists {
+		return ConfigFileAlreadyExistsError(filename)
+	}
+	return v.writeConfigAsTyped(filename, false)
+}
+
+// writeConfigAsTyped writes the current configuration to the given filename.
+// If force is false, it returns an error if the file exists.
+// The configuration is first processed to convert string representations
+// of booleans, integers, and floats into their native types.
+func (v *Viper) writeConfigAsTyped(filename string, force bool) error {
+	if v.logger != nil {
+		v.logger.Debug("Starting typed config write", "filename", filename, "force", force)
+	}
+
+	exists, err := afero.Exists(v.fs, filename)
+	if err != nil {
+		if v.logger != nil {
+			v.logger.Error("Error checking if config file exists", "filename", filename, "error", err)
+		}
+		return err
+	}
+	if exists && !force {
+		if v.logger != nil {
+			v.logger.Warn("Config file already exists, skipping write", "filename", filename)
+		}
+		return ConfigFileAlreadyExistsError(filename)
+	}
+
+	rawSettings := v.AllSettings()
+	if v.logger != nil {
+		v.logger.Debug("Raw settings before type coercion", "settings", rawSettings)
+	}
+
+	coerced := convertStringTypes(rawSettings)
+	settings, ok := coerced.(map[string]interface{})
+	if !ok {
+		if v.logger != nil {
+			v.logger.Error("Coerced settings are not a map", "type", fmt.Sprintf("%T", coerced), "error", err)
+		}
+		return ConfigMarshalError{fmt.Errorf("expected map[string]interface{}, got %T", coerced)}
+	}
+
+	if v.logger != nil {
+		v.logger.Debug("Coerced settings after type conversion", "settings", settings)
+	}
+
+	configType := v.getConfigType()
+	if configType == "" {
+		ext := filepath.Ext(filename)
+		if ext != "" {
+			configType = ext[1:] // remove leading dot
+		}
+	}
+	configType = strings.ToLower(configType)
+
+	if !slices.Contains(SupportedExts, configType) {
+		if v.logger != nil {
+			v.logger.Error("Unsupported config type", "type", configType)
+		}
+		return UnsupportedConfigError(configType)
+	}
+
+	encoder, err := v.encoderRegistry.Encoder(configType)
+	if err != nil {
+		if v.logger != nil {
+			v.logger.Error("Failed to get encoder for config type", "type", configType, "error", err)
+		}
+		return ConfigMarshalError{err}
+	}
+
+	data, err := encoder.Encode(settings)
+	if err != nil {
+		if v.logger != nil {
+			v.logger.Error("Failed to marshal config", "type", configType, "error", err)
+		}
+		return ConfigMarshalError{err}
+	}
+
+	if err := afero.WriteFile(v.fs, filename, data, 0644); err != nil {
+		if v.logger != nil {
+			v.logger.Error("Failed to write config file", "filename", filename, "error", err)
+		}
+		return err
+	}
+
+	if v.logger != nil {
+		v.logger.Info("Successfully wrote typed config file", "filename", filename, "size", len(data))
+	}
+
+	return nil
+}
+
+// convertStringTypes recursively converts string values in a map[string]interface{} to their
+// proper types: boolean, float64 (for both integers and floats).
+//
+// This is used when writing configuration to ensure that values set from sources
+// that only provide strings (e.g. environment variables, CLI flags) are written
+// with correct types (e.g. true instead of "true", 42 instead of "42").
+//
+// Supported conversions:
+//   - "true"  → true (bool)
+//   - "false" → false (bool)
+//   - "42"    → 42.0 (float64)
+//   - "3.14"  → 3.14 (float64)
+//   - "1e5"   → 100000.0 (float64)
+//
+// Strings that do not match these patterns are left unchanged.
+// Nested maps are processed recursively.
+//
+// Note: Integers are converted to float64 to match the behavior of json.Unmarshal,
+// which treats all JSON numbers as float64. This ensures consistency across formats.
+func convertStringTypes(in interface{}) interface{} {
+	switch x := in.(type) {
+	case map[string]interface{}:
+		out := make(map[string]interface{}, len(x))
+		for k, v := range x {
+			out[k] = convertStringTypes(v)
+		}
+		return out
+
+	case []interface{}:
+		out := make([]interface{}, len(x))
+		for i, v := range x {
+			out[i] = convertStringTypes(v)
+		}
+		return out
+
+	case string:
+		s := strings.TrimSpace(x)
+		if s == "" {
+			return x
+		}
+
+		// Булевы значения
+		switch strings.ToLower(s) {
+		case "true":
+			return true
+		case "false":
+			return false
+		}
+
+		// Сначала попробуем как int64
+		if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+			return i // вернём int64, а не float64
+		}
+
+		// Потом как float64
+		if f, err := strconv.ParseFloat(s, 64); err == nil {
+			return f
+		}
+
+		return x
+
+	default:
+		return x
+	}
+}
+
 func (v *Viper) writeConfig(filename string, force bool) error {
 	v.logger.Info("attempting to write configuration to file")
 
