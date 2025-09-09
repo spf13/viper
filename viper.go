@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	fs "io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -44,47 +45,10 @@ import (
 	"github.com/spf13/viper/internal/features"
 )
 
-// ConfigMarshalError happens when failing to marshal the configuration.
-type ConfigMarshalError struct {
-	err error
-}
-
-// Error returns the formatted configuration error.
-func (e ConfigMarshalError) Error() string {
-	return fmt.Sprintf("While marshaling config: %s", e.err.Error())
-}
-
 var v *Viper
 
 func init() {
 	v = New()
-}
-
-// UnsupportedConfigError denotes encountering an unsupported
-// configuration filetype.
-type UnsupportedConfigError string
-
-// Error returns the formatted configuration error.
-func (str UnsupportedConfigError) Error() string {
-	return fmt.Sprintf("Unsupported Config Type %q", string(str))
-}
-
-// ConfigFileNotFoundError denotes failing to find configuration file.
-type ConfigFileNotFoundError struct {
-	name, locations string
-}
-
-// Error returns the formatted configuration error.
-func (fnfe ConfigFileNotFoundError) Error() string {
-	return fmt.Sprintf("Config File %q Not Found in %q", fnfe.name, fnfe.locations)
-}
-
-// ConfigFileAlreadyExistsError denotes failure to write new configuration file.
-type ConfigFileAlreadyExistsError string
-
-// Error returns the formatted error when configuration already exists.
-func (faee ConfigFileAlreadyExistsError) Error() string {
-	return fmt.Sprintf("Config File %q Already Exists", string(faee))
 }
 
 // A DecoderConfigOption can be passed to viper.Unmarshal to configure
@@ -1516,6 +1480,8 @@ func (v *Viper) Set(key string, value any) {
 func ReadInConfig() error { return v.ReadInConfig() }
 
 func (v *Viper) ReadInConfig() error {
+	var pathError *fs.PathError
+
 	v.logger.Info("attempting to read in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
@@ -1529,7 +1495,13 @@ func (v *Viper) ReadInConfig() error {
 	v.logger.Debug("reading file", "file", filename)
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
-		return err
+		if errors.As(err, &pathError) {
+			// The specified config file is missing
+			return FileNotFoundError{err: err, path: filename}
+		} else {
+			// We hit some other error from the filesystem that isn't a missing file
+			return err
+		}
 	}
 
 	config := make(map[string]any)
