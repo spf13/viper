@@ -2,4 +2,5 @@
 
 package features
 
+// BindStruct is a feature flag for enabling/disabling the config binding to structs.
 const BindStruct = false
