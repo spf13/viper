@@ -1529,6 +1529,13 @@ func (v *Viper) ReadInConfig() error {
 	v.logger.Debug("reading file", "file", filename)
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
+		fileExt := filepath.Ext(filename)
+
+		if stringInSlice(fileExt, SupportedExts) {
+			log.Println("warning:", "Looks like you have included the file extention in the file name."+
+				"Consider using SetConfigType method instead.")
+		}
+
 		return err
 	}
 
