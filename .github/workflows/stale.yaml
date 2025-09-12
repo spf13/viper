@@ -17,5 +17,5 @@ jobs:
           days-before-pr-stale: -1 # Ignore all PRs
           stale-issue-message: "Issues with no activity for 30 days are marked stale and subject to being closed."
           close-issue-message: "This issue has been closed for inactivity. Please re-open if this was a mistake."
-          stole-issue-label: "lifecycle/stale"
+          stale-issue-label: "lifecycle/stale"
           debug-only: true # TODO for testing
