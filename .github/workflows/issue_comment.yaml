@@ -1,0 +1,11 @@
+on: issue_comment
+
+jobs:
+  handle:
+    name: Handle event
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/upload-artifact@v4
+        with:
+          name: event
+          path: ${{ github.event_path }}
