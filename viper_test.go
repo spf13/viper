@@ -1574,8 +1574,6 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 }
 
 func TestWrongFileNotFound(t *testing.T) {
-	var fileLookupError FileLookupError
-
 	_, config := initDirs(t)
 
 	v := New()
@@ -1585,6 +1583,9 @@ func TestWrongFileNotFound(t *testing.T) {
 	v.SetConfigFile(`whatareyoutalkingabout.yaml`)
 
 	err := v.ReadInConfig()
+
+	var fileLookupError FileLookupError
+
 	// It matches all error types and the shared error interface.
 	assert.ErrorAs(t, err, &FileNotFoundError{})
 	assert.ErrorAs(t, err, &fileLookupError)
@@ -1663,8 +1664,6 @@ func TestDirsSearch(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFound(t *testing.T) {
-	var fileLookupError FileLookupError
-
 	_, config := initDirs(t)
 
 	v := New()
@@ -1675,6 +1674,9 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.ReadInConfig()
+
+	var fileLookupError FileLookupError
+
 	// It matches all error types and the shared error interface.
 	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
 	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
@@ -1686,8 +1688,6 @@ func TestWrongDirsSearchNotFound(t *testing.T) {
 }
 
 func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
-	var fileLookupError FileLookupError
-
 	_, config := initDirs(t)
 
 	v := New()
@@ -1698,6 +1698,9 @@ func TestWrongDirsSearchNotFoundForMerge(t *testing.T) {
 	v.AddConfigPath(`thispathaintthere`)
 
 	err := v.MergeInConfig()
+
+	var fileLookupError FileLookupError
+
 	// It matches both types of errors.
 	assert.ErrorAs(t, err, &ConfigFileNotFoundError{})
 	assert.ErrorAs(t, err, &FileNotFoundFromSearchError{})
