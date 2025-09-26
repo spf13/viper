@@ -21,6 +21,7 @@ package viper
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -177,7 +178,8 @@ type Viper struct {
 	aliases        map[string]string
 	typeByDefValue bool
 
-	onConfigChange func(fsnotify.Event)
+	onConfigChange   func(fsnotify.Event)
+	stopWatchingFunc func()
 
 	logger *slog.Logger
 
@@ -337,6 +339,10 @@ func (v *Viper) WatchConfig() {
 		configDir, _ := filepath.Split(configFile)
 		realConfigFile, _ := filepath.EvalSymlinks(filename)
 
+		// init the stopWatchingFunc
+		watchingCtx, cancel := context.WithCancel(context.Background())
+		v.stopWatchingFunc = cancel
+
 		eventsWG := sync.WaitGroup{}
 		eventsWG.Add(1)
 		go func() {
@@ -373,6 +379,9 @@ func (v *Viper) WatchConfig() {
 					}
 					eventsWG.Done()
 					return
+				case <-watchingCtx.Done(): // StopWatching function called
+					eventsWG.Done()
+					return
 				}
 			}
 		}()
@@ -386,6 +395,16 @@ func (v *Viper) WatchConfig() {
 		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
 	initWG.Wait() // make sure that the go routine above fully ended before returning
+}
+
+// StopWatching stop watching a config file for changes.
+func StopWatching() { v.StopWatching() }
+
+// StopWatching stop watching a config file for changes.
+func (v *Viper) StopWatching() {
+	if v.stopWatchingFunc != nil {
+		v.stopWatchingFunc()
+	}
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
