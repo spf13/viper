@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-/* File look-up errors */
-
 // FileLookupError is returned when Viper cannot resolve a configuration file.
 //
 // This is meant to be a common interface for all file look-up errors, occurring either because a
@@ -18,7 +16,7 @@ type FileLookupError interface {
 
 // ConfigFileNotFoundError denotes failing to find a configuration file from a search.
 //
-// Deprecated: This is wrapped by FileNotFoundFromSearchError, which should be used instead.
+// Deprecated: This is wrapped by [FileNotFoundFromSearchError], which should be used instead.
 type ConfigFileNotFoundError struct {
 	locations []string
 	name      string
@@ -36,24 +34,27 @@ func (e ConfigFileNotFoundError) Error() string {
 
 // Unwraps to FileNotFoundFromSearchError.
 func (e ConfigFileNotFoundError) Unwrap() error {
-	return FileNotFoundFromSearchError{err: e, locations: e.locations, name: e.name}
+	return FileNotFoundFromSearchError(e)
 }
 
 // FileNotFoundFromSearchError denotes failing to find a configuration file from a search.
 // Wraps ConfigFileNotFoundError.
 type FileNotFoundFromSearchError struct {
-	err       ConfigFileNotFoundError
 	locations []string
 	name      string
 }
 
-func (e FileNotFoundFromSearchError) fileLookup() {
-	return
-}
+func (e FileNotFoundFromSearchError) fileLookup() {}
 
 // Error returns the formatted error.
 func (e FileNotFoundFromSearchError) Error() string {
-	return e.err.Error()
+	message := fmt.Sprintf("hile %q not found", e.name)
+
+	if len(e.locations) > 0 {
+		message += fmt.Sprintf(" in %v", e.locations)
+	}
+
+	return message
 }
 
 // FileNotFoundError denotes failing to find a specific configuration file.
@@ -62,16 +63,12 @@ type FileNotFoundError struct {
 	path string
 }
 
-func (e FileNotFoundError) fileLookup() {
-	return
-}
+func (e FileNotFoundError) fileLookup() {}
 
 // Error returns the formatted error.
 func (e FileNotFoundError) Error() string {
 	return fmt.Sprintf("file not found: %s", e.path)
 }
-
-/* Other error types */
 
 // ConfigFileAlreadyExistsError denotes failure to write new configuration file.
 type ConfigFileAlreadyExistsError string
