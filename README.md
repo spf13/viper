@@ -1,10 +1,12 @@
 > ## Viper v2 Feedback
-> Viper is heading towards v2 and we would love to hear what _**you**_ would like to see in it. Share your thoughts here: https://forms.gle/R6faU74qPRPAzchZ9
+>
+> Viper is heading towards v2 and we would love to hear what _**you**_ would
+> like to see in it. Share your thoughts here:
+> https://forms.gle/R6faU74qPRPAzchZ9
 >
 > **Thank you!**
 
 ![viper logo](https://github.com/user-attachments/assets/acae9193-2974-41f3-808d-2d433f5ada5e)
-
 
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#configuration)
 [![run on repl.it](https://repl.it/badge/github/sagikazarmark/Viper-example)](https://repl.it/@sagikazarmark/Viper-example#main.go)
@@ -88,7 +90,6 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * JSON
 * TOML
 * YAML
-* HCL
 * INI
 * envfile
 * Java Propeties
@@ -265,9 +266,9 @@ id := viper.Get("id") // 13
   the next configuration source, unless `AllowEmptyEnv` is used.
 * Viper does not "cache" environment variables--the value will be read each
   time it is accessed.
-* `SetEnvKeyReplacer` and `EnvKeyReplacer` allow you to use to rewrite Env
-  keys, which is useful to combine SCREAMING_SNAKE_CASE environment variables
-  to merge with kebab-cased configuration values from other sources.
+* `SetEnvKeyReplacer` and `EnvKeyReplacer` allow you to rewrite environment
+  variable keys, which is useful to merge SCREAMING_SNAKE_CASE environment
+  variables with kebab-cased configuration values from other sources.
 
 ### Working with Flags
 
@@ -370,8 +371,7 @@ provided below.
 * Firestore
 * NATS
 
-Viper will read a config string (as JSON, TOML, YAML, HCL or envfile) retrieved
-from a path in a key/value store.
+Viper will read a config string retrieved from a path in a key/value store.
 
 Viper supports multiple hosts separated by `;`. For example:
 `http://127.0.0.1:4001;http://127.0.0.1:4002`.
@@ -395,7 +395,7 @@ $ crypt get -plaintext /config/hugo.json
 See the Crypt documentation for examples of how to set encrypted values, or
 how to use Consul.
 
-### Remote Key/Value Store Examples (unencrypted)
+### Remote Key/Value Store Examples (Unencrypted)
 
 #### etcd
 
@@ -450,7 +450,7 @@ viper.SetConfigType("json")
 err := viper.ReadRemoteConfig()
 ```
 
-### Remote Key/Value Store Examples (encrypted)
+### Remote Key/Value Store Examples (Encrypted)
 
 ```go
 viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
@@ -493,7 +493,7 @@ go func(){
 
 ## Getting Values From Viper
 
-THe simplest way to retrieve configuration values from Viper is to use `Get*`
+The simplest way to retrieve configuration values from Viper is to use `Get*`
 functions. `Get` will return an any type, but specific types may be retrieved
 with `Get<Type>` functions.
 
@@ -579,8 +579,8 @@ cache1 := NewCache(cache1Config)
 
 ### Unmarshaling
 
-You also have the option of Unmarshaling all or a specific value to a struct,
-map, and etc., using `Unmarshal*` methods.
+You also have the option of unmarshaling configuration to a struct, map, etc.,
+using `Unmarshal*` methods.
 
 ```go
 type config struct {
@@ -660,9 +660,9 @@ default.
 
 ### Marshalling to String
 
-You may need to marshal all the settings held in viper into a string rather
-than write them to a file. You can use your favorite format's marshaller with
-the config returned by `AllSettings`.
+You may need to marshal all the settings held in Viper into a string. You can
+use your favorite format's marshaller with the config returned by
+`AllSettings`.
 
 ```go
 import (
@@ -681,10 +681,9 @@ func yamlStringSettings() string {
 
 ### Decoding Custom Formats
 
-A frequently requested feature for Viper is adding more value formats and
-decoders. For example, parsing character (dot, comma, semicolon, etc) separated
-strings into slices. This is already available in Viper using mapstructure
-decode hooks.
+A frequently requested feature is adding more value formats and decoders (for
+example; parsing character delimited strings into slices. This is already
+available in Viper using mapstructure decode hooks.
 
 Read more in [this blog
 post](https://sagikazarmark.hu/blog/decoding-custom-formats-with-viper/).
