@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 3 * * *"
 
+permissions:
+  actions: write
+  issues: write
+  # contents: write # only for delete-branch option
+  # pull-requests: write
+
 jobs:
   stale:
     name: Stale
