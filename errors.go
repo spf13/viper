@@ -24,12 +24,7 @@ type ConfigFileNotFoundError struct {
 
 // Error returns the formatted error.
 func (e ConfigFileNotFoundError) Error() string {
-	message := fmt.Sprintf("File %q Not Found", e.name)
-	if len(e.locations) != 0 {
-		message += fmt.Sprintf(" in %v", e.locations)
-	}
-
-	return message
+	return e.Unwrap().Error()
 }
 
 // Unwraps to FileNotFoundFromSearchError.
@@ -48,7 +43,7 @@ func (e FileNotFoundFromSearchError) fileLookup() {}
 
 // Error returns the formatted error.
 func (e FileNotFoundFromSearchError) Error() string {
-	message := fmt.Sprintf("hile %q not found", e.name)
+	message := fmt.Sprintf("File %q not found", e.name)
 
 	if len(e.locations) > 0 {
 		message += fmt.Sprintf(" in %v", e.locations)
