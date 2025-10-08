@@ -16,7 +16,7 @@ type FileLookupError interface {
 
 // ConfigFileNotFoundError denotes failing to find a configuration file from a search.
 //
-// Deprecated: This is wrapped by [FileNotFoundFromSearchError], which should be used instead.
+// Deprecated: This is error wraps [FileNotFoundFromSearchError], which should be used instead.
 type ConfigFileNotFoundError struct {
 	locations []string
 	name      string
