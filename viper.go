@@ -1629,6 +1629,25 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
+// Encode will load the rawVal into config, then you can write to file
+func (v *Viper) Encode(rawVal interface{}, opts ...DecoderConfigOption) error {
+	var cfg map[string]interface{}
+	err := decode(rawVal, defaultDecoderConfig(&cfg, opts...))
+	if err != nil {
+		return err
+	}
+	return v.MergeConfigMap(cfg)
+}
+
+// Marshal will return a Buffer containing the content that should have been written to the file
+func (v *Viper) Marshal() (*bytes.Buffer, error) {
+	data, err := v.encoderRegistry.Encode(v.getConfigType(), v.AllSettings())
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(data), nil
+}
+
 func (v *Viper) writeConfig(filename string, force bool) error {
 	v.logger.Info("attempting to write configuration to file")
 
