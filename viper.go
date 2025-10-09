@@ -152,6 +152,8 @@ type Viper struct {
 
 	experimentalFinder     bool
 	experimentalBindStruct bool
+
+	watchConfigDelete bool
 }
 
 // New returns an initialized Viper instance.
@@ -179,6 +181,7 @@ func New() *Viper {
 
 	v.experimentalFinder = features.Finder
 	v.experimentalBindStruct = features.BindStruct
+	v.watchConfigDelete = false
 
 	return v
 }
@@ -326,6 +329,10 @@ func (v *Viper) WatchConfig() {
 						if v.onConfigChange != nil {
 							v.onConfigChange(event)
 						}
+					} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) && v.GetWatchConfigDelete() {
+						if v.onConfigChange != nil {
+							v.onConfigChange(event)
+						}
 					} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) {
 						eventsWG.Done()
 						return
@@ -371,6 +378,14 @@ func (v *Viper) SetEnvPrefix(in string) {
 	if in != "" {
 		v.envPrefix = in
 	}
+}
+
+func (v *Viper) SetWatchConfigDelete(value bool) {
+	v.watchConfigDelete = value
+}
+
+func (v *Viper) GetWatchConfigDelete() bool {
+	return v.watchConfigDelete
 }
 
 func GetEnvPrefix() string { return v.GetEnvPrefix() }
