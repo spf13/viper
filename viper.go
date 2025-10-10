@@ -1101,6 +1101,128 @@ func (v *Viper) MustBindEnv(input ...string) {
 	}
 }
 
+type ValueOrigin int
+
+const (
+	ValueOriginOverride ValueOrigin = iota
+	ValueOriginFlag
+	ValueOriginEnv
+	ValueOriginConfig
+	ValueOriginKVStore
+	ValueOriginDefault
+	ValueOriginNone
+)
+
+// Origin finds the origin of a given key's value.
+// It returns a [ValueOrigin] value in the following order:
+// 1. ValueOriginOverride - Set() override
+// 2. ValueOriginFlag - PFlag override
+// 3. ValueOriginEnv - Env override
+// 4. ValueOriginConfig - Config file
+// 5. ValueOriginKVStore - K/V store
+// 6. ValueOriginDefault - Default value
+// 7. ValueOriginNone - No value found
+func Origin(key string) ValueOrigin { return v.Origin(key) }
+
+func (v *Viper) Origin(key string) ValueOrigin {
+	lcaseKey := strings.ToLower(key)
+
+	var (
+		val    any
+		exists bool
+		path   = strings.Split(lcaseKey, v.keyDelim)
+		nested = len(path) > 1
+	)
+
+	// compute the path through the nested maps to the nested value
+	if nested && v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)) != "" {
+		return ValueOriginNone
+	}
+
+	// if the requested key is an alias, then return the proper key
+	lcaseKey = v.realKey(lcaseKey)
+	path = strings.Split(lcaseKey, v.keyDelim)
+	nested = len(path) > 1
+
+	// Set() override first
+	val = v.searchMap(v.override, path)
+	if val != nil {
+		return ValueOriginOverride
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
+		return ValueOriginNone
+	}
+
+	// PFlag override next
+	flag, exists := v.pflags[lcaseKey]
+	if exists && flag.HasChanged() {
+		return ValueOriginFlag
+	}
+	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
+		return ValueOriginNone
+	}
+
+	// Env override next
+	if v.automaticEnvApplied {
+		envKey := strings.Join(append(v.parents, lcaseKey), ".")
+		// even if it hasn't been registered, if automaticEnv is used,
+		// check any Get request
+		if _, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return ValueOriginEnv
+		}
+		if nested && v.isPathShadowedInAutoEnv(path) != "" {
+			return ValueOriginNone
+		}
+	}
+	envkeys, exists := v.env[lcaseKey]
+	if exists {
+		for _, envkey := range envkeys {
+			if _, ok := v.getEnv(envkey); ok {
+				return ValueOriginEnv
+			}
+		}
+	}
+	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
+		return ValueOriginNone
+	}
+
+	// Config file next
+	val = v.searchIndexableWithPathPrefixes(v.config, path)
+	if val != nil {
+		return ValueOriginConfig
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
+		return ValueOriginNone
+	}
+
+	// K/V store next
+	val = v.searchMap(v.kvstore, path)
+	if val != nil {
+		return ValueOriginKVStore
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
+		return ValueOriginNone
+	}
+
+	// Default next
+	val = v.searchMap(v.defaults, path)
+	if val != nil {
+		return ValueOriginDefault
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
+		return ValueOriginNone
+	}
+
+	// last chance: if no value is found and a flag does exist for the key,
+	// get the flag's default value even if the flag's value has not been set.
+	if _, exists := v.pflags[lcaseKey]; exists {
+		return ValueOriginDefault
+	}
+	// last item, no need to check shadowing
+
+	return ValueOriginNone
+}
+
 // Given a key, find the value.
 //
 // Viper will check to see if an alias exists first.
