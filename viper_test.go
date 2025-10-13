@@ -2718,3 +2718,14 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+// Test the Set method with key delimiter for case insenitivty
+func TestUpperCaseKeyDelimiter(t *testing.T) {
+	v := NewWithOptions(KeyDelimiter("Z"))
+	v.Set("fooZbar", "Foo Bar Baz")
+
+	got := v.Get("foo")
+	want := map[string]any{"bar": "Foo Bar Baz"}
+
+	assert.Equal(t, want, got)
+}

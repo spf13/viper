@@ -1464,10 +1464,12 @@ func Set(key string, value any) { v.Set(key, value) }
 
 func (v *Viper) Set(key string, value any) {
 	// If alias passed in, then set the proper override
+
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
 
-	path := strings.Split(key, v.keyDelim)
+	path := strings.Split(key, strings.ToLower(v.keyDelim))
+
 	lastKey := strings.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
