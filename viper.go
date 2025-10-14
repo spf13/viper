@@ -1454,12 +1454,12 @@ func (v *Viper) AutomaticEnv() {
 // SetEnvKeyReplacer sets the StringReplacer on the viper object
 // Useful for mapping an environmental variable to a key that does
 // not match it.
-func SetEnvKeyReplacer(r *StringReplacer) { v.SetEnvKeyReplacer(r) }
+func SetEnvKeyReplacer(r StringReplacer) { v.SetEnvKeyReplacer(r) }
 
 // SetEnvKeyReplacer sets the StringReplacer on the viper object
 // Useful for mapping an environmental variable to a key that does
 // not match it.
-func (v *Viper) SetEnvKeyReplacer(r *StringReplacer) {
+func (v *Viper) SetEnvKeyReplacer(r StringReplacer) {
 	v.envKeyReplacer = r
 }
 
