@@ -25,4 +25,5 @@ jobs:
           close-issue-message: "This issue has been closed for inactivity. Please re-open if this was a mistake."
           exempt-issue-labels: "lifecycle/keep"
           stale-issue-label: "lifecycle/stale"
+          operations-per-run: 500 # Must respect GitHub API limits
           debug-only: false # Set this to 'true' to disable stale issue management
