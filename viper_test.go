@@ -2533,50 +2533,132 @@ func TestUnmarshal_DotSeparatorBackwardCompatibility(t *testing.T) {
 // `)
 
 func TestKeyDelimiter(t *testing.T) {
-	v := NewWithOptions(KeyDelimiter("::"))
-	v.SetConfigType("yaml")
-	r := strings.NewReader(string(yamlExampleWithDot))
+	t.Run("KeyDelimiterYAMLAndUnmarshal", func(t *testing.T) {
+		v := NewWithOptions(KeyDelimiter("::"))
+		v.SetConfigType("yaml")
+		r := strings.NewReader(string(yamlExampleWithDot))
 
-	err := v.unmarshalReader(r, v.config)
-	require.NoError(t, err)
+		err := v.unmarshalReader(r, v.config)
+		require.NoError(t, err)
 
-	values := map[string]any{
-		"image": map[string]any{
-			"repository": "someImage",
-			"tag":        "1.0.0",
-		},
-		"ingress": map[string]any{
-			"annotations": map[string]any{
-				"traefik.frontend.rule.type":                 "PathPrefix",
-				"traefik.ingress.kubernetes.io/ssl-redirect": "true",
+		values := map[string]any{
+			"image": map[string]any{
+				"repository": "someImage",
+				"tag":        "1.0.0",
 			},
-		},
-	}
-
-	v.SetDefault("charts::values", values)
-
-	assert.Equal(t, "leather", v.GetString("clothing::jacket"))
-	assert.Equal(t, "01/02/03", v.GetString("emails::steve@hacker.com::created"))
-
-	type config struct {
-		Charts struct {
-			Values map[string]any
+			"ingress": map[string]any{
+				"annotations": map[string]any{
+					"traefik.frontend.rule.type":                 "PathPrefix",
+					"traefik.ingress.kubernetes.io/ssl-redirect": "true",
+				},
+			},
 		}
-	}
 
-	expected := config{
-		Charts: struct {
-			Values map[string]any
-		}{
-			Values: values,
-		},
-	}
+		v.SetDefault("charts::values", values)
 
-	var actual config
+		assert.Equal(t, "leather", v.GetString("clothing::jacket"))
+		assert.Equal(t, "01/02/03", v.GetString("emails::steve@hacker.com::created"))
 
-	require.NoError(t, v.Unmarshal(&actual))
+		type config struct {
+			Charts struct {
+				Values map[string]any
+			}
+		}
 
-	assert.Equal(t, expected, actual)
+		expected := config{
+			Charts: struct {
+				Values map[string]any
+			}{
+				Values: values,
+			},
+		}
+
+		var actual config
+
+		require.NoError(t, v.Unmarshal(&actual))
+
+		assert.Equal(t, expected, actual)
+	})
+
+	// Test the Set method with key delimiter for case insenitivty
+	t.Run("CaseInsensitiveDelimiter", func(t *testing.T) {
+		v := NewWithOptions(KeyDelimiter("Z"))
+		v.Set("fooZbar", "Foo Bar Baz")
+
+		got := v.Get("foo")
+		want := map[string]any{"bar": "Foo Bar Baz"}
+		assert.Equal(t, want, got)
+
+		v.Set("foozbar", "Foo Bar Baz")
+		got = v.Get("foo")
+		assert.Equal(t, want, got)
+
+		v.Set("baz", "Bazzz")
+		got = v.Get("baz")
+		want2 := "Bazzz"
+		assert.Equal(t, want2, got)
+	})
+
+	// Test the InConfig method with key delimiter for case insenitivty
+	t.Run("UpperCasedDelimInConfig", func(t *testing.T) {
+		v := NewWithOptions(KeyDelimiter("Z"))
+
+		v.config = map[string]any{
+			"foo": map[string]any{
+				"bar": "nestedValue",
+			},
+		}
+		assert.True(t, v.InConfig("fooZbar"))
+		assert.True(t, v.InConfig("foozbar"))
+	})
+
+	// Test the SetDefault method with key delimiter for case insenitivty
+	t.Run("UpperCasedDelimSetDefault", func(t *testing.T) {
+		v := NewWithOptions(KeyDelimiter("Z"))
+		v.SetDefault("fooZbar", "Foo Bar Baz")
+
+		got := v.Get("foo")
+		want := map[string]any{"bar": "Foo Bar Baz"}
+		assert.Equal(t, want, got)
+
+		v.SetDefault("foozbar", "Foo Bar Baz")
+		got = v.Get("foo")
+		assert.Equal(t, want, got)
+	})
+
+	// Test the flattenAndMergeMap private method with key delimiter for case insenitivty
+	t.Run("UpperCasedDelimFlattenAndMerge", func(t *testing.T) {
+		config := map[string]any{
+			"foo": map[string]any{
+				"bar": 123,
+				"baz": 456,
+			},
+		}
+
+		v := NewWithOptions(KeyDelimiter("Z"))
+		shadow := make(map[string]bool)
+		shadow = v.flattenAndMergeMap(shadow, config, "")
+
+		assert.True(t, shadow["foozbar"])
+		assert.True(t, shadow["foozbaz"])
+	})
+
+	// Test the AllSettings method with key delimiter for case insenitivty
+	t.Run("UpperCasedDelimAllSettings", func(t *testing.T) {
+		v := NewWithOptions(KeyDelimiter("Z"))
+
+		v.Set("foozbar", 123)
+
+		got := v.AllSettings()
+
+		want := map[string]any{
+			"foo": map[string]any{
+				"bar": 123,
+			},
+		}
+
+		assert.Equal(t, want, got)
+	})
 }
 
 var yamlDeepNestedSlices = []byte(`TV:
@@ -2717,15 +2799,4 @@ func skipWindows(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Skip test on Windows")
 	}
-}
-
-// Test the Set method with key delimiter for case insenitivty
-func TestUpperCaseKeyDelimiter(t *testing.T) {
-	v := NewWithOptions(KeyDelimiter("Z"))
-	v.Set("fooZbar", "Foo Bar Baz")
-
-	got := v.Get("foo")
-	want := map[string]any{"bar": "Foo Bar Baz"}
-
-	assert.Equal(t, want, got)
 }

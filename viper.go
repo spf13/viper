@@ -486,7 +486,6 @@ func (v *Viper) searchIndexableWithPathPrefixes(source any, path []string) any {
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
-
 		var val any
 		switch sourceIndexable := source.(type) {
 		case []any:
@@ -593,7 +592,7 @@ func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]any) string 
 			continue
 		default:
 			// parentVal is a regular value which shadows "path"
-			return strings.Join(path[0:i], v.keyDelim)
+			return strings.Join(path[0:i], strings.ToLower(v.keyDelim))
 		}
 	}
 	return ""
@@ -619,7 +618,7 @@ func (v *Viper) isPathShadowedInFlatMap(path []string, mi any) string {
 	// scan paths
 	var parentKey string
 	for i := 1; i < len(path); i++ {
-		parentKey = strings.Join(path[0:i], v.keyDelim)
+		parentKey = strings.Join(path[0:i], strings.ToLower(v.keyDelim))
 		if _, ok := m[parentKey]; ok {
 			return parentKey
 		}
@@ -635,7 +634,7 @@ func (v *Viper) isPathShadowedInFlatMap(path []string, mi any) string {
 func (v *Viper) isPathShadowedInAutoEnv(path []string) string {
 	var parentKey string
 	for i := 1; i < len(path); i++ {
-		parentKey = strings.Join(path[0:i], v.keyDelim)
+		parentKey = strings.Join(path[0:i], strings.ToLower(v.keyDelim))
 		if _, ok := v.getEnv(v.mergeWithEnvPrefix(parentKey)); ok {
 			return parentKey
 		}
@@ -687,7 +686,7 @@ func (v *Viper) Get(key string) any {
 	if v.typeByDefValue {
 		// TODO(bep) this branch isn't covered by a single test.
 		valType := val
-		path := strings.Split(lcaseKey, v.keyDelim)
+		path := strings.Split(lcaseKey, strings.ToLower(v.keyDelim))
 		defVal := v.searchMap(v.defaults, path)
 		if defVal != nil {
 			valType = defVal
@@ -1114,7 +1113,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	var (
 		val    any
 		exists bool
-		path   = strings.Split(lcaseKey, v.keyDelim)
+		path   = strings.Split(lcaseKey, strings.ToLower(v.keyDelim))
 		nested = len(path) > 1
 	)
 
@@ -1125,7 +1124,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 
 	// if the requested key is an alias, then return the proper key
 	lcaseKey = v.realKey(lcaseKey)
-	path = strings.Split(lcaseKey, v.keyDelim)
+	path = strings.Split(lcaseKey, strings.ToLower(v.keyDelim))
 	nested = len(path) > 1
 
 	// Set() override first
@@ -1433,7 +1432,7 @@ func (v *Viper) InConfig(key string) bool {
 
 	// if the requested key is an alias, then return the proper key
 	lcaseKey = v.realKey(lcaseKey)
-	path := strings.Split(lcaseKey, v.keyDelim)
+	path := strings.Split(lcaseKey, strings.ToLower(v.keyDelim))
 
 	return v.searchIndexableWithPathPrefixes(v.config, path) != nil
 }
@@ -1448,7 +1447,7 @@ func (v *Viper) SetDefault(key string, value any) {
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
 
-	path := strings.Split(key, v.keyDelim)
+	path := strings.Split(key, strings.ToLower(v.keyDelim))
 	lastKey := strings.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.defaults, path[0:len(path)-1])
 
@@ -1919,11 +1918,13 @@ func (v *Viper) mergeFlatMap(shadow map[string]bool, m map[string]any) map[strin
 	// scan keys
 outer:
 	for k := range m {
-		path := strings.Split(k, v.keyDelim)
+		fmt.Println(k)
+		path := strings.Split(k, strings.ToLower(v.keyDelim))
+		fmt.Println(path)
 		// scan intermediate paths
 		var parentKey string
 		for i := 1; i < len(path); i++ {
-			parentKey = strings.Join(path[0:i], v.keyDelim)
+			parentKey = strings.Join(path[0:i], strings.ToLower(v.keyDelim))
 			if shadow[parentKey] {
 				// path is shadowed, continue
 				continue outer
@@ -1952,7 +1953,7 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 			// check just in case anything changes
 			continue
 		}
-		path := strings.Split(k, v.keyDelim)
+		path := strings.Split(k, strings.ToLower(v.keyDelim))
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
