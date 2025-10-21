@@ -481,6 +481,92 @@ func (v *Viper) searchMap(source map[string]any, path []string) any {
 	return nil
 }
 
+// searchMapWithAliases recursively searches for slice field in source map and
+// replace them with the environment variable value if it exists.
+//
+// Returns replaced values, and a boolean if the value was found in
+// environment varaible.
+func (v *Viper) searchAndReplaceSliceValueWithEnv(source any, envKey string) (any, bool) {
+
+	switch sourceValue := source.(type) {
+	case []any:
+		var newSliceValues []any
+		if len(sourceValue) <= 0 {
+			return newSliceValues, false
+
+		}
+
+		var exists []bool
+		for i := 0; ; i++ {
+			envKey := envKey + v.keyDelim + strconv.Itoa(i)
+			var value any
+			var existDefault = true
+			if len(sourceValue) < i+1 {
+				value = sourceValue[0]
+				existDefault = false
+			} else {
+				value = sourceValue[i]
+			}
+			switch existingValue := value.(type) {
+			case map[string]any:
+				newVal, found := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				if !found && !existDefault {
+					return newSliceValues, slices.Contains(exists, true)
+				}
+				newSliceValues = append(newSliceValues, newVal)
+				exists = append(exists, found || existDefault)
+
+			default:
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newSliceValues = append(newSliceValues, newVal)
+					exists = append(exists, true)
+				} else {
+					exists = append(exists, false || existDefault)
+					if existDefault {
+						newSliceValues = append(newSliceValues, existingValue)
+					} else {
+						return newSliceValues, slices.Contains(exists, true)
+					}
+				}
+			}
+		}
+		return newSliceValues, slices.Contains(exists, true)
+
+	case map[string]any:
+		var newMapValues map[string]any = make(map[string]any)
+		var exists []bool
+		for key, mapValue := range sourceValue {
+			envKey := envKey + v.keyDelim + key
+			switch existingValue := mapValue.(type) {
+			case map[string]any:
+				newVal, found := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				if !found {
+					return newMapValues, false
+				}
+				newMapValues[key] = newVal
+				exists = append(exists, found)
+
+			default:
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newMapValues[key] = newVal
+					exists = append(exists, true)
+				} else {
+					exists = append(exists, false)
+					newMapValues[key] = existingValue
+				}
+			}
+		}
+		return newMapValues, slices.Contains(exists, true)
+
+	default:
+		if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return newVal, true
+		} else {
+			return source, false
+		}
+	}
+}
+
 // searchIndexableWithPathPrefixes recursively searches for a value for path in source map/slice.
 //
 // While searchMap() considers each path element as a single map key or slice index, this
@@ -717,6 +803,11 @@ func (v *Viper) Get(key string) any {
 	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
+	}
+
+	// Check for Env override again, to handle slices
+	if v.automaticEnvApplied {
+		val, _ = v.searchAndReplaceSliceValueWithEnv(val, lcaseKey)
 	}
 
 	if v.typeByDefValue {
