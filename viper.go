@@ -481,6 +481,59 @@ func (v *Viper) searchMap(source map[string]any, path []string) any {
 	return nil
 }
 
+// searchMapWithAliases recursively searches for slice field in source map and
+// replace them with the environment variable value if it exists.
+//
+// Returns replaced values.
+func (v *Viper) searchAndReplaceSliceValueWithEnv(source any, envKey string) any {
+	switch sourceValue := source.(type) {
+	case []any:
+		var newSliceValues []any
+		for i, sliceValue := range sourceValue {
+			envKey := envKey + v.keyDelim + strconv.Itoa(i)
+			switch existingValue := sliceValue.(type) {
+			case map[string]any:
+				newVal := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				newSliceValues = append(newSliceValues, newVal)
+
+			default:
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newSliceValues = append(newSliceValues, newVal)
+				} else {
+					newSliceValues = append(newSliceValues, existingValue)
+				}
+			}
+		}
+		return newSliceValues
+
+	case map[string]any:
+		var newMapValues map[string]any = make(map[string]any)
+		for key, mapValue := range sourceValue {
+			envKey := envKey + v.keyDelim + key
+			switch existingValue := mapValue.(type) {
+			case map[string]any:
+				newVal := v.searchAndReplaceSliceValueWithEnv(existingValue, envKey)
+				newMapValues[key] = newVal
+
+			default:
+				if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+					newMapValues[key] = newVal
+				} else {
+					newMapValues[key] = existingValue
+				}
+			}
+		}
+		return newMapValues
+
+	default:
+		if newVal, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return newVal
+		} else {
+			return source
+		}
+	}
+}
+
 // searchIndexableWithPathPrefixes recursively searches for a value for path in source map/slice.
 //
 // While searchMap() considers each path element as a single map key or slice index, this
@@ -717,6 +770,11 @@ func (v *Viper) Get(key string) any {
 	val := v.find(lcaseKey, true)
 	if val == nil {
 		return nil
+	}
+
+	// Check for Env override again, to handle slices
+	if v.automaticEnvApplied {
+		val = v.searchAndReplaceSliceValueWithEnv(val, lcaseKey)
 	}
 
 	if v.typeByDefValue {
