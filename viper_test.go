@@ -22,6 +22,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/sagikazarmark/locafero"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
@@ -2032,6 +2033,264 @@ func TestSafeWriteConfigAsWithExistingFile(t *testing.T) {
 	require.Error(t, err)
 	_, ok := err.(ConfigFileAlreadyExistsError)
 	assert.True(t, ok, "Expected ConfigFileAlreadyExistsError")
+}
+
+func TestWriteConfigAsTyped(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	inputJSON := []byte(`{
+  "enabled": "true",
+  "debug": "false",
+  "port": "8080",
+  "timeout": "3.14",
+  "features": {
+    "new_ui": "true",
+    "beta": "false"
+  },
+  "nested": {
+    "value": "42",
+    "flag": "True"
+  },
+  "tags": ["1", "2.5", "enabled"]
+}`)
+
+	inputYAML := []byte(`enabled: "true"
+debug: "false"
+port: "8080"
+timeout: "3.14"
+features:
+  new_ui: "true"
+  beta: "false"
+nested:
+  value: "42"
+  flag: "True"
+tags:
+  - "1"
+  - "2.5"
+  - "enabled"
+`)
+
+	inputTOML := []byte(`
+enabled = "true"
+debug = "false"
+port = "8080"
+timeout = "3.14"
+tags = ["1", "2.5", "enabled"]
+
+[features]
+new_ui = "true"
+beta = "false"
+
+[nested]
+value = "42"
+flag = "True"
+`)
+
+	expectedJSON := []byte(`{
+  "debug": false,
+  "enabled": true,
+  "features": {
+    "beta": false,
+    "new_ui": true
+  },
+  "nested": {
+    "flag": true,
+    "value": 42
+  },
+  "port": 8080,
+  "tags": [
+    1,
+    2.5,
+    "enabled"
+  ],
+  "timeout": 3.14
+}`)
+
+	expectedYAML := []byte(`debug: false
+enabled: true
+features:
+    beta: false
+    new_ui: true
+nested:
+    flag: true
+    value: 42
+port: 8080
+tags:
+    - 1
+    - 2.5
+    - enabled
+timeout: 3.14
+`)
+
+	expectedTOML := []byte(`debug = false
+enabled = true
+port = 8080
+timeout = 3.14
+
+tags = [1, 2.5, "enabled"]
+
+[features]
+beta = false
+new_ui = true
+
+[nested]
+flag = true
+value = 42
+`)
+
+	testCases := map[string]struct {
+		configName      string
+		inConfigType    string
+		outConfigType   string
+		fileName        string
+		input           []byte
+		expectedContent []byte
+	}{
+		"json with file extension": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "json",
+			fileName:        "c.json",
+			input:           inputJSON,
+			expectedContent: expectedJSON,
+		},
+		"json without file extension": {
+			configName:      "c",
+			inConfigType:    "json",
+			outConfigType:   "json",
+			fileName:        "c",
+			input:           inputJSON,
+			expectedContent: expectedJSON,
+		},
+		"yaml with file extension": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
+			fileName:        "c.yaml",
+			input:           inputYAML,
+			expectedContent: expectedYAML,
+		},
+		"yaml without file extension": {
+			configName:      "c",
+			inConfigType:    "yaml",
+			outConfigType:   "yaml",
+			fileName:        "c",
+			input:           inputYAML,
+			expectedContent: expectedYAML,
+		},
+		"toml with file extension": {
+			configName:      "c",
+			inConfigType:    "toml",
+			outConfigType:   "toml",
+			fileName:        "c.toml",
+			input:           inputTOML,
+			expectedContent: expectedTOML,
+		},
+		"toml without file extension": {
+			configName:      "c",
+			inConfigType:    "toml",
+			outConfigType:   "toml",
+			fileName:        "c",
+			input:           inputTOML,
+			expectedContent: expectedTOML,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			fs = afero.NewMemMapFs()
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigName(tc.configName)
+			v.SetConfigType(tc.inConfigType)
+
+			err := v.ReadConfig(bytes.NewBuffer(tc.input))
+			require.NoError(t, err)
+
+			v.SetConfigType(tc.outConfigType)
+
+			err = v.WriteConfigAsTyped(tc.fileName)
+			require.NoError(t, err)
+
+			read, err := afero.ReadFile(fs, tc.fileName)
+			require.NoError(t, err)
+
+			switch tc.outConfigType {
+			case "json":
+				assert.JSONEq(t, string(tc.expectedContent), string(read))
+			case "yaml":
+				assert.YAMLEq(t, string(tc.expectedContent), string(read))
+			case "toml":
+				var expected, actual interface{}
+				err1 := toml.Unmarshal(tc.expectedContent, &expected)
+				err2 := toml.Unmarshal(read, &actual)
+				require.NoError(t, err1)
+				require.NoError(t, err2)
+				assert.Equal(t, expected, actual)
+			default:
+				assert.Equal(t, tc.expectedContent, read)
+			}
+		})
+	}
+}
+
+func TestSafeWriteConfigAsTyped(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	testCases := map[string]struct {
+		setup       func()
+		expectError bool
+	}{
+		"should succeed if file does not exist": {
+			setup:       func() {},
+			expectError: false,
+		},
+		"should fail if file already exists": {
+			setup: func() {
+				err := afero.WriteFile(fs, "config.yaml", []byte("dummy: value"), 0644)
+				require.NoError(t, err, "Failed to create existing config file")
+			},
+			expectError: true,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			fs = afero.NewMemMapFs()
+
+			v := New()
+			v.SetFs(fs)
+			v.SetConfigType("yaml")
+
+			v.Set("enabled", "true")
+			v.Set("port", "8080")
+			v.Set("features.new_ui", "true")
+
+			tc.setup()
+
+			err := v.SafeWriteConfigAsTyped("config.yaml")
+
+			if tc.expectError {
+				require.Error(t, err)
+				_, ok := err.(ConfigFileAlreadyExistsError)
+				assert.True(t, ok, "Error should be ConfigFileAlreadyExistsError")
+			} else {
+				require.NoError(t, err)
+
+				exists, err := afero.Exists(fs, "config.yaml")
+				require.NoError(t, err)
+				assert.True(t, exists)
+
+				data, err := afero.ReadFile(fs, "config.yaml")
+				require.NoError(t, err)
+				content := string(data)
+
+				assert.Contains(t, content, "enabled: true")
+				assert.Contains(t, content, "port: 8080")
+				assert.Contains(t, content, "new_ui: true")
+			}
+		})
+	}
 }
 
 func TestWriteHiddenFile(t *testing.T) {
