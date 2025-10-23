@@ -1740,6 +1740,11 @@ func (v *Viper) SafeWriteConfigAs(filename string) error {
 	return v.writeConfig(filename, false)
 }
 
+// MarshalToString writes current configuration to a string
+func MarshalToString(configTypeOps ...string) (string, error) {
+	return v.MarshalToString(configTypeOps...)
+}
+
 func (v *Viper) writeConfig(filename string, force bool) error {
 	v.logger.Info("attempting to write configuration to file")
 
@@ -1776,6 +1781,30 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	}
 
 	return f.Sync()
+}
+
+func (v *Viper) MarshalToString(configTypeOps ...string) (string, error) {
+	v.logger.Info("MarshalToString: attempting to marshal configuration to string")
+
+	//default by origin configType
+	var configType = v.configType
+	//set from param if configTypeOps len > 0
+	if len(configTypeOps) > 0 {
+		configType = configTypeOps[0]
+	}
+	if configType == "" {
+		return "", fmt.Errorf("MarshalToString: config type could not be determined")
+	}
+
+	if !stringInSlice(configType, SupportedExts) {
+		return "", UnsupportedConfigError(configType)
+	}
+
+	str, err := v.marshalToString(configType)
+	if err != nil {
+		return "", err
+	}
+	return str, nil
 }
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
@@ -1831,6 +1860,25 @@ func (v *Viper) marshalWriter(w io.Writer, configType string) error {
 	}
 
 	return nil
+}
+
+// Marshal a map into string.
+func (v *Viper) marshalToString(configType string) (string, error) {
+	c := v.AllSettings()
+	switch configType {
+	case "yaml", "yml", "json", "toml", "hcl", "tfvars", "ini", "prop", "props", "properties", "dotenv", "env":
+		encoder, err := v.encoderRegistry.Encoder(configType)
+		if err != nil {
+			return "", ConfigMarshalError{err}
+		}
+
+		b, err := encoder.Encode(c)
+		if err != nil {
+			return "", ConfigMarshalError{err}
+		}
+		return string(b), nil
+	}
+	return "", ConfigMarshalError{fmt.Errorf("config type could not be determined, type:%s", configType)}
 }
 
 func keyExists(k string, m map[string]any) string {
