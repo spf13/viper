@@ -76,9 +76,22 @@ func (v *Viper) searchInPath(in string) (filename string) {
 	for _, ext := range SupportedExts {
 		v.logger.Debug("checking if file exists", "file", filepath.Join(in, v.configName+"."+ext))
 		if b, _ := exists(v.fs, filepath.Join(in, v.configName+"."+ext)); b {
-			v.logger.Debug("found file", "file", filepath.Join(in, v.configName+"."+ext))
-			return filepath.Join(in, v.configName+"."+ext)
+			// record the first found
+			if len(filename) < 1 {
+				filename = filepath.Join(in, v.configName+"."+ext)
+			}
+			// if specific configType are same with the current extension type, then return current
+			if v.configType == ext {
+				filename = filepath.Join(in, v.configName+"."+ext)
+				break
+			}
 		}
+	}
+
+	// return only if file exists
+	if len(filename) > 0 {
+		v.logger.Debug("found file", "file", filename)
+		return filename
 	}
 
 	if v.configType != "" {
