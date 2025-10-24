@@ -1590,6 +1590,11 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
+	fileExist, err := afero.Exists(v.fs, filename)
+	if !fileExist {
+		return ConfigFileNotFoundError{filename, fmt.Sprintf("%s", v.configPaths)}
+	}
+
 	v.logger.Debug("reading file", "file", filename)
 
 	file, err := afero.ReadFile(v.fs, filename)
