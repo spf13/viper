@@ -201,7 +201,7 @@ func (fn optionFunc) apply(v *Viper) {
 // By default it's value is ".".
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
-		v.keyDelim = d
+		v.keyDelim = strings.ToLower(d)
 	})
 }
 
@@ -500,7 +500,6 @@ func (v *Viper) searchIndexableWithPathPrefixes(source any, path []string) any {
 	// search for path prefixes, starting from the longest one
 	for i := len(path); i > 0; i-- {
 		prefixKey := strings.ToLower(strings.Join(path[0:i], v.keyDelim))
-
 		var val any
 		switch sourceIndexable := source.(type) {
 		case []any:
@@ -1562,10 +1561,12 @@ func Set(key string, value any) { v.Set(key, value) }
 // flags, config file, ENV, default, or key/value store.
 func (v *Viper) Set(key string, value any) {
 	// If alias passed in, then set the proper override
+
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
 
 	path := strings.Split(key, v.keyDelim)
+
 	lastKey := strings.ToLower(path[len(path)-1])
 	deepestMap := deepSearch(v.override, path[0:len(path)-1])
 
