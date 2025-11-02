@@ -602,6 +602,7 @@ if err != nil {
 
 If you want to unmarshal configuration where the keys themselves contain `.`
 (the default key delimiter), you can change the delimiter.
+The delimiter is case-insensitive when using alphabetic characters.
 
 ```go
 v := viper.NewWithOptions(viper.KeyDelimiter("::"))
