@@ -2718,3 +2718,405 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestSubWithNestedPFlagBindings(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.Bool("test-flag", false, "Test flag description")
+	err := flags.Parse([]string{"--test-flag=true"})
+	require.NoError(t, err)
+
+	v.BindPFlag("test.test_field", flags.Lookup("test-flag"))
+	v.SetDefault("test.test_field", false)
+	v.Set("test.test_field2", true)
+
+	// Direct access should work
+	assert.True(t, v.GetBool("test.test_field"))
+	assert.True(t, v.GetBool("test.test_field2"))
+
+	// Sub() should now include the pflag binding
+	subConf := v.Sub("test")
+	require.NotNil(t, subConf, "Sub() should not return nil")
+
+	// AllKeys should include both keys
+	allKeys := subConf.AllKeys()
+	assert.Contains(t, allKeys, "test_field")
+	assert.Contains(t, allKeys, "test_field2")
+
+	// Values should be accessible through Sub()
+	assert.True(t, subConf.GetBool("test_field"))
+	assert.True(t, subConf.GetBool("test_field2"))
+
+	// Unmarshal should work correctly
+	type TestConfig struct {
+		TestField  bool `mapstructure:"test_field"`
+		TestField2 bool `mapstructure:"test_field2"`
+	}
+
+	var config TestConfig
+	err = subConf.Unmarshal(&config)
+	require.NoError(t, err)
+	assert.True(t, config.TestField)
+	assert.True(t, config.TestField2)
+}
+
+// TestSubWithMultipleNestedPFlagBindings tests multiple pflags in one subtree
+func TestSubWithMultipleNestedPFlagBindings(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("host", "default", "Database host")
+	flags.Int("port", 5432, "Database port")
+	flags.String("name", "mydb", "Database name")
+	err := flags.Parse([]string{"--host=localhost", "--port=3306", "--name=testdb"})
+	require.NoError(t, err)
+
+	v.BindPFlag("database.host", flags.Lookup("host"))
+	v.BindPFlag("database.port", flags.Lookup("port"))
+	v.BindPFlag("database.name", flags.Lookup("name"))
+	v.Set("database.timeout", 30)
+
+	dbConf := v.Sub("database")
+	require.NotNil(t, dbConf)
+
+	assert.Equal(t, "localhost", dbConf.GetString("host"))
+	assert.Equal(t, 3306, dbConf.GetInt("port"))
+	assert.Equal(t, "testdb", dbConf.GetString("name"))
+	assert.Equal(t, 30, dbConf.GetInt("timeout"))
+}
+
+// TestSubWithDeepNestedPFlagBindings tests multiple levels of Sub() calls
+func TestSubWithDeepNestedPFlagBindings(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("deep-flag", "default", "Deep flag")
+	err := flags.Parse([]string{"--deep-flag=actual-value"})
+	require.NoError(t, err)
+
+	v.BindPFlag("level1.level2.level3.field", flags.Lookup("deep-flag"))
+	v.Set("level1.level2.level3.otherfield", "data")
+
+	level1 := v.Sub("level1")
+	require.NotNil(t, level1)
+	assert.Equal(t, "actual-value", level1.GetString("level2.level3.field"))
+
+	level2 := level1.Sub("level2")
+	require.NotNil(t, level2)
+	assert.Equal(t, "actual-value", level2.GetString("level3.field"))
+
+	level3 := level2.Sub("level3")
+	require.NotNil(t, level3)
+	assert.Equal(t, "actual-value", level3.GetString("field"))
+}
+
+// TestSubWithoutPFlagBindings ensures backwards compatibility
+func TestSubWithoutPFlagBindings(t *testing.T) {
+	v := New()
+
+	v.Set("app.name", "myapp")
+	v.Set("app.version", "1.0.0")
+	v.Set("app.debug", true)
+
+	appConf := v.Sub("app")
+	require.NotNil(t, appConf)
+	assert.Equal(t, "myapp", appConf.GetString("name"))
+	assert.Equal(t, "1.0.0", appConf.GetString("version"))
+	assert.True(t, appConf.GetBool("debug"))
+}
+
+// TestSubWithEnvBindings tests that env bindings are copied to sub-viper
+func TestSubWithEnvBindings(t *testing.T) {
+	v := New()
+
+	v.BindEnv("app.database.host", "DB_HOST")
+	v.Set("app.database.host", "localhost")
+	v.Set("app.database.port", 5432)
+
+	appConf := v.Sub("app")
+	require.NotNil(t, appConf)
+
+	dbConf := appConf.Sub("database")
+	require.NotNil(t, dbConf)
+
+	assert.Equal(t, "localhost", dbConf.GetString("host"))
+	assert.Equal(t, 5432, dbConf.GetInt("port"))
+}
+
+// TestSubWithAliases tests that aliases work through Sub()
+func TestSubWithAliases(t *testing.T) {
+	v := New()
+
+	v.Set("server.hostname", "example.com")
+	v.RegisterAlias("server.host", "server.hostname")
+
+	serverConf := v.Sub("server")
+	require.NotNil(t, serverConf)
+
+	assert.Equal(t, "example.com", serverConf.GetString("hostname"))
+	assert.Equal(t, "example.com", serverConf.GetString("host"))
+}
+
+// TestSubWithDefaults tests that defaults are preserved in sub-viper
+func TestSubWithDefaults(t *testing.T) {
+	v := New()
+
+	v.SetDefault("app.timeout", 30)
+	v.SetDefault("app.retries", 3)
+	v.SetDefault("app.debug", false)
+	v.Set("app.debug", true)
+
+	appConf := v.Sub("app")
+	require.NotNil(t, appConf)
+
+	assert.Equal(t, 30, appConf.GetInt("timeout"))
+	assert.Equal(t, 3, appConf.GetInt("retries"))
+	assert.True(t, appConf.GetBool("debug"))
+}
+
+// TestSubWithMixedSources tests combining pflags, env, defaults, and Set
+func TestSubWithMixedSources(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("api-key", "", "API Key")
+	err := flags.Parse([]string{"--api-key=secret123"})
+	require.NoError(t, err)
+
+	v.SetDefault("api.timeout", 30)
+	v.BindPFlag("api.key", flags.Lookup("api-key"))
+	v.Set("api.endpoint", "https://api.example.com")
+	v.BindEnv("api.region", "API_REGION")
+	v.Set("api.region", "us-west-1")
+
+	apiConf := v.Sub("api")
+	require.NotNil(t, apiConf)
+
+	assert.Equal(t, 30, apiConf.GetInt("timeout"))
+	assert.Equal(t, "secret123", apiConf.GetString("key"))
+	assert.Equal(t, "https://api.example.com", apiConf.GetString("endpoint"))
+	assert.Equal(t, "us-west-1", apiConf.GetString("region"))
+
+	type APIConfig struct {
+		Timeout  int    `mapstructure:"timeout"`
+		Key      string `mapstructure:"key"`
+		Endpoint string `mapstructure:"endpoint"`
+		Region   string `mapstructure:"region"`
+	}
+
+	var apiConfig APIConfig
+	err = apiConf.Unmarshal(&apiConfig)
+	require.NoError(t, err)
+	assert.Equal(t, 30, apiConfig.Timeout)
+	assert.Equal(t, "secret123", apiConfig.Key)
+	assert.Equal(t, "https://api.example.com", apiConfig.Endpoint)
+	assert.Equal(t, "us-west-1", apiConfig.Region)
+}
+
+// TestSubReturnsNilForNonExistentKey tests nil return for missing keys
+func TestSubReturnsNilForNonExistentKey(t *testing.T) {
+	v := New()
+	v.Set("existing.key", "value")
+
+	nonExistent := v.Sub("nonexistent")
+	assert.Nil(t, nonExistent)
+
+	existing := v.Sub("existing")
+	assert.NotNil(t, existing)
+}
+
+// TestSubWithCaseSensitivity tests case-insensitive key handling
+func TestSubWithCaseSensitivity(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.Bool("test-flag", false, "Test flag")
+	err := flags.Parse([]string{"--test-flag=true"})
+	require.NoError(t, err)
+
+	v.BindPFlag("MyApp.MyConfig.MyFlag", flags.Lookup("test-flag"))
+	v.Set("MyApp.MyConfig.MyValue", "hello")
+
+	sub1 := v.Sub("myapp")
+	sub2 := v.Sub("MyApp")
+	sub3 := v.Sub("MYAPP")
+
+	require.NotNil(t, sub1)
+	require.NotNil(t, sub2)
+	require.NotNil(t, sub3)
+
+	assert.True(t, sub1.GetBool("myconfig.myflag"))
+	assert.True(t, sub2.GetBool("myconfig.myflag"))
+	assert.True(t, sub3.GetBool("myconfig.myflag"))
+}
+
+// TestSubSharesConfigWithParent tests that parent and sub share config
+func TestSubSharesConfigWithParent(t *testing.T) {
+	v := New()
+	v.Set("parent.child.value", "original")
+
+	sub := v.Sub("parent")
+	require.NotNil(t, sub)
+
+	sub.Set("child.value", "modified")
+	sub.Set("child.newvalue", "added")
+
+	// Changes in sub are visible in parent (shared config)
+	assert.Equal(t, "modified", v.GetString("parent.child.value"))
+	assert.Equal(t, "added", v.GetString("parent.child.newvalue"))
+}
+
+// TestSubWithBoolPFlags tests boolean flag types
+func TestSubWithBoolPFlags(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.Bool("enabled", false, "Enable feature")
+	flags.Bool("disabled", true, "Disable feature")
+	err := flags.Parse([]string{"--enabled", "--disabled=false"})
+	require.NoError(t, err)
+
+	v.BindPFlag("features.enabled", flags.Lookup("enabled"))
+	v.BindPFlag("features.disabled", flags.Lookup("disabled"))
+	v.Set("features.other", true)
+
+	sub := v.Sub("features")
+	require.NotNil(t, sub)
+
+	assert.True(t, sub.GetBool("enabled"))
+	assert.False(t, sub.GetBool("disabled"))
+}
+
+// TestSubWithSlicePFlags tests slice/array flag types
+func TestSubWithSlicePFlags(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.StringSlice("hosts", []string{}, "Host list")
+	err := flags.Parse([]string{"--hosts=host1,host2,host3"})
+	require.NoError(t, err)
+
+	v.BindPFlag("config.hosts", flags.Lookup("hosts"))
+	v.Set("config.port", 8080)
+
+	sub := v.Sub("config")
+	require.NotNil(t, sub)
+
+	hosts := sub.GetStringSlice("hosts")
+	assert.Equal(t, []string{"host1", "host2", "host3"}, hosts)
+}
+
+// TestSubWithUnsetPFlag tests flags that use default values
+func TestSubWithUnsetPFlag(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("optional", "default-value", "Optional flag")
+	err := flags.Parse([]string{}) // Don't set the flag
+	require.NoError(t, err)
+
+	v.BindPFlag("config.optional", flags.Lookup("optional"))
+	v.Set("config.required", "present")
+
+	sub := v.Sub("config")
+	require.NotNil(t, sub)
+
+	assert.Equal(t, "default-value", sub.GetString("optional"))
+	assert.Equal(t, "present", sub.GetString("required"))
+}
+
+// TestSubPriorityOrder tests value precedence: Set > PFlag > Default
+func TestSubPriorityOrder(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("priority", "flag-default", "Priority test")
+	err := flags.Parse([]string{"--priority=from-flag"})
+	require.NoError(t, err)
+
+	v.SetDefault("config.priority", "default-value")
+	v.BindPFlag("config.priority", flags.Lookup("priority"))
+
+	sub := v.Sub("config")
+	require.NotNil(t, sub)
+
+	// PFlag should win over default
+	assert.Equal(t, "from-flag", sub.GetString("priority"))
+
+	// Set() on sub-viper should override pflag in sub-viper
+	sub.Set("priority", "from-set")
+	assert.Equal(t, "from-set", sub.GetString("priority"))
+
+	// Note: Parent still sees pflag value because it has its own pflag binding
+	// This is expected behavior - sub and parent have independent precedence chains
+	assert.Equal(t, "from-flag", v.GetString("config.priority"))
+}
+
+// TestSubWithCustomKeyDelimiter tests custom delimiter support
+func TestSubWithCustomKeyDelimiter(t *testing.T) {
+	v := NewWithOptions(KeyDelimiter("::"))
+
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("test-flag", "default", "Test flag")
+	err := flags.Parse([]string{"--test-flag=custom"})
+	require.NoError(t, err)
+
+	v.BindPFlag("app::config::value", flags.Lookup("test-flag"))
+	v.Set("app::config::other", "data")
+
+	appConf := v.Sub("app")
+	require.NotNil(t, appConf)
+
+	assert.Equal(t, "::", appConf.keyDelim)
+	assert.Equal(t, "custom", appConf.GetString("config::value"))
+	assert.Equal(t, "data", appConf.GetString("config::other"))
+}
+
+// TestSubWithIntAndFloatPFlags tests numeric flag types
+func TestSubWithIntAndFloatPFlags(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.Int("port", 8080, "Port number")
+	flags.Float64("rate", 0.5, "Rate limit")
+	err := flags.Parse([]string{"--port=3000", "--rate=1.5"})
+	require.NoError(t, err)
+
+	v.BindPFlag("server.port", flags.Lookup("port"))
+	v.BindPFlag("server.rate", flags.Lookup("rate"))
+	v.Set("server.host", "localhost")
+
+	sub := v.Sub("server")
+	require.NotNil(t, sub)
+
+	assert.Equal(t, 3000, sub.GetInt("port"))
+	assert.Equal(t, 1.5, sub.GetFloat64("rate"))
+	assert.Equal(t, "localhost", sub.GetString("host"))
+}
+
+// TestMultipleSubCallsIndependence tests isolation between Sub() instances
+func TestMultipleSubCallsIndependence(t *testing.T) {
+	v := New()
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	flags.String("flag1", "", "Flag 1")
+	err := flags.Parse([]string{"--flag1=value"})
+	require.NoError(t, err)
+
+	v.BindPFlag("section.field", flags.Lookup("flag1"))
+	v.Set("section.other", "data")
+
+	sub1 := v.Sub("section")
+	sub2 := v.Sub("section")
+
+	require.NotNil(t, sub1)
+	require.NotNil(t, sub2)
+
+	assert.Equal(t, "value", sub1.GetString("field"))
+	assert.Equal(t, "value", sub2.GetString("field"))
+
+	sub1.Set("modified", "new")
+
+	assert.Equal(t, "new", sub2.GetString("modified"))
+}

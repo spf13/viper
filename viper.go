@@ -775,13 +775,75 @@ func (v *Viper) Sub(key string) *Viper {
 	}
 
 	if reflect.TypeOf(data).Kind() == reflect.Map {
+		subv.config = cast.ToStringMap(data)
+
+		keyLower := strings.ToLower(key)
+		keyPrefix := keyLower + v.keyDelim
+
+		// 1. Copy pflag bindings (FLAGS)
+		for flagKey, flagValue := range v.pflags {
+			flagKeyLower := strings.ToLower(flagKey)
+
+			if after, ok := strings.CutPrefix(flagKeyLower, keyPrefix); ok {
+				relativeKey := after
+				subv.pflags[relativeKey] = flagValue
+			}
+		}
+
+		// 2. Copy environment variable bindings (ENV VARS)
+		for envKey, envValue := range v.env {
+			envKeyLower := strings.ToLower(envKey)
+
+			if after, ok := strings.CutPrefix(envKeyLower, keyPrefix); ok {
+				relativeKey := after
+				subv.env[relativeKey] = envValue
+			}
+		}
+
+		// 3. Copy aliases (SHORTCUTS)
+		for aliasKey, realKey := range v.aliases {
+			aliasKeyLower := strings.ToLower(aliasKey)
+			realKeyLower := strings.ToLower(realKey)
+
+			if strings.HasPrefix(aliasKeyLower, keyPrefix) || strings.HasPrefix(realKeyLower, keyPrefix) {
+				relativeAliasKey := strings.TrimPrefix(aliasKeyLower, keyPrefix)
+				relativeRealKey := strings.TrimPrefix(realKeyLower, keyPrefix)
+				subv.aliases[relativeAliasKey] = relativeRealKey
+			}
+		}
+
+		// 4. Copy defaults (DEFAULT VALUES)
+		if len(v.defaults) > 0 {
+			path := strings.Split(keyLower, v.keyDelim)
+			if defaults := v.searchMap(v.defaults, path); defaults != nil {
+				if defaultsMap, ok := defaults.(map[string]interface{}); ok {
+					subv.defaults = defaultsMap
+				}
+			}
+		}
+
+		// 5. Copy overrides
+		if len(v.override) > 0 {
+			path := strings.Split(keyLower, v.keyDelim)
+			if overrides := v.searchMap(v.override, path); overrides != nil {
+				if overridesMap, ok := overrides.(map[string]interface{}); ok {
+					subv.override = overridesMap
+				}
+			}
+		}
+
 		subv.parents = append([]string(nil), v.parents...)
-		subv.parents = append(subv.parents, strings.ToLower(key))
+		subv.parents = append(subv.parents, keyLower)
 		subv.automaticEnvApplied = v.automaticEnvApplied
 		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
+		subv.typeByDefValue = v.typeByDefValue
 		subv.keyDelim = v.keyDelim
-		subv.config = cast.ToStringMap(data)
+
+		if v.logger != nil {
+			subv.logger = v.logger
+		}
+
 		return subv
 	}
 	return nil
