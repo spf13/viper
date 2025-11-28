@@ -51,3 +51,7 @@ emails:
         created: 01/02/03
         active: true
 `)
+
+var yamlEncodeWriteExpected = []byte(`age: 35
+beard: true
+`)
