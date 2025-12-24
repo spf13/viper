@@ -90,9 +90,10 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * JSON
 * TOML
 * YAML
-* INI
 * envfile
-* Java Propeties
+* HCL (see below)
+* INI (see below)
+* Java Propeties (see below)
 
 A single Viper instance only supports a single configuration file, but multiple
 paths may be searched for one.
@@ -140,6 +141,14 @@ if err := viper.ReadInConfig(); err != nil {
 > **NOTE (since 1.6)** You can also have a file without an extension and
 > specify the format programmatically, which is useful for files that naturally
 > have no extension (e.g., `.bashrc`).
+
+> **NOTE (since 1.20)** In order to reduce third-party dependencies, Viper dropped support for the following formats from the core:
+> - HCL
+> - INI
+> - Java properties
+>
+> You can still use these formats though by importing them from [github.com/go-viper/encoding](https://github.com/go-viper/encoding).
+> See the [migration guide](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core) for more details.
 
 ### Writing Config Files
 
@@ -765,6 +774,9 @@ the `sync` package). Concurrent reads and writes can cause a panic.
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
+## Upgrade an breaking changes
+
+For details on updates and breaking changes in new Viper releases, please refer to [UPGRADE.md](UPGRADE.md).
 
 ## Development
 
