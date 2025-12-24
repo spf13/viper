@@ -42,7 +42,8 @@ Many Go projects are built using Viper including:
 go get github.com/spf13/viper
 ```
 
-> **NOTE** Viper uses [Go Modules](https://go.dev/wiki/Modules) to manage dependencies.
+> [!NOTE]
+> Viper uses [Go Modules](https://go.dev/wiki/Modules) to manage dependencies.
 
 
 ## Why use Viper?
@@ -81,7 +82,8 @@ Viper uses the following precedence for merging:
  * external key/value stores
  * defaults
 
-> **NOTE** Viper configuration keys are case insensitive.
+> [!NOTE]
+> Viper configuration keys are case insensitive.
 
 ### Reading Config Files
 
@@ -90,9 +92,10 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * JSON
 * TOML
 * YAML
-* INI
 * envfile
-* Java Propeties
+* HCL ([see](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core))
+* INI ([see](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core))
+* Java Properties ([see](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core))
 
 A single Viper instance only supports a single configuration file, but multiple
 paths may be searched for one.
@@ -136,10 +139,19 @@ if err := viper.ReadInConfig(); err != nil {
 
 // Config file found and successfully parsed
 ```
-
-> **NOTE (since 1.6)** You can also have a file without an extension and
+> [!NOTE]
+> **Since 1.6:** You can also have a file without an extension and
 > specify the format programmatically, which is useful for files that naturally
 > have no extension (e.g., `.bashrc`).
+
+> [!NOTE]
+> **Since 1.20:** In order to reduce third-party dependencies, Viper dropped support for the following formats from the core:
+> - HCL
+> - INI
+> - Java properties
+>
+> You can still use these formats though by importing them from [github.com/go-viper/encoding](https://github.com/go-viper/encoding).
+> See the [migration guide](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core) for more details.
 
 ### Writing Config Files
 
@@ -246,7 +258,8 @@ viper.GetBool("verbose") // true
 
 Viper has full support for environment variables.
 
-> **NOTE** Unlike other configuration sources, environment variables are case
+> [!NOTE]
+> Unlike other configuration sources, environment variables are case
 > sensitive.
 
 ```go
@@ -526,7 +539,8 @@ GetString("datastore.metric.host") // "127.0.0.1"
 GetInt("host.ports.1") // 6029
 ```
 
-> **NOTE** Viper _does not_ deep merge configuration values. Complex values
+> [!NOTE]
+> Viper _does not_ deep merge configuration values. Complex values
 > that are overridden will be entirely replaced.
 
 If there exists a key that matches the delimited key path, its value will be
@@ -765,6 +779,9 @@ the `sync` package). Concurrent reads and writes can cause a panic.
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
+## Upgrade an breaking changes
+
+For details on updates and breaking changes in new Viper releases, please refer to [UPGRADE.md](UPGRADE.md).
 
 ## Development
 
