@@ -620,7 +620,7 @@ func (v *Viper) isPathShadowedInDeepMap(path []string, m map[string]any) string 
 //	"foo.bar.baz" in a lower-priority map
 func (v *Viper) isPathShadowedInFlatMap(path []string, mi any) string {
 	// unify input map
-	var m map[string]interface{}
+	var m map[string]any
 	switch miv := mi.(type) {
 	case map[string]string:
 		m = castMapStringToMapInterface(miv)
@@ -1030,8 +1030,8 @@ func stringToWeakSliceHookFunc(sep string) mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String || t.Kind() != reflect.Slice {
 			return data, nil
 		}
