@@ -1,10 +1,12 @@
-package json
+package json_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/spf13/viper/internal/encoding/json"
 )
 
 // encoded form of the data.
@@ -54,7 +56,7 @@ var data = map[string]any{
 }
 
 func TestCodec_Encode(t *testing.T) {
-	codec := Codec{}
+	codec := json.Codec{}
 
 	b, err := codec.Encode(data)
 	require.NoError(t, err)
@@ -64,7 +66,7 @@ func TestCodec_Encode(t *testing.T) {
 
 func TestCodec_Decode(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		codec := Codec{}
+		codec := json.Codec{}
 
 		v := map[string]any{}
 
@@ -75,7 +77,7 @@ func TestCodec_Decode(t *testing.T) {
 	})
 
 	t.Run("InvalidData", func(t *testing.T) {
-		codec := Codec{}
+		codec := json.Codec{}
 
 		v := map[string]any{}
 

@@ -1,4 +1,4 @@
-package json
+package json //revive:disable-line:var-naming
 
 import (
 	"encoding/json"
