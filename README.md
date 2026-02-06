@@ -1,7 +1,7 @@
-> ## Viper v2 feedback
-> Viper is heading towards v2 and we would love to hear what _**you**_ would like to see in it. Share your thoughts here: https://forms.gle/R6faU74qPRPAzchZ9
->
-> **Thank you!**
+## Viper v2 feedback
+Viper is heading towards v2 and we would love to hear what _**you**_ would like to see in it. Share your thoughts here: https://forms.gle/R6faU74qPRPAzchZ9
+
+**Thank you!**
 
 ![Viper](.github/logo.png?raw=true)
 
@@ -32,15 +32,14 @@ Many Go projects are built using Viper including:
 * [Coder](https://github.com/coder/coder)
 * [Vitess](https://vitess.io/)
 
-
 ## Install
 
 ```shell
+
 go get github.com/spf13/viper
 ```
 
 **Note:** Viper uses [Go Modules](https://github.com/golang/go/wiki/Modules) to manage dependencies.
-
 
 ## What is Viper?
 
@@ -58,7 +57,6 @@ and formats. It supports:
 * setting explicit values
 
 Viper can be thought of as a registry for all of your applications configuration needs.
-
 
 ## Why Viper?
 
@@ -85,7 +83,6 @@ Viper uses the following precedence order. Each item takes precedence over the i
 
 **Important:** Viper configuration keys are case insensitive.
 There are ongoing discussions about making that optional.
-
 
 ## Putting Values into Viper
 
@@ -169,9 +166,8 @@ viper.SafeWriteConfigAs("/path/to/my/.other_config")
 
 Viper supports the ability to have your application live read a config file while running.
 
-Gone are the days of needing to restart a server to have a config take effect,
-viper powered applications can read an update to a config file while running and
-not miss a beat.
+Gone are the days of needing to restart a server to have a config take effect.
+viper powered applications can read an update to a config file while running and not miss a beat.
 
 Simply tell the viper instance to watchConfig.
 Optionally you can provide a function for Viper to run each time a change occurs.
@@ -273,13 +269,13 @@ the `BindEnv` is called.
 
 `AutomaticEnv` is a powerful helper especially when combined with
 `SetEnvPrefix`. When called, Viper will check for an environment variable any
-time a `viper.Get` request is made. It will apply the following rules. It will
-check for an environment variable with a name matching the key uppercased and
-prefixed with the `EnvPrefix` if set.
+ time a `viper.Get` request is made. It will apply the following rules. It will
+ check for an environment variable with a name matching the key uppercased and
+ prefixed with the `EnvPrefix` if set.
 
 `SetEnvKeyReplacer` allows you to use a `strings.Replacer` object to rewrite Env
-keys to an extent. This is useful if you want to use `-` or something in your
-`Get()` calls, but want your environmental variables to use `_` delimiters. An
+keys to an extent. This is useful if you want to use "-" or something in your
+`Get()` calls, but want your environmental variables to use "_" delimiters. An
 example of using it can be found in `viper_test.go`.
 
 Alternatively, you can use `EnvKeyReplacer` with `NewWithOptions` factory function.
@@ -409,7 +405,7 @@ viper.BindFlagValues("my-flags", fSet)
 ### Remote Key/Value Store Support
 
 To enable remote support in Viper, do a blank import of the `viper/remote`
-package:
+packag:
 
 `import _ "github.com/spf13/viper/remote"`
 
@@ -678,6 +674,7 @@ and pass it to a module. This way the module can be instantiated more than once,
 For example, an application might use multiple different cache stores for different purposes:
 
 ```yaml
+
 cache:
   cache1:
     max-items: 100
@@ -716,7 +713,6 @@ func NewCache(v *Viper) *Cache {
 
 The resulting code is easy to test, since it's decoupled from the main config structure,
 and easier to reuse (for the same reason).
-
 
 ### Unmarshaling
 
@@ -758,7 +754,7 @@ v.SetDefault("chart::values", map[string]any{
 			"traefik.ingress.kubernetes.io/ssl-redirect": "true",
 		},
 	},
-})
+)
 
 type config struct {
 	Chart struct{
@@ -864,8 +860,7 @@ y.SetDefault("ContentDir", "foobar")
 ```
 
 When working with multiple vipers, it is up to the user to keep track of the
-different vipers.
-
+ different vipers.
 
 ## Q & A
 
@@ -926,3 +921,6 @@ make fmt
 ## License
 
 The project is licensed under the [MIT License](LICENSE).
+
+
+// Simulated backport fix for legacy branch v1.18.x
