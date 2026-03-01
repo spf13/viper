@@ -1302,7 +1302,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	}
 
 	// K/V store next
-	val = v.searchMap(v.kvstore, path)
+	val = v.searchIndexableWithPathPrefixes(v.kvstore, path)
 	if val != nil {
 		return val
 	}
