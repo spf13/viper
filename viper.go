@@ -1580,7 +1580,7 @@ func ReadInConfig() error { return v.ReadInConfig() }
 // ReadInConfig will discover and load the configuration file from disk
 // and key/value stores, searching in one of the defined paths.
 func (v *Viper) ReadInConfig() error {
-	v.logger.Info("attempting to read in config file")
+	v.logger.Debug("attempting to read in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err
@@ -1590,7 +1590,7 @@ func (v *Viper) ReadInConfig() error {
 		return UnsupportedConfigError(v.getConfigType())
 	}
 
-	v.logger.Debug("reading file", "file", filename)
+	v.logger.Info("reading file", "file", filename)
 
 	file, err := afero.ReadFile(v.fs, filename)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -1617,7 +1617,7 @@ func MergeInConfig() error { return v.MergeInConfig() }
 
 // MergeInConfig merges a new configuration with an existing config.
 func (v *Viper) MergeInConfig() error {
-	v.logger.Info("attempting to merge in config file")
+	v.logger.Debug("attempting to merge in config file")
 	filename, err := v.getConfigFile()
 	if err != nil {
 		return err
@@ -1626,6 +1626,8 @@ func (v *Viper) MergeInConfig() error {
 	if !slices.Contains(SupportedExts, v.getConfigType()) {
 		return UnsupportedConfigError(v.getConfigType())
 	}
+
+	v.logger.Info("merging file into config", "file", filename)
 
 	file, err := afero.ReadFile(v.fs, filename)
 	if err != nil {
