@@ -259,13 +259,15 @@ func SetOptions(opts ...Option) {
 // can use it in their testing as well.
 func Reset() {
 	v = New()
-	SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
+	SupportedExts = []string{"json", "toml", "yaml", "yml", "dotenv", "env"}
 
 	resetRemote()
 }
 
 // SupportedExts are universally supported extensions.
-var SupportedExts = []string{"json", "toml", "yaml", "yml", "properties", "props", "prop", "hcl", "tfvars", "dotenv", "env", "ini"}
+// Since v1.20, HCL, Java Properties, and INI were removed from core.
+// To use them, register a custom codec via [WithCodecRegistry] and append to this list.
+var SupportedExts = []string{"json", "toml", "yaml", "yml", "dotenv", "env"}
 
 // OnConfigChange sets the event handler that is called when a config file changes.
 func OnConfigChange(run func(in fsnotify.Event)) { v.OnConfigChange(run) }

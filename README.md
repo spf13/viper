@@ -90,9 +90,12 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * JSON
 * TOML
 * YAML
-* INI
-* envfile
-* Java Propeties
+* Dotenv
+
+> **NOTE (since v1.20):** HCL, Java Properties, and INI were removed from core to reduce
+> third-party dependencies. You can still use them by registering codecs from
+> [github.com/go-viper/encoding](https://github.com/go-viper/encoding).
+> See the [upgrade guide](UPGRADE.md#breaking-hcl-java-properties-ini-removed-from-core) for details.
 
 A single Viper instance only supports a single configuration file, but multiple
 paths may be searched for one.
