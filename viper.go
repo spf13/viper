@@ -899,6 +899,14 @@ func (v *Viper) GetIntSlice(key string) []int {
 	return cast.ToIntSlice(v.Get(key))
 }
 
+// GetInt64Slice returns the value associated with the key as a slice of int64 values.
+func GetInt64Slice(key string) []int64 { return v.GetInt64Slice(key) }
+
+// GetInt64Slice returns the value associated with the key as a slice of int64 values.
+func (v *Viper) GetInt64Slice(key string) []int64 {
+	return cast.ToInt64Slice(v.Get(key))
+}
+
 // GetStringSlice returns the value associated with the key as a slice of strings.
 func GetStringSlice(key string) []string { return v.GetStringSlice(key) }
 
@@ -1241,6 +1249,11 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 			s = strings.TrimSuffix(s, "]")
 			res, _ := readAsCSV(s)
 			return cast.ToIntSlice(res)
+		case "int64Slice":
+			s := strings.TrimPrefix(flag.ValueString(), "[")
+			s = strings.TrimSuffix(s, "]")
+			res, _ := readAsCSV(s)
+			return cast.ToInt64Slice(res)
 		case "uintSlice":
 			s := strings.TrimPrefix(flag.ValueString(), "[")
 			s = strings.TrimSuffix(s, "]")
@@ -1343,6 +1356,11 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 				s = strings.TrimSuffix(s, "]")
 				res, _ := readAsCSV(s)
 				return cast.ToIntSlice(res)
+			case "int64Slice":
+				s := strings.TrimPrefix(flag.ValueString(), "[")
+				s = strings.TrimSuffix(s, "]")
+				res, _ := readAsCSV(s)
+				return cast.ToInt64Slice(res)
 			case "uintSlice":
 				s := strings.TrimPrefix(flag.ValueString(), "[")
 				s = strings.TrimSuffix(s, "]")

@@ -1292,6 +1292,42 @@ func TestBindPFlagsIntSlice(t *testing.T) {
 	}
 }
 
+func TestBindPFlagsInt64Slice(t *testing.T) {
+	tests := []struct {
+		Expected []int64
+		Value    string
+	}{
+		{[]int64{}, ""},
+		{[]int64{1}, "1"},
+		{[]int64{2, 3}, "2,3"},
+	}
+
+	v := New() // create independent Viper object
+	defaultVal := []int64{0}
+	v.SetDefault("int64slice", defaultVal)
+
+	for _, testValue := range tests {
+		flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flagSet.Int64Slice("int64slice", testValue.Expected, "test")
+
+		for _, changed := range []bool{true, false} {
+			flagSet.VisitAll(func(f *pflag.Flag) {
+				f.Value.Set(testValue.Value)
+				f.Changed = changed
+			})
+
+			err := v.BindPFlags(flagSet)
+			require.NoError(t, err, "error binding flag set")
+
+			if changed {
+				assert.Equal(t, testValue.Expected, v.GetInt64Slice("int64slice"))
+			} else {
+				assert.Equal(t, defaultVal, v.GetInt64Slice("int64slice"))
+			}
+		}
+	}
+}
+
 func TestBindPFlag(t *testing.T) {
 	v := New()
 	testString := "testing"
