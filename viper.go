@@ -2058,6 +2058,9 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 	m := map[string]any{}
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
+		if v.isPathShadowedByOverride(strings.Split(k, v.keyDelim)) {
+			continue
+		}
 		value := v.Get(k)
 		if value == nil {
 			// should not happen, since AllKeys() returns only keys holding a value,
@@ -2071,6 +2074,30 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 		deepestMap[lastKey] = value
 	}
 	return m
+}
+
+// isPathShadowedByOverride reports whether a key path is shadowed by a parent
+// override map without an explicit override value at the same full path.
+func (v *Viper) isPathShadowedByOverride(path []string) bool {
+	if len(path) < 2 {
+		return false
+	}
+
+	for i := 1; i < len(path); i++ {
+		parentPath := path[0:i]
+		if v.searchMap(v.override, parentPath) == nil {
+			continue
+		}
+
+		// If the full path has a value in overrides, keep it.
+		if v.searchMap(v.override, path) != nil {
+			return false
+		}
+
+		return true
+	}
+
+	return false
 }
 
 // SetFs sets the filesystem to use to read configuration.
