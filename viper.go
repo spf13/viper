@@ -2076,8 +2076,6 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 	return m
 }
 
-// isPathShadowedByOverride reports whether a key path is shadowed by a parent
-// override map without an explicit override value at the same full path.
 func (v *Viper) isPathShadowedByOverride(path []string) bool {
 	if len(path) < 2 {
 		return false
@@ -2089,7 +2087,6 @@ func (v *Viper) isPathShadowedByOverride(path []string) bool {
 			continue
 		}
 
-		// If the full path has a value in overrides, keep it.
 		if v.searchMap(v.override, path) != nil {
 			return false
 		}
