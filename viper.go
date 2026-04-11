@@ -154,6 +154,51 @@ type Viper struct {
 	experimentalBindStruct bool
 }
 
+// lazyInit initializes the Viper instance's internal maps if they are nil.
+// This ensures that a zero-value Viper (created via &Viper{} instead of New())
+// does not panic on first use of mutating methods.
+func (v *Viper) lazyInit() {
+	if v.keyDelim == "" {
+		v.keyDelim = "."
+	}
+	if v.config == nil {
+		v.config = make(map[string]any)
+	}
+	if v.override == nil {
+		v.override = make(map[string]any)
+	}
+	if v.defaults == nil {
+		v.defaults = make(map[string]any)
+	}
+	if v.kvstore == nil {
+		v.kvstore = make(map[string]any)
+	}
+	if v.pflags == nil {
+		v.pflags = make(map[string]FlagValue)
+	}
+	if v.env == nil {
+		v.env = make(map[string][]string)
+	}
+	if v.aliases == nil {
+		v.aliases = make(map[string]string)
+	}
+	if v.parents == nil {
+		v.parents = []string{}
+	}
+	if v.logger == nil {
+		v.logger = slog.New(&discardHandler{})
+	}
+	if v.fs == nil {
+		v.fs = afero.NewOsFs()
+	}
+	if v.configName == "" {
+		v.configName = "config"
+	}
+	if v.configPermissions == 0 {
+		v.configPermissions = os.FileMode(0o644)
+	}
+}
+
 // New returns an initialized Viper instance.
 func New() *Viper {
 	v := new(Viper)
@@ -1538,6 +1583,7 @@ func SetDefault(key string, value any) { v.SetDefault(key, value) }
 // SetDefault is case-insensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func (v *Viper) SetDefault(key string, value any) {
+	v.lazyInit()
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
@@ -1561,6 +1607,7 @@ func Set(key string, value any) { v.Set(key, value) }
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func (v *Viper) Set(key string, value any) {
+	v.lazyInit()
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)

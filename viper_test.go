@@ -2718,3 +2718,32 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+// TestZeroValueViperDoesNotPanic ensures that a zero-value Viper (created via
+// &Viper{} instead of New()) does not panic when calling SetDefault or Set.
+// See https://github.com/spf13/viper/issues/2111
+func TestZeroValueViperDoesNotPanic(t *testing.T) {
+	t.Run("SetDefault on zero-value Viper", func(t *testing.T) {
+		v := &Viper{}
+		assert.NotPanics(t, func() {
+			v.SetDefault("key", "value")
+		})
+		assert.Equal(t, "value", v.GetString("key"))
+	})
+
+	t.Run("Set on zero-value Viper", func(t *testing.T) {
+		v := &Viper{}
+		assert.NotPanics(t, func() {
+			v.Set("key", "value")
+		})
+		assert.Equal(t, "value", v.GetString("key"))
+	})
+
+	t.Run("Set nested key on zero-value Viper", func(t *testing.T) {
+		v := &Viper{}
+		assert.NotPanics(t, func() {
+			v.Set("parent.child", "value")
+		})
+		assert.Equal(t, "value", v.GetString("parent.child"))
+	})
+}
