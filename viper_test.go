@@ -2441,6 +2441,14 @@ func TestWatchFile(t *testing.T) {
 		t.Skip("Skip test on Linux ...")
 	}
 
+	t.Run("panic on setup: failed to get config file", func(t *testing.T) {
+		v := New()
+		//explicitly dont set config to cover getConfigFile erroring.
+		require.Panics(t, func() {
+			v.WatchConfig()
+		}, "failed to panic as expected in get config file setup.")
+	})
+
 	t.Run("file content changed", func(t *testing.T) {
 		// given a `config.yaml` file being watched
 		v, configFile := newViperWithConfigFile(t)
