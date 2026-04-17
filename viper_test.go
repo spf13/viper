@@ -2718,3 +2718,19 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestZeroValueViperSetDefault(t *testing.T) {
+	v := &Viper{}
+	v.SetDefault("foo.bar", "baz")
+	if v.Get("foo.bar") != "baz" {
+		t.Fatalf("Expected baz, got %v", v.Get("foo.bar"))
+	}
+}
+
+func TestZeroValueViperSet(t *testing.T) {
+	v := &Viper{}
+	v.Set("foo.bar", "baz")
+	if v.Get("foo.bar") != "baz" {
+		t.Fatalf("Expected baz, got %v", v.Get("foo.bar"))
+	}
+}
