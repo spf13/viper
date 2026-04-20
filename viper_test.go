@@ -1573,6 +1573,27 @@ func TestReadConfigWithSetConfigFile(t *testing.T) {
 	assert.Equal(t, 45000, v.GetInt("hello.pop"))
 }
 
+func TestGetWithTypeByDefaultValue(t *testing.T) {
+	v := New()
+	v.SetDefault("port", 0)
+	v.SetDefault("enabled", false)
+	v.SetDefault("interval", time.Duration(0))
+
+	v.Set("port", "1138")
+	v.Set("enabled", "true")
+	v.Set("interval", "5s")
+
+	assert.Equal(t, "1138", v.Get("port"))
+	assert.Equal(t, "true", v.Get("enabled"))
+	assert.Equal(t, "5s", v.Get("interval"))
+
+	v.SetTypeByDefaultValue(true)
+
+	assert.Equal(t, 1138, v.Get("port"))
+	assert.Equal(t, true, v.Get("enabled"))
+	assert.Equal(t, 5*time.Second, v.Get("interval"))
+}
+
 func TestWrongFileNotFound(t *testing.T) {
 	_, config := initDirs(t)
 
