@@ -1538,6 +1538,7 @@ func SetDefault(key string, value any) { v.SetDefault(key, value) }
 // SetDefault is case-insensitive for a key.
 // Default only used when no value is provided by the user via flag, config or ENV.
 func (v *Viper) SetDefault(key string, value any) {
+	v.ensureMaps()
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
@@ -1561,6 +1562,7 @@ func Set(key string, value any) { v.Set(key, value) }
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func (v *Viper) Set(key string, value any) {
+	v.ensureMaps()
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
@@ -1571,6 +1573,41 @@ func (v *Viper) Set(key string, value any) {
 
 	// set innermost value
 	deepestMap[lastKey] = value
+}
+
+// ensureMaps lazily initialises the internal string-keyed maps that New
+// allocates up front. Callers that construct a Viper via a zero-value
+// struct literal (&Viper{}) rather than viper.New() would otherwise trip
+// an 'assignment to entry in nil map' panic on the first mutating call
+// (#2111). Treating the zero value as a usable instance matches Go
+// conventions for exported struct types (sync.Mutex{}, bytes.Buffer{},
+// and so on) without changing observable behaviour for instances that
+// already went through New.
+func (v *Viper) ensureMaps() {
+	if v.defaults == nil {
+		v.defaults = make(map[string]any)
+	}
+	if v.override == nil {
+		v.override = make(map[string]any)
+	}
+	if v.config == nil {
+		v.config = make(map[string]any)
+	}
+	if v.kvstore == nil {
+		v.kvstore = make(map[string]any)
+	}
+	if v.pflags == nil {
+		v.pflags = make(map[string]FlagValue)
+	}
+	if v.env == nil {
+		v.env = make(map[string][]string)
+	}
+	if v.aliases == nil {
+		v.aliases = make(map[string]string)
+	}
+	if v.keyDelim == "" {
+		v.keyDelim = "."
+	}
 }
 
 // ReadInConfig will discover and load the configuration file from disk

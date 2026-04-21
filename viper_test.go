@@ -481,6 +481,32 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, "leather", v.Get("clothing.jacket"))
 }
 
+// TestZeroValueStructSetDefaultNoPanic is a regression for #2111. A Viper
+// created via a zero-value struct literal (rather than viper.New()) used
+// to panic with `assignment to entry in nil map` on the first SetDefault
+// or Set, because the internal maps were not allocated. Since Viper is an
+// exported type, zero-value instances should be usable or at worst
+// error-return, not runtime-panic.
+func TestZeroValueStructSetDefaultNoPanic(t *testing.T) {
+	v := &Viper{}
+	assert.NotPanics(t, func() {
+		v.SetDefault("a", 1)
+		v.SetDefault("nested.key", "value")
+	})
+	assert.Equal(t, 1, v.Get("a"))
+	assert.Equal(t, "value", v.Get("nested.key"))
+}
+
+func TestZeroValueStructSetNoPanic(t *testing.T) {
+	v := &Viper{}
+	assert.NotPanics(t, func() {
+		v.Set("a", 1)
+		v.Set("nested.key", "value")
+	})
+	assert.Equal(t, 1, v.Get("a"))
+	assert.Equal(t, "value", v.Get("nested.key"))
+}
+
 func TestUnmarshaling(t *testing.T) {
 	v := New()
 	v.SetConfigType("yaml")
