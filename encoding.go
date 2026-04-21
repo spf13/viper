@@ -151,8 +151,8 @@ func (r *DefaultCodecRegistry) Decoder(format string) (Decoder, error) {
 }
 
 func (r *DefaultCodecRegistry) codec(format string) (Codec, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
 	format = strings.ToLower(format)
 
