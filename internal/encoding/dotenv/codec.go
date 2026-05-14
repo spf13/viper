@@ -32,7 +32,17 @@ func (Codec) Encode(v map[string]any) ([]byte, error) {
 	var buf bytes.Buffer
 
 	for _, key := range keys {
-		_, err := buf.WriteString(fmt.Sprintf("%v=%v\n", strings.ToUpper(key), flattened[key]))
+		var valStr string
+		switch v := flattened[key].(type) {
+		case []string:
+			// Encode string slices as comma-separated values.
+			// Using fmt's %v would produce "[a b]" which gotenv reads back
+			// as a single string instead of a slice.
+			valStr = strings.Join(v, ",")
+		default:
+			valStr = fmt.Sprintf("%v", v)
+		}
+		_, err := buf.WriteString(fmt.Sprintf("%v=%v\n", strings.ToUpper(key), valStr))
 		if err != nil {
 			return nil, err
 		}
