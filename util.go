@@ -153,25 +153,24 @@ func parseSizeInBytes(sizeStr string) uint {
 	lastChar := len(sizeStr) - 1
 	multiplier := uint(1)
 
-	if lastChar > 0 {
-		if sizeStr[lastChar] == 'b' || sizeStr[lastChar] == 'B' {
-			if lastChar > 1 {
-				switch unicode.ToLower(rune(sizeStr[lastChar-1])) {
-				case 'k':
-					multiplier = 1 << 10
-					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
-				case 'm':
-					multiplier = 1 << 20
-					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
-				case 'g':
-					multiplier = 1 << 30
-					sizeStr = strings.TrimSpace(sizeStr[:lastChar-1])
-				default:
-					multiplier = 1
-					sizeStr = strings.TrimSpace(sizeStr[:lastChar])
-				}
+	if lastChar > 0 && (sizeStr[lastChar] == 'b' || sizeStr[lastChar] == 'B') {
+		sizeStr = sizeStr[:lastChar]
+		lastChar--
+
+		if lastChar >= 0 {
+			switch unicode.ToLower(rune(sizeStr[lastChar])) {
+			case 'k':
+				multiplier = 1 << 10
+				sizeStr = sizeStr[:lastChar]
+			case 'm':
+				multiplier = 1 << 20
+				sizeStr = sizeStr[:lastChar]
+			case 'g':
+				multiplier = 1 << 30
+				sizeStr = sizeStr[:lastChar]
 			}
 		}
+		sizeStr = strings.TrimSpace(sizeStr)
 	}
 
 	size := max(cast.ToInt(sizeStr), 0)
