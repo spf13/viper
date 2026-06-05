@@ -964,6 +964,23 @@ func TestUnmarshalWithDecoderOptions(t *testing.T) {
 	}, &C)
 }
 
+func TestUnmarshalEmbeddedUnexportedStruct(t *testing.T) {
+	v := New()
+	v.Set("field", "value")
+
+	type unexportedConfig struct {
+		Field string
+	}
+
+	type config struct {
+		unexportedConfig
+	}
+
+	var cfg config
+	require.NoError(t, v.Unmarshal(&cfg, DecodeSquash(true)))
+	assert.Equal(t, "value", cfg.Field)
+}
+
 func TestUnmarshalWithAutomaticEnv(t *testing.T) {
 	t.Setenv("PORT", "1313")
 	t.Setenv("NAME", "Steve")
