@@ -68,6 +68,14 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	}
 }
 
+// DecodeSquash returns a DecoderConfigOption that configures whether
+// embedded/anonymous fields are squashed into the parent structure during decoding.
+func DecodeSquash(squash bool) DecoderConfigOption {
+	return func(c *mapstructure.DecoderConfig) {
+		c.Squash = squash
+	}
+}
+
 // Viper is a prioritized configuration registry. It
 // maintains a set of configuration sources, fetches
 // values to populate those, and provides them according
