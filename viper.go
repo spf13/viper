@@ -56,12 +56,8 @@ func init() {
 type DecoderConfigOption func(*mapstructure.DecoderConfig)
 
 // DecodeHook returns a DecoderConfigOption which overrides the default
-// DecoderConfig.DecodeHook value, the default is:
-//
-//	 mapstructure.ComposeDecodeHookFunc(
-//			mapstructure.StringToTimeDurationHookFunc(),
-//			mapstructure.StringToSliceHookFunc(","),
-//		)
+// DecoderConfig.DecodeHook value. Prefer composing with [DefaultDecodeHook]
+// if you need to keep Viper's built-in duration/slice conversions (#2139).
 func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.DecodeHook = hook
@@ -995,16 +991,25 @@ func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]stri
 	return r, nil
 }
 
+// DefaultDecodeHook returns Viper's built-in mapstructure decode hooks:
+// time.Duration conversion and weak string-to-slice splitting on commas.
+//
+// Applications that set a custom decode hook via [WithDecodeHook] or
+// [DecodeHook] replace the defaults entirely; compose with this function to
+// keep the built-in behavior (#2139).
+func DefaultDecodeHook() mapstructure.DecodeHookFunc {
+	return mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		stringToWeakSliceHookFunc(","),
+	)
+}
+
 // defaultDecoderConfig returns default mapstructure.DecoderConfig with support
 // of time.Duration values & string slices.
 func (v *Viper) defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	decodeHook := v.decodeHook
 	if decodeHook == nil {
-		decodeHook = mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			// mapstructure.StringToSliceHookFunc(","),
-			stringToWeakSliceHookFunc(","),
-		)
+		decodeHook = DefaultDecodeHook()
 	}
 
 	c := &mapstructure.DecoderConfig{

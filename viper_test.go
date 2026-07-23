@@ -2718,3 +2718,23 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestDefaultDecodeHookComposable(t *testing.T) {
+	// #2139: custom hooks should be composable with the exported defaults.
+	custom := mapstructure.ComposeDecodeHookFunc(
+		DefaultDecodeHook(),
+		func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+			return data, nil
+		},
+	)
+	v := NewWithOptions(WithDecodeHook(custom))
+	v.Set("timeout", "5s")
+	v.Set("tags", "a,b,c")
+	var cfg struct {
+		Timeout time.Duration `mapstructure:"timeout"`
+		Tags    []string      `mapstructure:"tags"`
+	}
+	require.NoError(t, v.Unmarshal(&cfg))
+	assert.Equal(t, 5*time.Second, cfg.Timeout)
+	assert.Equal(t, []string{"a", "b", "c"}, cfg.Tags)
+}
