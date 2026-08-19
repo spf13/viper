@@ -1,6 +1,7 @@
 package viper
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -14,6 +15,14 @@ type finderStub struct {
 
 func (f finderStub) Find(_ afero.Fs) ([]string, error) {
 	return f.results, nil
+}
+
+type errorFinderStub struct {
+	err error
+}
+
+func (f errorFinderStub) Find(_ afero.Fs) ([]string, error) {
+	return nil, f.err
 }
 
 func TestFinders(t *testing.T) {
@@ -39,4 +48,46 @@ func TestFinders(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, results)
+}
+
+func TestFinders_WithNilAndErrors(t *testing.T) {
+	errDummy := errors.New("find error")
+	finder := Finders(
+		nil,
+		finderStub{
+			results: []string{
+				"/home/user/.viper.yaml",
+			},
+		},
+		errorFinderStub{
+			err: errDummy,
+		},
+		finderStub{
+			results: []string{
+				"/etc/viper/config.yaml",
+			},
+		},
+	)
+
+	results, err := finder.Find(afero.NewMemMapFs())
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errDummy)
+
+	expected := []string{
+		"/home/user/.viper.yaml",
+		"/etc/viper/config.yaml",
+	}
+	assert.Equal(t, expected, results)
+}
+
+func TestWithFinderOption(t *testing.T) {
+	v := New()
+	optNil := WithFinder(nil)
+	optNil.apply(v)
+	assert.Nil(t, v.finder)
+
+	stub := finderStub{results: []string{"/test.yaml"}}
+	opt := WithFinder(stub)
+	opt.apply(v)
+	assert.Equal(t, stub, v.finder)
 }
