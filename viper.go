@@ -222,6 +222,17 @@ func EnvKeyReplacer(r StringReplacer) Option {
 	})
 }
 
+// DefaultDecodeHook is the mapstructure hook chain Viper uses when no custom
+// DecodeHook is set: string-to-time.Duration and weak string-to-slice on comma.
+// WithDecodeHook replaces this chain entirely; compose with DefaultDecodeHook
+// to keep the built-in conversions (see #2139).
+func DefaultDecodeHook() mapstructure.DecodeHookFunc {
+	return mapstructure.ComposeDecodeHookFunc(
+		mapstructure.StringToTimeDurationHookFunc(),
+		stringToWeakSliceHookFunc(","),
+	)
+}
+
 // WithDecodeHook sets a default decode hook for mapstructure.
 func WithDecodeHook(h mapstructure.DecodeHookFunc) Option {
 	return optionFunc(func(v *Viper) {
@@ -1000,11 +1011,7 @@ func (v *Viper) decodeStructKeys(input any, opts ...DecoderConfigOption) ([]stri
 func (v *Viper) defaultDecoderConfig(output any, opts ...DecoderConfigOption) *mapstructure.DecoderConfig {
 	decodeHook := v.decodeHook
 	if decodeHook == nil {
-		decodeHook = mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			// mapstructure.StringToSliceHookFunc(","),
-			stringToWeakSliceHookFunc(","),
-		)
+		decodeHook = DefaultDecodeHook()
 	}
 
 	c := &mapstructure.DecoderConfig{
