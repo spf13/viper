@@ -894,6 +894,24 @@ func TestUnmarshal(t *testing.T) {
 	)
 }
 
+func TestDefaultDecodeHookComposable(t *testing.T) {
+	// A custom hook must be able to keep comma-split slices by composing
+	// DefaultDecodeHook instead of copying unexported helpers (#2139).
+	v := NewWithOptions(WithDecodeHook(mapstructure.ComposeDecodeHookFunc(
+		func(f reflect.Type, t reflect.Type, data any) (any, error) {
+			return data, nil
+		},
+		DefaultDecodeHook(),
+	)))
+	v.Set("items", "a,b")
+
+	var got struct {
+		Items []string
+	}
+	require.NoError(t, v.Unmarshal(&got))
+	assert.Equal(t, []string{"a", "b"}, got.Items)
+}
+
 func TestUnmarshalWithDefaultDecodeHook(t *testing.T) {
 	opt := mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
