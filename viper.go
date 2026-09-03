@@ -2059,12 +2059,18 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
 		value := v.Get(k)
-		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
-			continue
-		}
 		path := strings.Split(k, v.keyDelim)
+		if value == nil {
+			// Keep explicit null leaves when their parent map exists.
+			// Get reports both missing keys and null as nil.
+			if len(path) <= 1 {
+				continue
+			}
+			parent := strings.Join(path[:len(path)-1], v.keyDelim)
+			if v.Get(parent) == nil {
+				continue
+			}
+		}
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
