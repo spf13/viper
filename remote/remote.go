@@ -55,12 +55,16 @@ func (rc remoteConfigProvider) WatchChannel(rp viper.RemoteProvider) (<-chan *vi
 	cryptoResponseCh := cm.Watch(rp.Path(), quit)
 	// need this function to convert the Channel response form crypt.Response to viper.Response
 	go func(cr <-chan *crypt.Response, vr chan<- *viper.RemoteResponse, quitwc <-chan bool, quit chan<- bool) {
+		defer close(vr)
 		for {
 			select {
 			case <-quitwc:
-				quit <- true
+				close(quit)
 				return
-			case resp := <-cr:
+			case resp, ok := <-cr:
+				if !ok {
+					return
+				}
 				vr <- &viper.RemoteResponse{
 					Error: resp.Error,
 					Value: resp.Value,
