@@ -83,7 +83,7 @@ v := viper.NewWithOptions(
 )
 ```
 
-### BREAKING: "github.com/mitchellh/mapstructure" depedency replaced
+### BREAKING: "github.com/mitchellh/mapstructure" dependency replaced
 
 The original [mapstructure](https://github.com/mitchellh/mapstructure) has been [archived](https://github.com/mitchellh/mapstructure/issues/349) and was replaced with a [fork](https://github.com/go-viper/mapstructure) maintained by Viper ([#1723](https://github.com/spf13/viper/pull/1723)).
 
