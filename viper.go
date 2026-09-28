@@ -2059,12 +2059,17 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
 		value := v.Get(k)
-		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+		path := strings.Split(k, v.keyDelim)
+		if value == nil && len(path) == 1 {
+			// A nil value at the top level carries no structure to preserve, so
+			// keep the previous behaviour of skipping it (this also preserves
+			// "unset field" semantics for Unmarshal with ErrorUnset).
 			continue
 		}
-		path := strings.Split(k, v.keyDelim)
+		// For nested keys (len(path) > 1) we must NOT skip nil leaves: doing so
+		// would drop the intermediate mapping entirely when all of its leaves
+		// are null (e.g. a YAML entry like "mysql:\n  protocol:\n  addr:"),
+		// losing the structure the config author expressed (see #2146).
 		lastKey := strings.ToLower(path[len(path)-1])
 		deepestMap := deepSearch(m, path[0:len(path)-1])
 		// set innermost value
