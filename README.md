@@ -220,7 +220,7 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 
 ### Setting Overrides
 
-Viper allows explict setting of configuration, such as from your own
+Viper allows explicit setting of configuration, such as from your own
 application logic.
 
 ```go
