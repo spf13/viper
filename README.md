@@ -92,7 +92,7 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * YAML
 * INI
 * envfile
-* Java Propeties
+* Java Properties
 
 A single Viper instance only supports a single configuration file, but multiple
 paths may be searched for one.
@@ -137,9 +137,19 @@ if err := viper.ReadInConfig(); err != nil {
 // Config file found and successfully parsed
 ```
 
-> **NOTE (since 1.6)** You can also have a file without an extension and
-> specify the format programmatically, which is useful for files that naturally
-> have no extension (e.g., `.bashrc`).
+> **NOTE (since 1.6)** For extensionless config files (such as `.bashrc` or `$HOME/.foo`),
+> use `SetConfigName` for the filename and explicitly specify the format using `SetConfigType`
+> before calling `ReadInConfig`:
+>
+> ```go
+> viper.SetConfigName(".foo") // name of the extensionless file
+> viper.SetConfigType("yaml") // REQUIRED: format cannot be inferred without an extension
+> viper.AddConfigPath("$HOME")
+> ```
+>
+> For files with standard extensions (e.g. `config.yaml`), Viper automatically infers the format
+> from the file extension. For files without extensions, `SetConfigType` is required because Viper
+> only searches for extensionless files when a config type is explicitly set.
 
 ### Writing Config Files
 
