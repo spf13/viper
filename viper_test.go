@@ -2675,6 +2675,64 @@ func TestFlagShadow(t *testing.T) {
 	assert.Equal(t, "", v.GetString("foo.bar1.bar2"))
 }
 
+// Regression test for https://github.com/spf13/viper/issues/2146
+func TestUnmarshal_PreserveNestedNullFields(t *testing.T) {
+	type clientConfig struct {
+		Protocol string `mapstructure:"protocol"`
+		Addr     string `mapstructure:"addr"`
+	}
+	type Config struct {
+		Clients map[string]clientConfig `mapstructure:"clients"`
+	}
+
+	data := `
+clients:
+  mysql:
+    protocol:
+    addr:
+`
+	v := New()
+	v.SetConfigType("yaml")
+
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(data)))
+
+	settings := v.AllSettings()
+	expectedSettings := map[string]any{
+		"clients": map[string]any{
+			"mysql": map[string]any{
+				"protocol": nil,
+				"addr":     nil,
+			},
+		},
+	}
+	assert.Equal(t, expectedSettings, settings)
+
+	var cfg Config
+	require.NoError(t, v.Unmarshal(&cfg))
+
+	assert.NotNil(t, cfg.Clients)
+	assert.Contains(t, cfg.Clients, "mysql")
+	assert.Equal(t, clientConfig{}, cfg.Clients["mysql"])
+
+	t.Run("empty nested map", func(t *testing.T) {
+		emptyData := `
+clients:
+  mysql: {}
+`
+		vEmpty := New()
+		vEmpty.SetConfigType("yaml")
+
+		require.NoError(t, vEmpty.ReadConfig(bytes.NewBufferString(emptyData)))
+
+		var cfgEmpty Config
+		require.NoError(t, vEmpty.Unmarshal(&cfgEmpty))
+
+		assert.NotNil(t, cfgEmpty.Clients)
+		assert.Contains(t, cfgEmpty.Clients, "mysql")
+		assert.Equal(t, clientConfig{}, cfgEmpty.Clients["mysql"])
+	})
+}
+
 func BenchmarkGetBool(b *testing.B) {
 	key := "BenchmarkGetBool"
 	v = New()
