@@ -778,6 +778,7 @@ func (v *Viper) Sub(key string) *Viper {
 		subv.parents = append([]string(nil), v.parents...)
 		subv.parents = append(subv.parents, strings.ToLower(key))
 		subv.automaticEnvApplied = v.automaticEnvApplied
+		subv.allowEmptyEnv = v.allowEmptyEnv
 		subv.envPrefix = v.envPrefix
 		subv.envKeyReplacer = v.envKeyReplacer
 		subv.keyDelim = v.keyDelim

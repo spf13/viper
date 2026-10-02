@@ -8,6 +8,7 @@ package viper
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -748,6 +749,29 @@ func TestEnvSubConfig(t *testing.T) {
 	subWithPrefix := v.Sub("clothing").Sub("pants")
 	t.Setenv("FOO_CLOTHING_PANTS_SIZE", "large")
 	assert.Equal(t, "large", subWithPrefix.Get("size"))
+}
+
+func TestEnvSubConfigAllowEmptyEnv(t *testing.T) {
+	for _, allowEmpty := range []bool{false, true} {
+		t.Run(fmt.Sprintf("allowEmpty=%v", allowEmpty), func(t *testing.T) {
+			v := New()
+			v.SetConfigType("json")
+			require.NoError(t, v.ReadConfig(strings.NewReader(`{"service":{"client":{"token":"config-token"}}}`)))
+			v.AutomaticEnv()
+			v.SetEnvPrefix("app")
+			v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+			v.AllowEmptyEnv(allowEmpty)
+			t.Setenv("APP_SERVICE_CLIENT_TOKEN", "")
+
+			expected := "config-token"
+			if allowEmpty {
+				expected = ""
+			}
+			assert.Equal(t, expected, v.GetString("service.client.token"))
+			assert.Equal(t, expected, v.Sub("service.client").GetString("token"))
+			assert.Equal(t, expected, v.Sub("service").Sub("client").GetString("token"))
+		})
+	}
 }
 
 func TestAllKeys(t *testing.T) {
