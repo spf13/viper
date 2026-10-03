@@ -2630,6 +2630,30 @@ func TestSliceIndexAccess(t *testing.T) {
 	assert.Equal(t, "Static", v.GetString("tv.0.episodes.1.2"))
 }
 
+// A negative path element must be treated as "not found" rather than being
+// used as a negative slice index, which would panic.
+func TestSliceIndexAccessNegativeIndex(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+
+	r := strings.NewReader(string(yamlDeepNestedSlices))
+
+	err := v.unmarshalReader(r, v.config)
+	require.NoError(t, err)
+
+	// Sanity check: the same key with a valid index still resolves.
+	assert.Equal(t, "The Expanse", v.GetString("tv.0.title"))
+
+	assert.NotPanics(t, func() {
+		assert.Nil(t, v.Get("tv.-1"))
+		assert.Equal(t, "", v.GetString("tv.-1.title"))
+		assert.False(t, v.IsSet("tv.-1.title"))
+		assert.Equal(t, "", v.GetString("tv.-1.seasons.0.first_released"))
+		assert.Equal(t, "", v.GetString("tv.-99.episodes"))
+		assert.Equal(t, "", v.GetString("tv.0.episodes.-1"))
+	})
+}
+
 func TestIsPathShadowedInFlatMap(t *testing.T) {
 	v := New()
 

@@ -529,7 +529,7 @@ func (v *Viper) searchSliceWithPathPrefixes(
 ) any {
 	// if the prefixKey is not a number or it is out of bounds of the slice
 	index, err := strconv.Atoi(prefixKey)
-	if err != nil || len(sourceSlice) <= index {
+	if err != nil || index < 0 || len(sourceSlice) <= index {
 		return nil
 	}
 
