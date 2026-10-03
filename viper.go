@@ -2059,9 +2059,10 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
 		value := v.Get(k)
-		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+		if value == nil && !v.isNullConfigValue(k) {
+			// Automatic environment lookup can contribute a key path even when
+			// that variable is unset. Only retain nil values explicitly present
+			// in the config source.
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
@@ -2071,6 +2072,49 @@ func (v *Viper) getSettings(keys []string) map[string]any {
 		deepestMap[lastKey] = value
 	}
 	return m
+}
+
+func (v *Viper) isNullConfigValue(path string) bool {
+	parts := strings.Split(path, v.keyDelim)
+	var find func(value any, remaining []string) (any, bool)
+	find = func(value any, remaining []string) (any, bool) {
+		if len(remaining) == 0 {
+			return value, true
+		}
+		for i := len(remaining); i > 0; i-- {
+			key := strings.Join(remaining[:i], v.keyDelim)
+			var next any
+			var ok bool
+			switch m := value.(type) {
+			case map[string]any:
+				for candidate, candidateValue := range m {
+					if strings.EqualFold(candidate, key) {
+						next, ok = candidateValue, true
+						break
+					}
+				}
+			case map[any]any:
+				for candidate, candidateValue := range m {
+					if candidateKey, valid := candidate.(string); valid && strings.EqualFold(candidateKey, key) {
+						next, ok = candidateValue, true
+						break
+					}
+				}
+			}
+			if !ok {
+				continue
+			}
+			if i == len(remaining) {
+				return next, true
+			}
+			if result, found := find(next, remaining[i:]); found {
+				return result, true
+			}
+		}
+		return nil, false
+	}
+	value, found := find(v.config, parts)
+	return found && value == nil
 }
 
 // SetFs sets the filesystem to use to read configuration.

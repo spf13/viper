@@ -894,6 +894,35 @@ func TestUnmarshal(t *testing.T) {
 	)
 }
 
+func TestUnmarshalPreservesNestedMapWithNullValues(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(`clients:
+  mysql:
+    protocol:
+    addr:
+`)))
+
+	type clientConfig struct {
+		Protocol string
+		Addr     string
+	}
+	type config struct {
+		Clients map[string]clientConfig
+	}
+
+	require.Equal(t, map[string]any{
+		"mysql": map[string]any{
+			"protocol": nil,
+			"addr":     nil,
+		},
+	}, v.AllSettings()["clients"])
+
+	var got config
+	require.NoError(t, v.Unmarshal(&got))
+	require.Equal(t, map[string]clientConfig{"mysql": {}}, got.Clients)
+}
+
 func TestUnmarshalWithDefaultDecodeHook(t *testing.T) {
 	opt := mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
