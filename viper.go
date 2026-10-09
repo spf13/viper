@@ -33,7 +33,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -276,80 +275,83 @@ func (v *Viper) OnConfigChange(run func(in fsnotify.Event)) {
 }
 
 // WatchConfig starts watching a config file for changes.
+// It panics if setting up the watcher fails (for example, when creating the watcher,
+// resolving the config file, or adding the config directory); subsequent watch or read
+// errors are logged.
 func WatchConfig() { v.WatchConfig() }
 
 // WatchConfig starts watching a config file for changes.
+// It panics if setting up the watcher fails (for example, when creating the watcher,
+// resolving the config file, or adding the config directory); subsequent watch or read
+// errors are logged.
 func (v *Viper) WatchConfig() {
-	initWG := sync.WaitGroup{}
-	initWG.Add(1)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		err = fmt.Errorf("failed to create watcher: %w", err)
+		v.logger.Error(err.Error())
+		panic(err)
+	}
+
+	// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
+	filename, err := v.getConfigFile()
+	if err != nil {
+		err = fmt.Errorf("failed to get config file: %w", err)
+		v.logger.Error(err.Error())
+		_ = watcher.Close()
+		panic(err)
+	}
+
+	configFile := filepath.Clean(filename)
+	configDir := filepath.Dir(configFile)
+	if configDir == "" {
+		configDir = "."
+	}
+	realConfigFile, _ := filepath.EvalSymlinks(filename)
+
+	err = watcher.Add(configDir)
+	if err != nil {
+		err = fmt.Errorf("failed to add config dir to watcher: %w", err)
+		v.logger.Error(err.Error())
+		_ = watcher.Close()
+		panic(err)
+	}
+
 	go func() {
-		watcher, err := fsnotify.NewWatcher()
-		if err != nil {
-			v.logger.Error(fmt.Sprintf("failed to create watcher: %s", err))
-			os.Exit(1)
-		}
 		defer watcher.Close()
-		// we have to watch the entire directory to pick up renames/atomic saves in a cross-platform way
-		filename, err := v.getConfigFile()
-		if err != nil {
-			v.logger.Error(fmt.Sprintf("get config file: %s", err))
-			initWG.Done()
-			return
-		}
 
-		configFile := filepath.Clean(filename)
-		configDir, _ := filepath.Split(configFile)
-		realConfigFile, _ := filepath.EvalSymlinks(filename)
-
-		eventsWG := sync.WaitGroup{}
-		eventsWG.Add(1)
-		go func() {
-			for {
-				select {
-				case event, ok := <-watcher.Events:
-					if !ok { // 'Events' channel is closed
-						eventsWG.Done()
-						return
-					}
-					currentConfigFile, _ := filepath.EvalSymlinks(filename)
-					// we only care about the config file with the following cases:
-					// 1 - if the config file was modified or created
-					// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
-					if (filepath.Clean(event.Name) == configFile &&
-						(event.Has(fsnotify.Write) || event.Has(fsnotify.Create))) ||
-						(currentConfigFile != "" && currentConfigFile != realConfigFile) {
-						realConfigFile = currentConfigFile
-						err := v.ReadInConfig()
-						if err != nil {
-							v.logger.Error(fmt.Sprintf("read config file: %s", err))
-						}
-						if v.onConfigChange != nil {
-							v.onConfigChange(event)
-						}
-					} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) {
-						eventsWG.Done()
-						return
-					}
-
-				case err, ok := <-watcher.Errors:
-					if ok { // 'Errors' channel is not closed
-						v.logger.Error(fmt.Sprintf("watcher error: %s", err))
-					}
-					eventsWG.Done()
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok { // 'Events' channel is closed
 					return
 				}
+				currentConfigFile, _ := filepath.EvalSymlinks(filename)
+				// we only care about the config file with the following cases:
+				// 1 - if the config file was modified or created
+				// 2 - if the real path to the config file changed (eg: k8s ConfigMap replacement)
+				if (filepath.Clean(event.Name) == configFile &&
+					(event.Has(fsnotify.Write) || event.Has(fsnotify.Create))) ||
+					(currentConfigFile != "" && currentConfigFile != realConfigFile) {
+					realConfigFile = currentConfigFile
+					err := v.ReadInConfig()
+					if err != nil {
+						v.logger.Error(fmt.Sprintf("read config file: %s", err))
+					}
+					if v.onConfigChange != nil {
+						v.onConfigChange(event)
+					}
+				} else if filepath.Clean(event.Name) == configFile && event.Has(fsnotify.Remove) {
+					return
+				}
+
+			case err, ok := <-watcher.Errors:
+				if ok { // 'Errors' channel is not closed
+					v.logger.Error(fmt.Sprintf("watcher error: %s", err))
+				}
+				return
 			}
-		}()
-		err = watcher.Add(configDir)
-		if err != nil {
-			v.logger.Error(fmt.Sprintf("failed to add watcher: %s", err))
-			initWG.Done()
-			return
 		}
-		initWG.Done()   // done initializing the watch in this go routine, so the parent routine can move on...
-		eventsWG.Wait() // now, wait for event loop to end in this go-routine...
 	}()
-	initWG.Wait() // make sure that the go routine above fully ended before returning
 }
 
 // SetConfigFile explicitly defines the path, name and extension of the config file.
