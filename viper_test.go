@@ -2718,3 +2718,119 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestUnmarshalPreservesNestedConfigWithNullFields(t *testing.T) {
+	data := `
+clients:
+  mysql:
+    protocol:
+    addr:
+`
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(data)))
+
+	type clientConfig struct {
+		Protocol string `mapstructure:"protocol"`
+		Addr     string `mapstructure:"addr"`
+	}
+	type config struct {
+		Clients map[string]clientConfig `mapstructure:"clients"`
+	}
+
+	var cfg config
+	require.NoError(t, v.Unmarshal(&cfg))
+	assert.NotNil(t, cfg.Clients)
+	assert.Contains(t, cfg.Clients, "mysql")
+	assert.Equal(t, clientConfig{}, cfg.Clients["mysql"])
+
+	settings := v.AllSettings()
+	assert.Contains(t, settings, "clients")
+	clientsMap, ok := settings["clients"].(map[string]any)
+	require.True(t, ok)
+	assert.Contains(t, clientsMap, "mysql")
+	mysqlMap, ok := clientsMap["mysql"].(map[string]any)
+	require.True(t, ok)
+	assert.Nil(t, mysqlMap["protocol"])
+	assert.Nil(t, mysqlMap["addr"])
+}
+
+func TestUnmarshalPreservesNestedConfigWithEmptyMap(t *testing.T) {
+	data := `
+clients:
+  mysql: {}
+`
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(data)))
+
+	type clientConfig struct {
+		Protocol string `mapstructure:"protocol"`
+		Addr     string `mapstructure:"addr"`
+	}
+	type config struct {
+		Clients map[string]clientConfig `mapstructure:"clients"`
+	}
+
+	var cfg config
+	require.NoError(t, v.Unmarshal(&cfg))
+	assert.NotNil(t, cfg.Clients)
+	assert.Contains(t, cfg.Clients, "mysql")
+	assert.Equal(t, clientConfig{}, cfg.Clients["mysql"])
+
+	settings := v.AllSettings()
+	assert.Contains(t, settings, "clients")
+	clientsMap, ok := settings["clients"].(map[string]any)
+	require.True(t, ok)
+	assert.Contains(t, clientsMap, "mysql")
+}
+
+func TestUnmarshalPreservesNestedStructWithNullFields(t *testing.T) {
+	data := `
+database:
+  connection:
+    host:
+    port:
+`
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(data)))
+
+	type connConfig struct {
+		Host string `mapstructure:"host"`
+		Port int    `mapstructure:"port"`
+	}
+	type dbConfig struct {
+		Connection *connConfig `mapstructure:"connection"`
+	}
+	type config struct {
+		Database dbConfig `mapstructure:"database"`
+	}
+
+	var cfg config
+	require.NoError(t, v.Unmarshal(&cfg))
+	assert.NotNil(t, cfg.Database.Connection)
+	assert.Equal(t, &connConfig{}, cfg.Database.Connection)
+}
+
+func TestUnmarshalPreservesJSONNullNestedConfig(t *testing.T) {
+	data := `{"services": {"auth": {"token": null, "endpoint": null}}}`
+	v := New()
+	v.SetConfigType("json")
+	require.NoError(t, v.ReadConfig(bytes.NewBufferString(data)))
+
+	type serviceConfig struct {
+		Token    string `mapstructure:"token"`
+		Endpoint string `mapstructure:"endpoint"`
+	}
+	type config struct {
+		Services map[string]serviceConfig `mapstructure:"services"`
+	}
+
+	var cfg config
+	require.NoError(t, v.Unmarshal(&cfg))
+	assert.NotNil(t, cfg.Services)
+	assert.Contains(t, cfg.Services, "auth")
+	assert.Equal(t, serviceConfig{}, cfg.Services["auth"])
+}
+
