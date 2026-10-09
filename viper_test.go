@@ -2435,6 +2435,48 @@ func newViperWithSymlinkedConfigFile(t *testing.T) (*Viper, string, string) {
 	return v, watchDir, configFile
 }
 
+func TestWatchConfig(t *testing.T) {
+	t.Run("panic on setup: failed to get config file", func(t *testing.T) {
+		v := New()
+		require.Panics(t, func() {
+			v.WatchConfig()
+		}, "expected WatchConfig to panic when config file cannot be resolved")
+
+		defer func() {
+			r := recover()
+			require.NotNil(t, r)
+			err, ok := r.(error)
+			require.True(t, ok)
+			assert.Contains(t, err.Error(), "failed to get config file")
+		}()
+		v.WatchConfig()
+	})
+
+	t.Run("panic on setup: failed to add config dir to watcher", func(t *testing.T) {
+		v := New()
+		v.SetConfigFile(filepath.Join(t.TempDir(), "nonexistent_subdir", "config.yaml"))
+		require.Panics(t, func() {
+			v.WatchConfig()
+		}, "expected WatchConfig to panic when config dir does not exist")
+
+		defer func() {
+			r := recover()
+			require.NotNil(t, r)
+			err, ok := r.(error)
+			require.True(t, ok)
+			assert.Contains(t, err.Error(), "failed to add config dir to watcher")
+		}()
+		v.WatchConfig()
+	})
+
+	t.Run("successful initialization", func(t *testing.T) {
+		v, _ := newViperWithConfigFile(t)
+		require.NotPanics(t, func() {
+			v.WatchConfig()
+		})
+	})
+}
+
 func TestWatchFile(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		// TODO(bep) FIX ME
