@@ -2018,6 +2018,10 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]any, pre
 			shadow[strings.ToLower(fullKey)] = true
 			continue
 		}
+		if len(m2) == 0 {
+			shadow[strings.ToLower(fullKey)] = true
+			continue
+		}
 		// recursively merge to shadow map
 		shadow = v.flattenAndMergeMap(shadow, m2, fullKey)
 	}
@@ -2055,13 +2059,19 @@ func (v *Viper) AllSettings() map[string]any {
 }
 
 func (v *Viper) getSettings(keys []string) map[string]any {
+	var allKeys map[string]bool
+	if v.experimentalBindStruct {
+		allKeys = make(map[string]bool)
+		for _, k := range v.AllKeys() {
+			allKeys[strings.ToLower(k)] = true
+		}
+	}
+
 	m := map[string]any{}
 	// start from the list of keys, and construct the map one value at a time
 	for _, k := range keys {
 		value := v.Get(k)
-		if value == nil {
-			// should not happen, since AllKeys() returns only keys holding a value,
-			// check just in case anything changes
+		if value == nil && v.experimentalBindStruct && !allKeys[strings.ToLower(k)] {
 			continue
 		}
 		path := strings.Split(k, v.keyDelim)
