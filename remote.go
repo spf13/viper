@@ -31,7 +31,8 @@ type RemoteResponse struct {
 var RemoteConfig remoteConfigFactory
 
 // UnsupportedRemoteProviderError denotes encountering an unsupported remote
-// provider. Currently only etcd and Consul are supported.
+// provider. See SupportedRemoteProviders for the currently supported set
+// (etcd, etcd3, consul, firestore and nats).
 type UnsupportedRemoteProviderError string
 
 // Error returns the formatted remote provider error.
