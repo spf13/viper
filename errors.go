@@ -33,7 +33,7 @@ func (e ConfigFileNotFoundError) Unwrap() error {
 }
 
 // FileNotFoundFromSearchError denotes failing to find a configuration file from a search.
-// Wraps ConfigFileNotFoundError.
+// Wrapped by [ConfigFileNotFoundError].
 type FileNotFoundFromSearchError struct {
 	locations []string
 	name      string
