@@ -29,4 +29,4 @@ This is a YAML 1.1 feature according to [go-yaml/yaml#740](https://github.com/go
 Potential solutions are:
 
 1. Quoting values resolved as boolean
-1. Upgrading to YAML v3 (for the time being this is possible by passing the `viper_yaml3` tag to your build)
+1. Upgrading to YAML v3. Current Viper releases already use [go.yaml.in/yaml/v3](https://pkg.go.dev/go.yaml.in/yaml/v3) for YAML (see `internal/encoding/yaml/codec.go`), so there is no `viper_yaml3` build tag left to pass: upgrade Viper, or register your own codec through the [encoding API](https://pkg.go.dev/github.com/spf13/viper#Codec).
