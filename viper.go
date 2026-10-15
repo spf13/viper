@@ -60,7 +60,7 @@ type DecoderConfigOption func(*mapstructure.DecoderConfig)
 //
 //	 mapstructure.ComposeDecodeHookFunc(
 //			mapstructure.StringToTimeDurationHookFunc(),
-//			mapstructure.StringToSliceHookFunc(","),
+//			stringToWeakSliceHookFunc(","),
 //		)
 func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	return func(c *mapstructure.DecoderConfig) {
