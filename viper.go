@@ -1441,12 +1441,22 @@ func (v *Viper) IsSet(key string) bool {
 	return val != nil
 }
 
-// AutomaticEnv makes Viper check if environment variables match any of the existing keys
-// (config, default or flags). If matching env vars are found, they are loaded into Viper.
+// AutomaticEnv tells Viper to look up an environment variable for every key it
+// is asked about, whether or not that key was registered through a config file,
+// SetDefault or a flag. The variable is named after the key: it is upper-cased,
+// prefixed with the SetEnvPrefix value, and passed through the
+// SetEnvKeyReplacer value when one is set. Values are read on each lookup
+// instead of being loaded into Viper, so a key that exists only in the
+// environment is not reported by AllKeys or AllSettings.
 func AutomaticEnv() { v.AutomaticEnv() }
 
-// AutomaticEnv makes Viper check if environment variables match any of the existing keys
-// (config, default or flags). If matching env vars are found, they are loaded into Viper.
+// AutomaticEnv tells Viper to look up an environment variable for every key it
+// is asked about, whether or not that key was registered through a config file,
+// SetDefault or a flag. The variable is named after the key: it is upper-cased,
+// prefixed with the SetEnvPrefix value, and passed through the
+// SetEnvKeyReplacer value when one is set. Values are read on each lookup
+// instead of being loaded into Viper, so a key that exists only in the
+// environment is not reported by AllKeys or AllSettings.
 func (v *Viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
 }
