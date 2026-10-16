@@ -346,7 +346,7 @@ type myFlagSet struct {
 	flags []myFlag
 }
 func (f myFlagSet) VisitAll(fn func(FlagValue)) {
-	for _, flag := range flags {
+	for _, flag := range f.flags {
 		fn(flag)
 	}
 }
@@ -354,7 +354,7 @@ func (f myFlagSet) VisitAll(fn func(FlagValue)) {
 fSet := myFlagSet{
 	flags: []myFlag{myFlag{}, myFlag{}},
 }
-viper.BindFlagValues("my-flags", fSet)
+viper.BindFlagValues(fSet)
 ```
 
 ### Remote Key/Value Store Support
