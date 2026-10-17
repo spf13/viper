@@ -404,7 +404,7 @@ how to use Consul.
 
 ```go
 viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001","/config/hugo.json")
-viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv"
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "env", "dotenv"
 err := viper.ReadRemoteConfig()
 ```
 
@@ -412,7 +412,7 @@ err := viper.ReadRemoteConfig()
 
 ```go
 viper.AddRemoteProvider("etcd3", "http://127.0.0.1:4001","/config/hugo.json")
-viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv"
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "env", "dotenv"
 err := viper.ReadRemoteConfig()
 ```
 
@@ -457,7 +457,7 @@ err := viper.ReadRemoteConfig()
 
 ```go
 viper.AddSecureRemoteProvider("etcd","http://127.0.0.1:4001","/config/hugo.json","/etc/secrets/mykeyring.gpg")
-viper.SetConfigType("json") // because there is no file extension in a stream of bytes,  supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv"
+viper.SetConfigType("json") // because there is no file extension in a stream of bytes,  supported extensions are "json", "toml", "yaml", "yml", "env", "dotenv"
 err := viper.ReadRemoteConfig()
 ```
 
@@ -468,7 +468,7 @@ err := viper.ReadRemoteConfig()
 var runtime_viper = viper.New()
 
 runtime_viper.AddRemoteProvider("etcd", "http://127.0.0.1:4001", "/config/hugo.yml")
-runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "properties", "props", "prop", "env", "dotenv"
+runtime_viper.SetConfigType("yaml") // because there is no file extension in a stream of bytes, supported extensions are "json", "toml", "yaml", "yml", "env", "dotenv"
 
 // Read from remote config the first time
 err := runtime_viper.ReadRemoteConfig()
