@@ -141,6 +141,54 @@ if err := viper.ReadInConfig(); err != nil {
 > specify the format programmatically, which is useful for files that naturally
 > have no extension (e.g., `.bashrc`).
 
+#### Custom file searches
+
+Since v1.20, `viper.WithFinder` lets you replace the default file search with a
+custom `viper.Finder`. For example, use
+[`locafero`](https://github.com/sagikazarmark/locafero) to search for specific file
+names:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/sagikazarmark/locafero"
+	"github.com/spf13/viper"
+)
+
+func main() {
+	finder := locafero.Finder{
+		Paths: []string{".", "/etc/appname"},
+		Names: []string{"app.yaml", "app.toml"},
+		Type:  locafero.FileTypeFile,
+	}
+	v := viper.NewWithOptions(viper.WithFinder(finder))
+	if err := v.ReadInConfig(); err != nil {
+		panic(err)
+	}
+	fmt.Println(v.ConfigFileUsed())
+}
+```
+
+The finder controls the search paths and names, replacing `AddConfigPath` and
+`SetConfigName` for this instance. `WithFinder` does not require
+`ExperimentalFinder` or the `viper_finder` build tag. An explicit `SetConfigFile`
+bypasses the finder.
+
+Viper reads the first path returned by the finder; it does not merge all matches.
+The selected path is retained for subsequent reads. Search errors are returned
+by `ReadInConfig`, and no matches produce a `ConfigFileNotFoundError` (which can
+be handled as a `FileLookupError`, as shown above).
+
+You can implement the `Finder` interface yourself:
+`Find(afero.Fs) ([]string, error)`. Viper passes its configured filesystem to
+`Find`, so custom finders can also work with a filesystem supplied by `SetFs`.
+Use `viper.Finders(first, second)` to combine finders in order. It collects their
+results and errors; if any finder returns an error, `ReadInConfig` returns that
+error instead of reading a match.
+
 ### Writing Config Files
 
 At times you may want to store all configuration modifications made during run
