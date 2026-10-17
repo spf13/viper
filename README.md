@@ -523,7 +523,7 @@ following configuration:
 
 ```go
 GetString("datastore.metric.host") // "127.0.0.1"
-GetInt("host.ports.1") // 6029
+GetInt("datastore.metric.ports.1") // 6029
 ```
 
 > **NOTE** Viper _does not_ deep merge configuration values. Complex values
