@@ -160,7 +160,7 @@ viper.SafeWriteConfigAs("/path/to/my/.config")
 viper.SafeWriteConfigAs("/path/to/my/.other_config")
 ```
 
-As a rule of the thumb, methods prefixed with `Safe` won't overwrite any
+As a rule of thumb, methods prefixed with `Safe` won't overwrite any
 existing file, while other methods will.
 
 ### Watching and Re-reading Config Files

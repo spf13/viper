@@ -20,7 +20,7 @@ Viper opted to use [Go Modules](https://go.dev/wiki/Modules) to manage its depen
 The solution is easy: switch to using Go Modules.
 Please refer to the [wiki](https://go.dev/wiki/Modules) on how to do that.
 
-**tl;dr* `export GO111MODULE=on`
+**tl;dr:** `export GO111MODULE=on`
 
 ## Unquoted 'y' and 'n' characters get replaced with _true_ and _false_ when reading a YAML file
 
