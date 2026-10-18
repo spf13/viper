@@ -201,7 +201,7 @@ func (fn optionFunc) apply(v *Viper) {
 // By default it's value is ".".
 func KeyDelimiter(d string) Option {
 	return optionFunc(func(v *Viper) {
-		v.keyDelim = d
+		v.keyDelim = strings.ToLower(d)
 	})
 }
 

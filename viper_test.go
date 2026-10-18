@@ -2579,6 +2579,18 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestKeyDelimiterCase(t *testing.T) {
+	// A key delimiter containing uppercase letters must work the same as a
+	// lowercase one: keys are lowercased before lookup, so the delimiter must
+	// be lowercased as well for nested paths to resolve.
+	v := NewWithOptions(KeyDelimiter("A>B"))
+	v.SetConfigType("yaml")
+	require.NoError(t, v.unmarshalReader(strings.NewReader("severity:\n  foo: warning\n"), v.config))
+
+	assert.Equal(t, "warning", v.Get("severityA>BFoo"))
+	assert.Equal(t, map[string]any{"severity": map[string]any{"foo": "warning"}}, v.AllSettings())
+}
+
 var yamlDeepNestedSlices = []byte(`TV:
 - title: "The Expanse"
   title_i18n:
