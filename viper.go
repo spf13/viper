@@ -1531,12 +1531,14 @@ func (v *Viper) InConfig(key string) bool {
 
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
-// Default only used when no value is provided by the user via flag, config or ENV.
+// The default is used only when no higher-priority source (override, flag,
+// env, config file or key/value store) provides a value for the key.
 func SetDefault(key string, value any) { v.SetDefault(key, value) }
 
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
-// Default only used when no value is provided by the user via flag, config or ENV.
+// The default is used only when no higher-priority source (override, flag,
+// env, config file or key/value store) provides a value for the key.
 func (v *Viper) SetDefault(key string, value any) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
