@@ -1573,12 +1573,14 @@ func (v *Viper) Set(key string, value any) {
 	deepestMap[lastKey] = value
 }
 
-// ReadInConfig will discover and load the configuration file from disk
-// and key/value stores, searching in one of the defined paths.
+// ReadInConfig will discover and load the configuration file from disk,
+// searching in one of the defined paths. To load configuration from a
+// remote key/value store, use ReadRemoteConfig.
 func ReadInConfig() error { return v.ReadInConfig() }
 
-// ReadInConfig will discover and load the configuration file from disk
-// and key/value stores, searching in one of the defined paths.
+// ReadInConfig will discover and load the configuration file from disk,
+// searching in one of the defined paths. To load configuration from a
+// remote key/value store, use ReadRemoteConfig.
 func (v *Viper) ReadInConfig() error {
 	v.logger.Info("attempting to read in config file")
 	filename, err := v.getConfigFile()
