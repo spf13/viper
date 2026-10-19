@@ -1186,7 +1186,7 @@ func (v *Viper) MustBindEnv(input ...string) {
 //
 // Viper will check to see if an alias exists first.
 // Viper will then check in the following order:
-// flag, env, config file, key/value store.
+// override, flag, env, config file, key/value store, default.
 // Lastly, if no value was found and flagDefault is true, and if the key
 // corresponds to a flag, the flag's default value is returned.
 //
