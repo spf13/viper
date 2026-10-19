@@ -2098,12 +2098,12 @@ func (v *Viper) SetConfigName(in string) {
 	}
 }
 
-// SetConfigType sets the type of the configuration returned by the
-// remote source, e.g. "json".
+// SetConfigType sets the type of the configuration, e.g. "json".
+// It applies to every source Viper reads from or writes to.
 func SetConfigType(in string) { v.SetConfigType(in) }
 
-// SetConfigType sets the type of the configuration returned by the
-// remote source, e.g. "json".
+// SetConfigType sets the type of the configuration, e.g. "json".
+// It applies to every source Viper reads from or writes to.
 func (v *Viper) SetConfigType(in string) {
 	if in != "" {
 		v.configType = in
