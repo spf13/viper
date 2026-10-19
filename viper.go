@@ -211,7 +211,7 @@ type StringReplacer interface {
 	Replace(s string) string
 }
 
-// EnvKeyReplacer sets a replacer used for mapping environment variables to internal keys.
+// EnvKeyReplacer sets a replacer used for mapping internal keys to environment variables.
 func EnvKeyReplacer(r StringReplacer) Option {
 	return optionFunc(func(v *Viper) {
 		if r == nil {
@@ -1452,12 +1452,12 @@ func (v *Viper) AutomaticEnv() {
 }
 
 // SetEnvKeyReplacer sets the strings.Replacer on the viper object
-// Useful for mapping an environmental variable to a key that does
+// Useful for mapping a key to an environmental variable that does
 // not match it.
 func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
 
 // SetEnvKeyReplacer sets the strings.Replacer on the viper object
-// Useful for mapping an environmental variable to a key that does
+// Useful for mapping a key to an environmental variable that does
 // not match it.
 func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
