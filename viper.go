@@ -410,9 +410,9 @@ func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
 // rewriting keys many things, Ex: Get('someKey') -> some_key
 // (camel case to snake case for JSON keys perhaps)
 
-// getEnv is a wrapper around os.Getenv which replaces characters in the original
+// getEnv is a wrapper around os.LookupEnv which replaces characters in the original
 // key. This allows env vars which have different keys than the config object
-// keys.
+// keys. It reports an empty value as unset unless AllowEmptyEnv is enabled.
 func (v *Viper) getEnv(key string) (string, bool) {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
