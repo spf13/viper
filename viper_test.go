@@ -466,6 +466,109 @@ func TestReadInConfig(t *testing.T) {
 	})
 }
 
+func TestConfigTypeIsCaseInsensitive(t *testing.T) {
+	t.Run("read in config", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := afero.WriteFile(fs, testutil.AbsFilePath(t, "/etc/viper/config.json"), []byte(`{"key":"value"}`), 0o666)
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.SetConfigFile(testutil.AbsFilePath(t, "/etc/viper/config.json"))
+		v.SetConfigType("JSON")
+
+		err = v.ReadInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
+	})
+
+	t.Run("merge in config", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := afero.WriteFile(fs, testutil.AbsFilePath(t, "/etc/viper/config.yaml"), []byte(`key: value`), 0o666)
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.SetConfigFile(testutil.AbsFilePath(t, "/etc/viper/config.yaml"))
+		v.SetConfigType("YaML")
+
+		err = v.MergeInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
+	})
+
+	t.Run("uppercase file extension", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := afero.WriteFile(fs, testutil.AbsFilePath(t, "/etc/viper/config.JSON"), []byte(`{"key":"value"}`), 0o666)
+		require.NoError(t, err)
+
+		v := New()
+
+		v.SetFs(fs)
+		v.SetConfigFile(testutil.AbsFilePath(t, "/etc/viper/config.JSON"))
+
+		err = v.ReadInConfig()
+		require.NoError(t, err)
+
+		assert.Equal(t, "value", v.Get("key"))
+	})
+
+	t.Run("write config as", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		v := New()
+
+		v.SetFs(fs)
+		v.Set("key", "value")
+
+		err := v.WriteConfigAs(testutil.AbsFilePath(t, "/out/config.JSON"))
+		require.NoError(t, err)
+
+		data, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/out/config.JSON"))
+		require.NoError(t, err)
+
+		assert.JSONEq(t, `{"key":"value"}`, string(data))
+	})
+
+	t.Run("write config uses set type", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		v := New()
+
+		v.SetFs(fs)
+		v.Set("key", "value")
+		v.SetConfigType("JSON")
+
+		err := v.WriteConfigAs(testutil.AbsFilePath(t, "/out/config"))
+		require.NoError(t, err)
+
+		data, err := afero.ReadFile(fs, testutil.AbsFilePath(t, "/out/config"))
+		require.NoError(t, err)
+
+		assert.JSONEq(t, `{"key":"value"}`, string(data))
+	})
+
+	t.Run("unsupported type still fails", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		v := New()
+
+		v.SetFs(fs)
+		v.Set("key", "value")
+		v.SetConfigType("XML")
+
+		err := v.WriteConfigAs(testutil.AbsFilePath(t, "/out/config"))
+		assert.Equal(t, UnsupportedConfigError("xml"), err)
+	})
+}
+
 func TestDefault(t *testing.T) {
 	v := New()
 	v.SetDefault("age", 45)

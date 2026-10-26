@@ -1719,7 +1719,7 @@ func WriteConfigTo(w io.Writer) error { return v.WriteConfigTo(w) }
 
 // WriteConfigTo writes current configuration to an [io.Writer].
 func (v *Viper) WriteConfigTo(w io.Writer) error {
-	format := strings.ToLower(v.getConfigType())
+	format := v.getConfigType()
 
 	if !slices.Contains(SupportedExts, format) {
 		return UnsupportedConfigError(format)
@@ -1754,6 +1754,8 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 	if configType == "" {
 		return fmt.Errorf("config type could not be determined for %s", filename)
 	}
+	// Format names are case-insensitive, so normalize before looking one up.
+	configType = strings.ToLower(configType)
 
 	if !slices.Contains(SupportedExts, configType) {
 		return UnsupportedConfigError(configType)
@@ -1779,7 +1781,7 @@ func (v *Viper) writeConfig(filename string, force bool) error {
 }
 
 func (v *Viper) unmarshalReader(in io.Reader, c map[string]any) error {
-	format := strings.ToLower(v.getConfigType())
+	format := v.getConfigType()
 	if format == "" {
 		return errors.New("cannot decode configuration: unable to determine config type")
 	}
@@ -2119,8 +2121,10 @@ func (v *Viper) SetConfigPermissions(perm os.FileMode) {
 }
 
 func (v *Viper) getConfigType() string {
+	// Format names are case-insensitive (see DefaultCodecRegistry), so normalize
+	// once here instead of at every call site.
 	if v.configType != "" {
-		return v.configType
+		return strings.ToLower(v.configType)
 	}
 
 	cf, err := v.getConfigFile()
@@ -2131,7 +2135,7 @@ func (v *Viper) getConfigType() string {
 	ext := filepath.Ext(cf)
 
 	if len(ext) > 1 {
-		return ext[1:]
+		return strings.ToLower(ext[1:])
 	}
 
 	return ""
