@@ -669,7 +669,7 @@ use your favorite format's marshaller with the config returned by
 
 ```go
 import (
-	yaml "go.yaml.in/yaml/v3"
+	yaml "go.yaml.in/yaml/v4"
 )
 
 func yamlStringSettings() string {
