@@ -1974,6 +1974,36 @@ func TestWriteConfigDotEnv(t *testing.T) {
 	}
 }
 
+// TestWriteConfigDotEnvSpecialValues writes values an unquoted dotenv entry
+// cannot represent and reads the file back, so a round trip through
+// WriteConfigAs/ReadInConfig must not alter them.
+func TestWriteConfigDotEnvSpecialValues(t *testing.T) {
+	t.Setenv("NAME", "EXPANDED")
+
+	fs := afero.NewMemMapFs()
+	v := New()
+	v.SetFs(fs)
+	v.SetConfigType("env")
+	v.Set("password", "pa$sword")
+	v.Set("token", "$NAME")
+	v.Set("note", "keep #1")
+	v.Set("padded", "padded ")
+	v.Set("multiline", "first\nsecond")
+	require.NoError(t, v.WriteConfigAs("c.env"))
+
+	v2 := New()
+	v2.SetFs(fs)
+	v2.SetConfigType("env")
+	v2.SetConfigFile("c.env")
+	require.NoError(t, v2.ReadInConfig())
+
+	assert.Equal(t, "pa$sword", v2.GetString("password"))
+	assert.Equal(t, "$NAME", v2.GetString("token"))
+	assert.Equal(t, "keep #1", v2.GetString("note"))
+	assert.Equal(t, "padded ", v2.GetString("padded"))
+	assert.Equal(t, "first\nsecond", v2.GetString("multiline"))
+}
+
 func TestSafeWriteConfig(t *testing.T) {
 	v := New()
 	fs := afero.NewMemMapFs()
