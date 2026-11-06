@@ -66,16 +66,31 @@ func needsQuoting(val string) bool {
 // quote as the closing one. Values spanning several lines are double-quoted, so
 // the entry stays on one line, with the characters the parser interprets
 // escaped.
+//
+// The parser treats a quote preceded by a backslash as escaped, even the
+// closing one, and only checks the last quote on the line. A quoted value
+// ending in a backslash is therefore followed by a comment holding a quote, so
+// the line still parses and the real closing quote ends the value.
 func encodeValue(val any) string {
 	s := fmt.Sprintf("%v", val)
 	if !needsQuoting(s) {
 		return s
 	}
 
-	if !strings.ContainsAny(s, "\n\r") {
-		return "'" + s + "'"
+	var quoted string
+	if strings.ContainsAny(s, "\n\r") {
+		quoted = doubleQuote(s)
+	} else {
+		quoted = "'" + s + "'"
 	}
 
+	if strings.HasSuffix(s, `\`) {
+		quoted += " #" + quoted[:1] + "."
+	}
+	return quoted
+}
+
+func doubleQuote(s string) string {
 	var buf strings.Builder
 	buf.Grow(len(s) + 2)
 	buf.WriteByte('"')

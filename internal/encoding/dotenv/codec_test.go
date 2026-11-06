@@ -87,6 +87,11 @@ func TestCodec_RoundTrip(t *testing.T) {
 		{"CarriageReturn", "line1\r\nline2"},
 		{"MultilineWithQuote", "line1\nit's #1 and $NAME"},
 		{"MultilineWithBackslash", "a\nb\\c"},
+		{"TrailingBackslash", `C:\path\`},
+		{"QuotedTrailingBackslash", `a#b\`},
+		{"QuotedTrailingBackslashWithQuote", `it's #1\`},
+		{"VariableTrailingBackslash", `$NAME\`},
+		{"MultilineTrailingBackslash", "a\nb\\"},
 	}
 
 	codec := Codec{}
@@ -113,11 +118,13 @@ func TestCodec_EncodeQuotesOnlyWhenNeeded(t *testing.T) {
 		"padded": "value ",
 		"secret": "a#b",
 		"multi":  "line1\nline2",
+		"path":   `a#b\`,
 	})
 	require.NoError(t, err)
 
 	assert.Equal(t, `MULTI="line1\nline2"
 PADDED='value '
+PATH='a#b\' #'.
 PLAIN=value
 SECRET='a#b'
 `, string(b))
