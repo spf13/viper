@@ -410,17 +410,24 @@ func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
 // rewriting keys many things, Ex: Get('someKey') -> some_key
 // (camel case to snake case for JSON keys perhaps)
 
-// getEnv is a wrapper around os.Getenv which replaces characters in the original
-// key. This allows env vars which have different keys than the config object
-// keys.
-func (v *Viper) getEnv(key string) (string, bool) {
+// resolveEnv looks up an environment variable, applying the key replacer if configured.
+// It returns the effective environment variable name, its value, and whether it was found.
+func (v *Viper) resolveEnv(key string) (string, string, bool) {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
 	}
 
 	val, ok := os.LookupEnv(key)
 
-	return val, ok && (v.allowEmptyEnv || val != "")
+	return key, val, ok && (v.allowEmptyEnv || val != "")
+}
+
+// getEnv is a wrapper around os.Getenv which replaces characters in the original
+// key. This allows env vars which have different keys than the config object
+// keys.
+func (v *Viper) getEnv(key string) (string, bool) {
+	_, val, ok := v.resolveEnv(key)
+	return val, ok
 }
 
 // ConfigFileUsed returns the file used to populate the config registry.
@@ -1439,6 +1446,179 @@ func (v *Viper) IsSet(key string) bool {
 	lcaseKey := strings.ToLower(key)
 	val := v.find(lcaseKey, false)
 	return val != nil
+}
+
+// SourceKind represents the priority level and type of configuration source.
+type SourceKind uint8
+
+const (
+	// SourceOverride indicates the value was provided by an explicit Set override.
+	SourceOverride SourceKind = iota
+
+	// SourceFlag indicates the value was provided by a command-line flag.
+	SourceFlag
+
+	// SourceEnvironment indicates the value was provided by an environment variable.
+	SourceEnvironment
+
+	// SourceConfig indicates the value was provided by a configuration file.
+	SourceConfig
+
+	// SourceKeyStore indicates the value was provided by a remote key/value store.
+	SourceKeyStore
+
+	// SourceDefault indicates the value was provided by a default setting.
+	SourceDefault
+)
+
+// SourceKeyValueStore is an alias for SourceKeyStore.
+const SourceKeyValueStore = SourceKeyStore
+
+// String returns the human-readable name of the configuration source kind.
+func (k SourceKind) String() string {
+	switch k {
+	case SourceOverride:
+		return "override"
+	case SourceFlag:
+		return "flag"
+	case SourceEnvironment:
+		return "environment"
+	case SourceConfig:
+		return "config"
+	case SourceKeyStore:
+		return "key/value store"
+	case SourceDefault:
+		return "default"
+	default:
+		return fmt.Sprintf("SourceKind(%d)", k)
+	}
+}
+
+// Source represents the provenance of a configuration value.
+type Source struct {
+	Kind SourceKind
+	Name string
+}
+
+// ValueSource is an alias for Source.
+type ValueSource = Source
+
+// String returns the human-readable description of the source.
+func (s Source) String() string {
+	if s.Name != "" {
+		return fmt.Sprintf("%s (%s)", s.Kind, s.Name)
+	}
+	return s.Kind.String()
+}
+
+// SourceOf returns the provenance of the value associated with the key following
+// Viper's resolution priority: override, flag, env, config, key/value store, default.
+// The boolean reports whether the key was found in any configuration source.
+// When resolved from an environment variable, Name contains the effective environment
+// variable name that supplied the value.
+func SourceOf(key string) (Source, bool) { return v.SourceOf(key) }
+
+// SourceOf returns the provenance of the value associated with the key following
+// Viper's resolution priority: override, flag, env, config, key/value store, default.
+// The boolean reports whether the key was found in any configuration source.
+// When resolved from an environment variable, Name contains the effective environment
+// variable name that supplied the value.
+func (v *Viper) SourceOf(key string) (Source, bool) {
+	lcaseKey := strings.ToLower(key)
+	path := strings.Split(lcaseKey, v.keyDelim)
+	nested := len(path) > 1
+
+	// compute the path through the nested maps to the nested value
+	if nested && v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)) != "" {
+		return Source{}, false
+	}
+
+	// if the requested key is an alias, then return the proper key
+	lcaseKey = v.realKey(lcaseKey)
+	path = strings.Split(lcaseKey, v.keyDelim)
+	nested = len(path) > 1
+
+	// Set() override first
+	val := v.searchMap(v.override, path)
+	if val != nil {
+		return Source{Kind: SourceOverride, Name: lcaseKey}, true
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
+		return Source{}, false
+	}
+
+	// PFlag override next
+	flag, exists := v.pflags[lcaseKey]
+	if exists && flag.HasChanged() {
+		flagName := flag.Name()
+		if flagName == "" {
+			flagName = lcaseKey
+		}
+		return Source{Kind: SourceFlag, Name: flagName}, true
+	}
+	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
+		return Source{}, false
+	}
+
+	// Env override next
+	if v.automaticEnvApplied {
+		envKey := strings.Join(append(v.parents, lcaseKey), ".")
+		if actualKey, _, ok := v.resolveEnv(v.mergeWithEnvPrefix(envKey)); ok {
+			return Source{Kind: SourceEnvironment, Name: actualKey}, true
+		}
+		if nested && v.isPathShadowedInAutoEnv(path) != "" {
+			return Source{}, false
+		}
+	}
+	envkeys, exists := v.env[lcaseKey]
+	if exists {
+		for _, envkey := range envkeys {
+			if actualKey, _, ok := v.resolveEnv(envkey); ok {
+				return Source{Kind: SourceEnvironment, Name: actualKey}, true
+			}
+		}
+	}
+	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
+		return Source{}, false
+	}
+
+	// Config file next
+	val = v.searchIndexableWithPathPrefixes(v.config, path)
+	if val != nil {
+		return Source{Kind: SourceConfig, Name: lcaseKey}, true
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
+		return Source{}, false
+	}
+
+	// K/V store next
+	val = v.searchMap(v.kvstore, path)
+	if val != nil {
+		return Source{Kind: SourceKeyStore, Name: lcaseKey}, true
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
+		return Source{}, false
+	}
+
+	// Default next
+	val = v.searchMap(v.defaults, path)
+	if val != nil {
+		return Source{Kind: SourceDefault, Name: lcaseKey}, true
+	}
+	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
+		return Source{}, false
+	}
+
+	// Flag default next
+	if flag, exists := v.pflags[lcaseKey]; exists {
+		flagName := flag.Name()
+		if flagName == "" {
+			flagName = lcaseKey
+		}
+		return Source{Kind: SourceFlag, Name: flagName}, true
+	}
+
+	return Source{}, false
 }
 
 // AutomaticEnv makes Viper check if environment variables match any of the existing keys
