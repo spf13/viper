@@ -2718,3 +2718,228 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestSourceOf(t *testing.T) {
+	t.Run("override source provenance", func(t *testing.T) {
+		v := New()
+		v.Set("service.token", "token-override")
+
+		source, ok := v.SourceOf("service.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceOverride, source.Kind)
+		assert.Equal(t, "service.token", source.Name)
+
+		// Case-insensitive lookup
+		source, ok = v.SourceOf("SERVICE.TOKEN")
+		require.True(t, ok)
+		assert.Equal(t, SourceOverride, source.Kind)
+		assert.Equal(t, "service.token", source.Name)
+	})
+
+	t.Run("flag source provenance", func(t *testing.T) {
+		v := New()
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flags.String("port", "8080", "port flag")
+		flags.String("host", "localhost", "host flag")
+		require.NoError(t, flags.Set("port", "9090"))
+
+		v.BindPFlag("server.port", flags.Lookup("port"))
+		v.BindPFlag("server.host", flags.Lookup("host"))
+
+		// Changed flag
+		source, ok := v.SourceOf("server.port")
+		require.True(t, ok)
+		assert.Equal(t, SourceFlag, source.Kind)
+		assert.Equal(t, "port", source.Name)
+
+		// Unchanged flag default fallback
+		source, ok = v.SourceOf("server.host")
+		require.True(t, ok)
+		assert.Equal(t, SourceFlag, source.Kind)
+		assert.Equal(t, "host", source.Name)
+	})
+
+	t.Run("env source provenance explicit BindEnv multiple fallbacks", func(t *testing.T) {
+		v := New()
+		v.BindEnv(
+			"service.token",
+			"CURRENT_SERVICE_TOKEN",
+			"LEGACY_SERVICE_TOKEN",
+		)
+
+		// Only fallback is set
+		t.Setenv("LEGACY_SERVICE_TOKEN", "legacy-secret")
+		source, ok := v.SourceOf("service.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "LEGACY_SERVICE_TOKEN", source.Name)
+
+		// Primary is also set
+		t.Setenv("CURRENT_SERVICE_TOKEN", "current-secret")
+		source, ok = v.SourceOf("service.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "CURRENT_SERVICE_TOKEN", source.Name)
+	})
+
+	t.Run("env source provenance automatic env with prefix and replacer", func(t *testing.T) {
+		v := New()
+		v.SetEnvPrefix("APP")
+		v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+		v.AutomaticEnv()
+
+		t.Setenv("APP_SERVICE_TOKEN", "app-token-val")
+		source, ok := v.SourceOf("service.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "APP_SERVICE_TOKEN", source.Name)
+	})
+
+	t.Run("env source provenance single BindEnv with prefix and replacer", func(t *testing.T) {
+		v := New()
+		v.SetEnvPrefix("APP")
+		v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+		v.BindEnv("database.url")
+
+		t.Setenv("APP_DATABASE_URL", "postgres://localhost/db")
+		source, ok := v.SourceOf("database.url")
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "APP_DATABASE_URL", source.Name)
+	})
+
+	t.Run("env source provenance empty env handling", func(t *testing.T) {
+		v := New()
+		v.BindEnv("empty.token", "EMPTY_SERVICE_TOKEN")
+		t.Setenv("EMPTY_SERVICE_TOKEN", "")
+
+		// By default empty env is disallowed
+		_, ok := v.SourceOf("empty.token")
+		assert.False(t, ok)
+
+		// Allowed empty env
+		v.AllowEmptyEnv(true)
+		source, ok := v.SourceOf("empty.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "EMPTY_SERVICE_TOKEN", source.Name)
+	})
+
+	t.Run("config source provenance", func(t *testing.T) {
+		v := New()
+		v.SetConfigType("yaml")
+		require.NoError(t, v.ReadConfig(strings.NewReader("service:\n  name: auth-service\n")))
+
+		source, ok := v.SourceOf("service.name")
+		require.True(t, ok)
+		assert.Equal(t, SourceConfig, source.Kind)
+		assert.Equal(t, "service.name", source.Name)
+	})
+
+	t.Run("kvstore source provenance", func(t *testing.T) {
+		v := New()
+		v.SetConfigType("json")
+		require.NoError(t, v.unmarshalReader(strings.NewReader(`{"kvkey": "kvval"}`), v.kvstore))
+
+		source, ok := v.SourceOf("kvkey")
+		require.True(t, ok)
+		assert.Equal(t, SourceKeyStore, source.Kind)
+		assert.Equal(t, SourceKeyValueStore, source.Kind)
+		assert.Equal(t, "kvkey", source.Name)
+	})
+
+	t.Run("default source provenance", func(t *testing.T) {
+		v := New()
+		v.SetDefault("timeout", "30s")
+
+		source, ok := v.SourceOf("timeout")
+		require.True(t, ok)
+		assert.Equal(t, SourceDefault, source.Kind)
+		assert.Equal(t, "timeout", source.Name)
+	})
+
+	t.Run("missing key", func(t *testing.T) {
+		v := New()
+		source, ok := v.SourceOf("nonexistent.key")
+		assert.False(t, ok)
+		assert.Equal(t, Source{}, source)
+	})
+
+	t.Run("precedence ordering", func(t *testing.T) {
+		v := New()
+		key := "app.mode"
+
+		// 1. Default
+		v.SetDefault(key, "default-mode")
+		source, ok := v.SourceOf(key)
+		require.True(t, ok)
+		assert.Equal(t, SourceDefault, source.Kind)
+
+		// 2. Config over Default
+		v.SetConfigType("yaml")
+		require.NoError(t, v.ReadConfig(strings.NewReader("app:\n  mode: config-mode\n")))
+		source, ok = v.SourceOf(key)
+		require.True(t, ok)
+		assert.Equal(t, SourceConfig, source.Kind)
+
+		// 3. Env over Config
+		t.Setenv("APP_MODE_ENV", "env-mode")
+		v.BindEnv(key, "APP_MODE_ENV")
+		source, ok = v.SourceOf(key)
+		require.True(t, ok)
+		assert.Equal(t, SourceEnvironment, source.Kind)
+		assert.Equal(t, "APP_MODE_ENV", source.Name)
+
+		// 4. Flag over Env
+		flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		flags.String("mode", "flag-mode", "mode flag")
+		require.NoError(t, flags.Set("mode", "flag-mode"))
+		v.BindPFlag(key, flags.Lookup("mode"))
+		source, ok = v.SourceOf(key)
+		require.True(t, ok)
+		assert.Equal(t, SourceFlag, source.Kind)
+		assert.Equal(t, "mode", source.Name)
+
+		// 5. Override over Flag
+		v.Set(key, "override-mode")
+		source, ok = v.SourceOf(key)
+		require.True(t, ok)
+		assert.Equal(t, SourceOverride, source.Kind)
+		assert.Equal(t, "app.mode", source.Name)
+	})
+
+	t.Run("alias source provenance", func(t *testing.T) {
+		v := New()
+		v.Set("canonical.token", "secret")
+		v.RegisterAlias("alias.token", "canonical.token")
+
+		source, ok := v.SourceOf("alias.token")
+		require.True(t, ok)
+		assert.Equal(t, SourceOverride, source.Kind)
+		assert.Equal(t, "canonical.token", source.Name)
+	})
+
+	t.Run("package level SourceOf", func(t *testing.T) {
+		Reset()
+		t.Cleanup(Reset)
+
+		SetDefault("global.service.name", "global-service")
+		source, ok := SourceOf("global.service.name")
+		require.True(t, ok)
+		assert.Equal(t, SourceDefault, source.Kind)
+		assert.Equal(t, "global.service.name", source.Name)
+	})
+
+	t.Run("string representation", func(t *testing.T) {
+		assert.Equal(t, "override", SourceOverride.String())
+		assert.Equal(t, "flag", SourceFlag.String())
+		assert.Equal(t, "environment", SourceEnvironment.String())
+		assert.Equal(t, "config", SourceConfig.String())
+		assert.Equal(t, "key/value store", SourceKeyStore.String())
+		assert.Equal(t, "default", SourceDefault.String())
+		assert.Equal(t, "SourceKind(99)", SourceKind(99).String())
+
+		assert.Equal(t, "environment (APP_SERVICE_TOKEN)", Source{Kind: SourceEnvironment, Name: "APP_SERVICE_TOKEN"}.String())
+		assert.Equal(t, "override", Source{Kind: SourceOverride}.String())
+	})
+}
