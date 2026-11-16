@@ -60,7 +60,7 @@ type DecoderConfigOption func(*mapstructure.DecoderConfig)
 //
 //	 mapstructure.ComposeDecodeHookFunc(
 //			mapstructure.StringToTimeDurationHookFunc(),
-//			mapstructure.StringToSliceHookFunc(","),
+//			stringToWeakSliceHookFunc(","),
 //		)
 func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
 	return func(c *mapstructure.DecoderConfig) {
@@ -211,7 +211,7 @@ type StringReplacer interface {
 	Replace(s string) string
 }
 
-// EnvKeyReplacer sets a replacer used for mapping environment variables to internal keys.
+// EnvKeyReplacer sets a replacer used for mapping internal keys to environment variables.
 func EnvKeyReplacer(r StringReplacer) Option {
 	return optionFunc(func(v *Viper) {
 		if r == nil {
@@ -410,9 +410,9 @@ func (v *Viper) AllowEmptyEnv(allowEmptyEnv bool) {
 // rewriting keys many things, Ex: Get('someKey') -> some_key
 // (camel case to snake case for JSON keys perhaps)
 
-// getEnv is a wrapper around os.Getenv which replaces characters in the original
+// getEnv is a wrapper around os.LookupEnv which replaces characters in the original
 // key. This allows env vars which have different keys than the config object
-// keys.
+// keys. It reports an empty value as unset unless AllowEmptyEnv is enabled.
 func (v *Viper) getEnv(key string) (string, bool) {
 	if v.envKeyReplacer != nil {
 		key = v.envKeyReplacer.Replace(key)
@@ -1186,7 +1186,7 @@ func (v *Viper) MustBindEnv(input ...string) {
 //
 // Viper will check to see if an alias exists first.
 // Viper will then check in the following order:
-// flag, env, config file, key/value store.
+// override, flag, env, config file, key/value store, default.
 // Lastly, if no value was found and flagDefault is true, and if the key
 // corresponds to a flag, the flag's default value is returned.
 //
@@ -1441,23 +1441,33 @@ func (v *Viper) IsSet(key string) bool {
 	return val != nil
 }
 
-// AutomaticEnv makes Viper check if environment variables match any of the existing keys
-// (config, default or flags). If matching env vars are found, they are loaded into Viper.
+// AutomaticEnv tells Viper to look up an environment variable for every key it
+// is asked about, whether or not that key was registered through a config file,
+// SetDefault or a flag. The variable is named after the key: it is upper-cased,
+// prefixed with the SetEnvPrefix value, and passed through the
+// SetEnvKeyReplacer value when one is set. Values are read on each lookup
+// instead of being loaded into Viper, so a key that exists only in the
+// environment is not reported by AllKeys or AllSettings.
 func AutomaticEnv() { v.AutomaticEnv() }
 
-// AutomaticEnv makes Viper check if environment variables match any of the existing keys
-// (config, default or flags). If matching env vars are found, they are loaded into Viper.
+// AutomaticEnv tells Viper to look up an environment variable for every key it
+// is asked about, whether or not that key was registered through a config file,
+// SetDefault or a flag. The variable is named after the key: it is upper-cased,
+// prefixed with the SetEnvPrefix value, and passed through the
+// SetEnvKeyReplacer value when one is set. Values are read on each lookup
+// instead of being loaded into Viper, so a key that exists only in the
+// environment is not reported by AllKeys or AllSettings.
 func (v *Viper) AutomaticEnv() {
 	v.automaticEnvApplied = true
 }
 
 // SetEnvKeyReplacer sets the strings.Replacer on the viper object
-// Useful for mapping an environmental variable to a key that does
+// Useful for mapping a key to an environmental variable that does
 // not match it.
 func SetEnvKeyReplacer(r *strings.Replacer) { v.SetEnvKeyReplacer(r) }
 
 // SetEnvKeyReplacer sets the strings.Replacer on the viper object
-// Useful for mapping an environmental variable to a key that does
+// Useful for mapping a key to an environmental variable that does
 // not match it.
 func (v *Viper) SetEnvKeyReplacer(r *strings.Replacer) {
 	v.envKeyReplacer = r
@@ -1531,12 +1541,14 @@ func (v *Viper) InConfig(key string) bool {
 
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
-// Default only used when no value is provided by the user via flag, config or ENV.
+// The default is used only when no higher-priority source (override, flag,
+// env, config file or key/value store) provides a value for the key.
 func SetDefault(key string, value any) { v.SetDefault(key, value) }
 
 // SetDefault sets the default value for this key.
 // SetDefault is case-insensitive for a key.
-// Default only used when no value is provided by the user via flag, config or ENV.
+// The default is used only when no higher-priority source (override, flag,
+// env, config file or key/value store) provides a value for the key.
 func (v *Viper) SetDefault(key string, value any) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
@@ -1573,12 +1585,14 @@ func (v *Viper) Set(key string, value any) {
 	deepestMap[lastKey] = value
 }
 
-// ReadInConfig will discover and load the configuration file from disk
-// and key/value stores, searching in one of the defined paths.
+// ReadInConfig will discover and load the configuration file from disk,
+// searching in one of the defined paths. To load configuration from a
+// remote key/value store, use ReadRemoteConfig.
 func ReadInConfig() error { return v.ReadInConfig() }
 
-// ReadInConfig will discover and load the configuration file from disk
-// and key/value stores, searching in one of the defined paths.
+// ReadInConfig will discover and load the configuration file from disk,
+// searching in one of the defined paths. To load configuration from a
+// remote key/value store, use ReadRemoteConfig.
 func (v *Viper) ReadInConfig() error {
 	v.logger.Info("attempting to read in config file")
 	filename, err := v.getConfigFile()
@@ -2098,12 +2112,12 @@ func (v *Viper) SetConfigName(in string) {
 	}
 }
 
-// SetConfigType sets the type of the configuration returned by the
-// remote source, e.g. "json".
+// SetConfigType sets the type of the configuration, e.g. "json".
+// It applies to every source Viper reads from or writes to.
 func SetConfigType(in string) { v.SetConfigType(in) }
 
-// SetConfigType sets the type of the configuration returned by the
-// remote source, e.g. "json".
+// SetConfigType sets the type of the configuration, e.g. "json".
+// It applies to every source Viper reads from or writes to.
 func (v *Viper) SetConfigType(in string) {
 	if in != "" {
 		v.configType = in

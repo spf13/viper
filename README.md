@@ -160,7 +160,7 @@ viper.SafeWriteConfigAs("/path/to/my/.config")
 viper.SafeWriteConfigAs("/path/to/my/.other_config")
 ```
 
-As a rule of the thumb, methods prefixed with `Safe` won't overwrite any
+As a rule of thumb, methods prefixed with `Safe` won't overwrite any
 existing file, while other methods will.
 
 ### Watching and Re-reading Config Files
@@ -346,7 +346,7 @@ type myFlagSet struct {
 	flags []myFlag
 }
 func (f myFlagSet) VisitAll(fn func(FlagValue)) {
-	for _, flag := range flags {
+	for _, flag := range f.flags {
 		fn(flag)
 	}
 }
@@ -354,7 +354,7 @@ func (f myFlagSet) VisitAll(fn func(FlagValue)) {
 fSet := myFlagSet{
 	flags: []myFlag{myFlag{}, myFlag{}},
 }
-viper.BindFlagValues("my-flags", fSet)
+viper.BindFlagValues(fSet)
 ```
 
 ### Remote Key/Value Store Support
@@ -523,7 +523,7 @@ following configuration:
 
 ```go
 GetString("datastore.metric.host") // "127.0.0.1"
-GetInt("host.ports.1") // 6029
+GetInt("datastore.metric.ports.1") // 6029
 ```
 
 > **NOTE** Viper _does not_ deep merge configuration values. Complex values

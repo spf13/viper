@@ -2,7 +2,7 @@
 
 ## Unmarshaling doesn't work
 
-The most common reason for this issue is improper use of struct tags (eg. `yaml` or `json`). Viper uses [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure) under the hood for unmarshaling values which uses `mapstructure` tags by default. Please refer to the library's documentation for using other struct tags.
+The most common reason for this issue is improper use of struct tags (eg. `yaml` or `json`). Viper uses [github.com/go-viper/mapstructure/v2](https://github.com/go-viper/mapstructure/v2) under the hood for unmarshaling values which uses `mapstructure` tags by default. Please refer to the library's documentation for using other struct tags.
 
 ## Cannot find package
 
@@ -20,7 +20,7 @@ Viper opted to use [Go Modules](https://go.dev/wiki/Modules) to manage its depen
 The solution is easy: switch to using Go Modules.
 Please refer to the [wiki](https://go.dev/wiki/Modules) on how to do that.
 
-**tl;dr* `export GO111MODULE=on`
+**tl;dr:** `export GO111MODULE=on`
 
 ## Unquoted 'y' and 'n' characters get replaced with _true_ and _false_ when reading a YAML file
 
@@ -29,4 +29,4 @@ This is a YAML 1.1 feature according to [go-yaml/yaml#740](https://github.com/go
 Potential solutions are:
 
 1. Quoting values resolved as boolean
-1. Upgrading to YAML v3 (for the time being this is possible by passing the `viper_yaml3` tag to your build)
+1. Upgrading to YAML v3. Current Viper releases already use [go.yaml.in/yaml/v3](https://pkg.go.dev/go.yaml.in/yaml/v3) for YAML (see `internal/encoding/yaml/codec.go`), so there is no `viper_yaml3` build tag left to pass: upgrade Viper, or register your own codec through the [encoding API](https://pkg.go.dev/github.com/spf13/viper#Codec).
