@@ -17,7 +17,7 @@ type FlagValue interface {
 	ValueType() string
 }
 
-// pflagValueSet is a wrapper around *pflag.ValueSet
+// pflagValueSet is a wrapper around *pflag.FlagSet
 // that implements FlagValueSet.
 type pflagValueSet struct {
 	flags *pflag.FlagSet
@@ -30,7 +30,7 @@ func (p pflagValueSet) VisitAll(fn func(flag FlagValue)) {
 	})
 }
 
-// pflagValue is a wrapper around *pflag.flag
+// pflagValue is a wrapper around *pflag.Flag
 // that implements FlagValue.
 type pflagValue struct {
 	flag *pflag.Flag
