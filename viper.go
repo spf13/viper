@@ -737,6 +737,10 @@ func (v *Viper) Get(key string) any {
 			return cast.ToInt(val)
 		case uint:
 			return cast.ToUint(val)
+		case uint8:
+			return cast.ToUint8(val)
+		case uint16:
+			return cast.ToUint16(val)
 		case uint32:
 			return cast.ToUint32(val)
 		case uint64:
