@@ -131,15 +131,23 @@ type Viper struct {
 	envKeyReplacer      StringReplacer
 	allowEmptyEnv       bool
 
-	parents        []string
-	config         map[string]any
-	override       map[string]any
-	defaults       map[string]any
-	kvstore        map[string]any
-	pflags         map[string]FlagValue
-	env            map[string][]string
-	aliases        map[string]string
-	typeByDefValue bool
+	parents  []string
+	config   map[string]any
+	override map[string]any
+	defaults map[string]any
+	kvstore  map[string]any
+
+	// wholeMaps records, for the override and defaults registers, the
+	// keys whose map value was assigned as a whole (Set or SetDefault
+	// called with a map at that exact key). Such a map replaces values
+	// from lower-priority sources for that key entirely, unlike a map
+	// that only exists in a register because a nested key was set.
+	overrideWholeMaps map[string]bool
+	defaultWholeMaps  map[string]bool
+	pflags            map[string]FlagValue
+	env               map[string][]string
+	aliases           map[string]string
+	typeByDefValue    bool
 
 	onConfigChange func(fsnotify.Event)
 
@@ -1197,7 +1205,44 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		exists bool
 		path   = strings.Split(lcaseKey, v.keyDelim)
 		nested = len(path) > 1
+
+		// mergedMap accumulates map values found for the key across
+		// sources, from the highest to the lowest priority one. A map
+		// found in one source must not shadow sibling keys of maps in
+		// lower-priority sources: leaf lookups and AllSettings already
+		// resolve those keys, so returning the first map as-is would
+		// silently drop them from Get, GetStringMap, Sub and friends.
+		mergedMap   map[string]any
+		mergedFound bool
 	)
+
+	// addSourceValue records a value found in one of the deep-map
+	// sources (override, config, key/value store, defaults). It reports
+	// whether the value is final and can be returned immediately: maps
+	// are accumulated instead, so lower-priority sources still get a
+	// chance to contribute their keys — unless the map was assigned as
+	// a whole at this key (whole), in which case it replaces
+	// lower-priority values entirely, as Set has always promised.
+	addSourceValue := func(val any, whole bool) (any, bool) {
+		m, ok := val.(map[string]any)
+		if ok && whole {
+			return val, true
+		}
+		if !ok {
+			if mergedFound {
+				// A scalar in a lower-priority source sits below a map
+				// found higher up; the map shadows it for this key.
+				return nil, false
+			}
+			return val, true
+		}
+		if mergedFound {
+			mergedMap = mergeMapValues(mergedMap, m)
+		} else {
+			mergedMap, mergedFound = m, true
+		}
+		return nil, false
+	}
 
 	// compute the path through the nested maps to the nested value
 	if nested && v.isPathShadowedInDeepMap(path, castMapStringToMapInterface(v.aliases)) != "" {
@@ -1212,15 +1257,21 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	// Set() override first
 	val = v.searchMap(v.override, path)
 	if val != nil {
-		return val
+		if final, ok := addSourceValue(val, v.overrideWholeMaps[lcaseKey]); ok {
+			return final
+		}
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.override) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
 	}
 
 	// PFlag override next
+	// (a changed flag cannot override a map already found in the
+	// higher-priority override source)
 	flag, exists := v.pflags[lcaseKey]
-	if exists && flag.HasChanged() {
+	if exists && flag.HasChanged() && !mergedFound {
 		switch flag.ValueType() {
 		case "int", "int8", "int16", "int32", "int64":
 			return cast.ToInt(flag.ValueString())
@@ -1265,11 +1316,15 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.pflags) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
 	}
 
 	// Env override next
-	if v.automaticEnvApplied {
+	// (skipped when a higher-priority source already provided a map for
+	// the key: env values are scalars and cannot override that map)
+	if v.automaticEnvApplied && !mergedFound {
 		envKey := strings.Join(append(v.parents, lcaseKey), ".")
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
@@ -1281,7 +1336,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		}
 	}
 	envkeys, exists := v.env[lcaseKey]
-	if exists {
+	if exists && !mergedFound {
 		for _, envkey := range envkeys {
 			if val, ok := v.getEnv(envkey); ok {
 				return val
@@ -1289,34 +1344,52 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		}
 	}
 	if nested && v.isPathShadowedInFlatMap(path, v.env) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
 	}
 
 	// Config file next
 	val = v.searchIndexableWithPathPrefixes(v.config, path)
 	if val != nil {
-		return val
+		if final, ok := addSourceValue(val, false); ok {
+			return final
+		}
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.config) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
 	}
 
 	// K/V store next
 	val = v.searchMap(v.kvstore, path)
 	if val != nil {
-		return val
+		if final, ok := addSourceValue(val, false); ok {
+			return final
+		}
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.kvstore) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
 	}
 
 	// Default next
 	val = v.searchMap(v.defaults, path)
 	if val != nil {
-		return val
+		if final, ok := addSourceValue(val, v.defaultWholeMaps[lcaseKey]); ok {
+			return final
+		}
 	}
 	if nested && v.isPathShadowedInDeepMap(path, v.defaults) != "" {
-		return nil
+		if !mergedFound {
+			return nil
+		}
+	}
+
+	if mergedFound {
+		return mergedMap
 	}
 
 	if flagDefault {
@@ -1541,6 +1614,7 @@ func (v *Viper) SetDefault(key string, value any) {
 	// If alias passed in, then set the proper default
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
+	v.defaultWholeMaps = v.recordWholeMap(v.defaultWholeMaps, key, value)
 
 	path := strings.Split(key, v.keyDelim)
 	lastKey := strings.ToLower(path[len(path)-1])
@@ -1548,6 +1622,28 @@ func (v *Viper) SetDefault(key string, value any) {
 
 	// set innermost value
 	deepestMap[lastKey] = value
+}
+
+// recordWholeMap updates a whole-map registry after a Set-style
+// assignment at key in the corresponding register: a map value marks
+// the key as assigned as a whole, any other value clears the mark, and
+// marks below the key are dropped because the assignment replaces
+// that part of the register.
+func (v *Viper) recordWholeMap(registry map[string]bool, key string, value any) map[string]bool {
+	if registry == nil {
+		registry = map[string]bool{}
+	}
+	for k := range registry {
+		if strings.HasPrefix(k, key+v.keyDelim) {
+			delete(registry, k)
+		}
+	}
+	if _, ok := value.(map[string]any); ok {
+		registry[key] = true
+	} else {
+		delete(registry, key)
+	}
+	return registry
 }
 
 // Set sets the value for the key in the override register.
@@ -1564,6 +1660,7 @@ func (v *Viper) Set(key string, value any) {
 	// If alias passed in, then set the proper override
 	key = v.realKey(strings.ToLower(key))
 	value = toCaseInsensitiveValue(value)
+	v.overrideWholeMaps = v.recordWholeMap(v.overrideWholeMaps, key, value)
 
 	path := strings.Split(key, v.keyDelim)
 	lastKey := strings.ToLower(path[len(path)-1])
@@ -1876,6 +1973,30 @@ func castMapFlagToMapInterface(src map[string]FlagValue) map[string]any {
 		tgt[k] = v
 	}
 	return tgt
+}
+
+// mergeMapValues deep-merges two map values found for the same key in
+// different sources. Values from high win: when both sides hold a map for
+// the same sub-key the merge recurses, otherwise the high value replaces
+// the low one entirely (in particular, a scalar in high keeps shadowing
+// a whole subtree in low). Neither input is modified.
+func mergeMapValues(high, low map[string]any) map[string]any {
+	out := make(map[string]any, len(low)+len(high))
+	for k, lv := range low {
+		out[k] = lv
+	}
+	for k, hv := range high {
+		if lv, exists := out[k]; exists {
+			hm, hok := hv.(map[string]any)
+			lm, lok := lv.(map[string]any)
+			if hok && lok {
+				out[k] = mergeMapValues(hm, lm)
+				continue
+			}
+		}
+		out[k] = hv
+	}
+	return out
 }
 
 // mergeMaps merges two maps. The `itgt` parameter is for handling go-yaml's
