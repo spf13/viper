@@ -2718,3 +2718,84 @@ func skipWindows(t *testing.T) {
 		t.Skip("Skip test on Windows")
 	}
 }
+
+func TestGetMapMergesKeysAcrossSources(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(strings.NewReader("a:\n  b: 1\n  c: 2\n")))
+
+	// Overriding a single leaf must not hide its siblings from the
+	// config file when the whole map is requested: leaf lookups and
+	// AllSettings resolve both keys, and Get has to agree with them.
+	v.Set("a.b", 5)
+
+	assert.Equal(t, 5, v.GetInt("a.b"))
+	assert.Equal(t, 2, v.GetInt("a.c"))
+	assert.Equal(t, map[string]any{"b": 5, "c": 2}, v.Get("a"))
+	assert.Equal(t, map[string]any{"b": 5, "c": 2}, v.GetStringMap("a"))
+	assert.Equal(t, v.AllSettings()["a"], v.Get("a"))
+
+	sub := v.Sub("a")
+	require.NotNil(t, sub)
+	assert.Equal(t, 5, sub.GetInt("b"))
+	assert.Equal(t, 2, sub.GetInt("c"))
+}
+
+func TestGetMapMergesDefaultSiblings(t *testing.T) {
+	v := New()
+	v.SetDefault("a.c", 99)
+	v.Set("a.b", 5)
+
+	assert.Equal(t, map[string]any{"b": 5, "c": 99}, v.GetStringMap("a"))
+}
+
+func TestGetMapMergesNestedMaps(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(strings.NewReader("a:\n  b:\n    x: 1\n    y: 2\n")))
+
+	v.Set("a.b.x", 9)
+
+	assert.Equal(t, map[string]any{"x": 9, "y": 2}, v.Get("a.b"))
+}
+
+func TestGetMapScalarStillShadowsSubtree(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(strings.NewReader("clothing:\n  jacket: leather\n  trousers: denim\n")))
+
+	// A scalar in a higher-priority source keeps shadowing a whole
+	// subtree below it: merging must not resurrect the default's
+	// clothing.jacket.price when clothing.jacket itself is a string.
+	v.SetDefault("clothing.jacket.price", 100)
+	v.SetDefault("clothing.shirt", "polyester")
+
+	clothing := v.GetStringMap("clothing")
+	assert.Equal(t, "leather", clothing["jacket"])
+	assert.Equal(t, "denim", clothing["trousers"])
+	assert.Equal(t, "polyester", clothing["shirt"])
+	assert.Nil(t, v.Get("clothing.jacket.price"))
+}
+
+func TestGetMapHigherScalarWinsOverLowerMap(t *testing.T) {
+	v := New()
+	v.SetConfigType("yaml")
+	require.NoError(t, v.ReadConfig(strings.NewReader("a:\n  b: 1\n")))
+
+	v.Set("a", "scalar")
+
+	assert.Equal(t, "scalar", v.Get("a"))
+}
+
+func TestGetMapSetAsWholeStillReplaces(t *testing.T) {
+	v := New()
+	v.SetDefault("tom.size", 4)
+	v.Set("tom", map[string]any{"age": 10})
+
+	// A map assigned as a whole at a key keeps replacing lower-priority
+	// values for that key (see TestNestedOverrides), while leaf lookups
+	// still fall through to the default.
+	assert.Equal(t, map[string]any{"age": 10}, v.Get("tom"))
+	assert.Equal(t, 4, v.GetInt("tom.size"))
+	assert.Equal(t, 10, v.GetInt("tom.age"))
+}
