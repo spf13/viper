@@ -92,7 +92,7 @@ Viper requires minimal configuration to load config files. Viper currently suppo
 * YAML
 * INI
 * envfile
-* Java Propeties
+* Java Properties
 
 A single Viper instance only supports a single configuration file, but multiple
 paths may be searched for one.
@@ -220,7 +220,7 @@ viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "cat
 
 ### Setting Overrides
 
-Viper allows explict setting of configuration, such as from your own
+Viper allows explicit setting of configuration, such as from your own
 application logic.
 
 ```go
