@@ -1270,7 +1270,7 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 
 	// Env override next
 	if v.automaticEnvApplied {
-		envKey := strings.Join(append(v.parents, lcaseKey), ".")
+		envKey := strings.Join(append(v.parents, lcaseKey), v.keyDelim)
 		// even if it hasn't been registered, if automaticEnv is used,
 		// check any Get request
 		if val, ok := v.getEnv(v.mergeWithEnvPrefix(envKey)); ok {
