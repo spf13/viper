@@ -1222,8 +1222,14 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 	flag, exists := v.pflags[lcaseKey]
 	if exists && flag.HasChanged() {
 		switch flag.ValueType() {
-		case "int", "int8", "int16", "int32", "int64":
+		case "int", "int8", "int16", "int32":
 			return cast.ToInt(flag.ValueString())
+		case "int64":
+			value, err := strconv.ParseInt(flag.ValueString(), 0, 64)
+			if err != nil {
+				return int64(0)
+			}
+			return value
 		case "bool":
 			return cast.ToBool(flag.ValueString())
 		case "stringSlice", "stringArray":
@@ -1324,8 +1330,14 @@ func (v *Viper) find(lcaseKey string, flagDefault bool) any {
 		// get the flag's default value even if the flag's value has not been set.
 		if flag, exists := v.pflags[lcaseKey]; exists {
 			switch flag.ValueType() {
-			case "int", "int8", "int16", "int32", "int64":
+			case "int", "int8", "int16", "int32":
 				return cast.ToInt(flag.ValueString())
+			case "int64":
+				value, err := strconv.ParseInt(flag.ValueString(), 0, 64)
+				if err != nil {
+					return int64(0)
+				}
+				return value
 			case "bool":
 				return cast.ToBool(flag.ValueString())
 			case "stringSlice", "stringArray":
